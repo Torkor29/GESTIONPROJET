@@ -47,3 +47,29 @@ const TYPES_PAR_EXTENSION: Record<string, string> = {
 export function typeMime(nom: string): string {
   return TYPES_PAR_EXTENSION[path.extname(nom).toLowerCase()] ?? "application/octet-stream";
 }
+
+/**
+ * Construit l'en-tête Content-Disposition en préservant le nom d'origine.
+ *
+ * `encodeURIComponent` laisse passer ' ( ) * , que la RFC 5987 n'autorise pas :
+ * un nom comme « Avis CPP (signé).pdf » casse alors l'analyse et le navigateur
+ * enregistre le fichier sous le nom « download ». On complète donc l'encodage,
+ * et on ajoute un repli ASCII pour les navigateurs qui ignorent `filename*`.
+ */
+export function enteteContentDisposition(
+  disposition: "inline" | "attachment",
+  nomOriginal: string,
+): string {
+  const repliAscii = nomOriginal
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7e]/g, "_")
+    .replace(/["\\]/g, "_");
+
+  const encode = encodeURIComponent(nomOriginal).replace(
+    /['()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+  return `${disposition}; filename="${repliAscii}"; filename*=UTF-8''${encode}`;
+}

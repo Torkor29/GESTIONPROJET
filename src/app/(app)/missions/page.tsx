@@ -1,0 +1,249 @@
+import Link from "next/link";
+import FormulaireTache from "@/components/formulaire-tache";
+import TableauMissions from "@/components/tableau-missions";
+import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
+import { listerEtudes, toutesLesTaches } from "@/lib/requetes";
+
+export const dynamic = "force-dynamic";
+
+const VUES = [
+  { cle: "tableau", libelle: "Tableau" },
+  { cle: "groupe", libelle: "Groupé par statut" },
+  { cle: "echeances", libelle: "Par échéance" },
+] as const;
+
+type Params = {
+  etude?: string;
+  statut?: string;
+  q?: string;
+  vue?: string;
+  masquerTerminees?: string;
+};
+
+export default async function PageMissions({
+  searchParams,
+}: {
+  searchParams: Promise<Params>;
+}) {
+  const params = await searchParams;
+  const vue = params.vue ?? "tableau";
+  const maintenant = Math.floor(Date.now() / 1000);
+
+  const [toutes, etudes] = await Promise.all([toutesLesTaches(), listerEtudes()]);
+
+  const etudeId = params.etude ? Number(params.etude) : null;
+  const recherche = (params.q ?? "").trim().toLowerCase();
+  const masquerTerminees = params.masquerTerminees === "1";
+
+  const lignes = toutes.filter(({ tache }) => {
+    if (etudeId && tache.etudeId !== etudeId) return false;
+    if (params.statut && tache.statut !== params.statut) return false;
+    if (masquerTerminees && tache.statut === "terminee") return false;
+    if (recherche) {
+      const texte = `${tache.titre} ${tache.notes ?? ""}`.toLowerCase();
+      if (!texte.includes(recherche)) return false;
+    }
+    return true;
+  });
+
+  const enRetard = lignes.filter(
+    ({ tache }) => tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant,
+  );
+
+  return (
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Suivi de missions</h1>
+          <p className="mt-1 text-sm text-muted">
+            {lignes.length} mission{lignes.length > 1 ? "s" : ""} affichée
+            {lignes.length > 1 ? "s" : ""}
+            {enRetard.length > 0 && (
+              <span className="text-red-500"> · {enRetard.length} en retard</span>
+            )}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`/api/export-missions?${new URLSearchParams(
+              Object.entries(params).filter(([, v]) => v) as [string, string][],
+            ).toString()}`}
+            className="bouton-discret"
+            download
+          >
+            ⬇ Exporter
+          </a>
+          <FormulaireTache etudes={etudes} libelle="Nouvelle mission" />
+        </div>
+      </header>
+
+      {/* Barre de vues */}
+      <nav className="flex flex-wrap gap-2">
+        {VUES.map((v) => {
+          const q = new URLSearchParams(
+            Object.entries(params).filter(([k, val]) => val && k !== "vue") as [string, string][],
+          );
+          q.set("vue", v.cle);
+          return (
+            <Link
+              key={v.cle}
+              href={`/missions?${q.toString()}`}
+              aria-current={vue === v.cle ? "page" : undefined}
+              className={`rounded-lg border px-3 py-1.5 text-sm transition
+                          ${
+                            vue === v.cle
+                              ? "border-accent bg-accent/10 font-medium text-accent"
+                              : "border-line text-muted hover:text-ink"
+                          }`}
+            >
+              {v.libelle}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Filtres */}
+      <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
+        <input type="hidden" name="vue" value={vue} />
+
+        <div className="min-w-48 flex-1">
+          <label htmlFor="q" className="mb-1.5 block text-xs text-muted">
+            Rechercher
+          </label>
+          <input
+            id="q"
+            name="q"
+            defaultValue={params.q ?? ""}
+            placeholder="Titre ou commentaire"
+            className="champ"
+          />
+        </div>
+
+        <div className="min-w-44">
+          <label htmlFor="etude" className="mb-1.5 block text-xs text-muted">
+            Étude
+          </label>
+          <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
+            <option value="">Toutes</option>
+            {etudes.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.code ? `${e.code} — ${e.nom}` : e.nom}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="min-w-40">
+          <label htmlFor="statut" className="mb-1.5 block text-xs text-muted">
+            Statut
+          </label>
+          <select id="statut" name="statut" defaultValue={params.statut ?? ""} className="champ">
+            <option value="">Tous</option>
+            {Object.entries(LIBELLES_STATUT_MISSION).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <label className="flex items-center gap-2 pb-2 text-sm">
+          <input
+            type="checkbox"
+            name="masquerTerminees"
+            value="1"
+            defaultChecked={masquerTerminees}
+            className="h-4 w-4 accent-indigo-600"
+          />
+          Masquer les terminées
+        </label>
+
+        <button type="submit" className="bouton-discret">
+          Filtrer
+        </button>
+        {(params.q || params.etude || params.statut || masquerTerminees) && (
+          <Link href={`/missions?vue=${vue}`} className="pb-2 text-sm text-muted hover:text-ink">
+            Réinitialiser
+          </Link>
+        )}
+      </form>
+
+      {vue === "groupe" ? (
+        <div className="space-y-5">
+          {Object.entries(LIBELLES_STATUT_MISSION).map(([statut, libelle]) => {
+            const duGroupe = lignes.filter((l) => l.tache.statut === statut);
+            if (duGroupe.length === 0) return null;
+            return (
+              <section key={statut}>
+                <h2 className="mb-2 px-1 text-sm font-medium">
+                  {libelle}
+                  <span className="chiffres ml-2 text-xs text-muted">{duGroupe.length}</span>
+                </h2>
+                <TableauMissions lignes={duGroupe} etudes={etudes} />
+              </section>
+            );
+          })}
+        </div>
+      ) : vue === "echeances" ? (
+        <VueEcheances lignes={lignes} etudes={etudes} maintenant={maintenant} />
+      ) : (
+        <TableauMissions
+          lignes={lignes}
+          etudes={etudes}
+          message="Aucune mission ne correspond à ces filtres."
+        />
+      )}
+    </div>
+  );
+}
+
+/** Regroupe par urgence : en retard, cette semaine, plus tard, sans échéance. */
+function VueEcheances({
+  lignes,
+  etudes,
+  maintenant,
+}: {
+  lignes: Awaited<ReturnType<typeof toutesLesTaches>>;
+  etudes: Awaited<ReturnType<typeof listerEtudes>>;
+  maintenant: number;
+}) {
+  const dansUneSemaine = maintenant + 7 * 86400;
+  const ouvertes = lignes.filter((l) => l.tache.statut !== "terminee");
+
+  const groupes = [
+    {
+      titre: "En retard",
+      lignes: ouvertes.filter((l) => l.tache.echeance && l.tache.echeance < maintenant),
+    },
+    {
+      titre: "Dans les 7 jours",
+      lignes: ouvertes.filter(
+        (l) =>
+          l.tache.echeance && l.tache.echeance >= maintenant && l.tache.echeance <= dansUneSemaine,
+      ),
+    },
+    {
+      titre: "Plus tard",
+      lignes: ouvertes.filter((l) => l.tache.echeance && l.tache.echeance > dansUneSemaine),
+    },
+    { titre: "Sans échéance", lignes: ouvertes.filter((l) => !l.tache.echeance) },
+  ].filter((g) => g.lignes.length > 0);
+
+  if (groupes.length === 0) {
+    return <p className="carte p-8 text-center text-sm text-muted">Aucune mission ouverte.</p>;
+  }
+
+  return (
+    <div className="space-y-5">
+      {groupes.map((g) => (
+        <section key={g.titre}>
+          <h2 className="mb-2 px-1 text-sm font-medium">
+            {g.titre}
+            <span className="chiffres ml-2 text-xs text-muted">{g.lignes.length}</span>
+          </h2>
+          <TableauMissions lignes={g.lignes} etudes={etudes} />
+        </section>
+      ))}
+    </div>
+  );
+}

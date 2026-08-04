@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Modale from "./modale";
 import { creerTache, modifierTache } from "@/actions/taches";
@@ -30,6 +30,9 @@ export default function FormulaireTache({
   libelle: string;
   variante?: "principal" | "discret" | "icone";
 }) {
+  // Plusieurs de ces formulaires cohabitent sur une même page : les identifiants
+  // doivent être uniques, sinon les libellés pointent vers le mauvais champ.
+  const uid = useId();
   const [ouverte, setOuverte] = useState(false);
   const edition = Boolean(tache);
   const [etat, action] = useActionState(edition ? modifierTache : creerTache, VIDE);
@@ -54,8 +57,8 @@ export default function FormulaireTache({
       <button
         type="button"
         onClick={() => setOuverte(true)}
-        title={edition ? "Modifier la tâche" : undefined}
-        aria-label={edition ? "Modifier la tâche" : undefined}
+        title={edition ? "Modifier la mission" : undefined}
+        aria-label={edition ? "Modifier la mission" : undefined}
         className={classes}
       >
         {libelle}
@@ -64,32 +67,32 @@ export default function FormulaireTache({
       <Modale
         ouverte={ouverte}
         onFermer={() => setOuverte(false)}
-        titre={edition ? "Modifier la tâche" : "Nouvelle tâche"}
+        titre={edition ? "Modifier la mission" : "Nouvelle mission"}
       >
         <form action={action} className="space-y-4">
           {edition && <input type="hidden" name="id" value={tache!.id} />}
 
           <div>
-            <label htmlFor="titre" className="mb-1.5 block text-sm font-medium">
-              Tâche
+            <label htmlFor={`${uid}-titre`} className="mb-1.5 block text-sm font-medium">
+              Mission
             </label>
             <input
-              id="titre"
+              id={`${uid}-titre`}
               name="titre"
               required
               autoFocus
               defaultValue={tache?.titre}
-              placeholder="Rédiger la note de calcul"
+              placeholder="Déclaration de fin d'étude à l'ANSM"
               className="champ"
             />
           </div>
 
           <div>
-            <label htmlFor="etudeId" className="mb-1.5 block text-sm font-medium">
+            <label htmlFor={`${uid}-etudeId`} className="mb-1.5 block text-sm font-medium">
               Étude
             </label>
             <select
-              id="etudeId"
+              id={`${uid}-etudeId`}
               name="etudeId"
               defaultValue={tache?.etudeId ?? etudeIdParDefaut ?? ""}
               className="champ"
@@ -105,11 +108,11 @@ export default function FormulaireTache({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="priorite" className="mb-1.5 block text-sm font-medium">
+              <label htmlFor={`${uid}-priorite`} className="mb-1.5 block text-sm font-medium">
                 Priorité
               </label>
               <select
-                id="priorite"
+                id={`${uid}-priorite`}
                 name="priorite"
                 defaultValue={tache?.priorite ?? "normale"}
                 className="champ"
@@ -123,11 +126,11 @@ export default function FormulaireTache({
             </div>
 
             <div>
-              <label htmlFor="echeance" className="mb-1.5 block text-sm font-medium">
+              <label htmlFor={`${uid}-echeance`} className="mb-1.5 block text-sm font-medium">
                 Échéance
               </label>
               <input
-                id="echeance"
+                id={`${uid}-echeance`}
                 name="echeance"
                 type="date"
                 defaultValue={versChampDate(tache?.echeance)}
@@ -138,10 +141,10 @@ export default function FormulaireTache({
 
           {edition && (
             <div>
-              <label htmlFor="statut" className="mb-1.5 block text-sm font-medium">
+              <label htmlFor={`${uid}-statut`} className="mb-1.5 block text-sm font-medium">
                 Statut
               </label>
-              <select id="statut" name="statut" defaultValue={tache!.statut} className="champ">
+              <select id={`${uid}-statut`} name="statut" defaultValue={tache!.statut} className="champ">
                 {Object.entries(LIBELLES_STATUT_TACHE).map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}
@@ -152,11 +155,11 @@ export default function FormulaireTache({
           )}
 
           <div>
-            <label htmlFor="notes" className="mb-1.5 block text-sm font-medium">
-              Notes <span className="font-normal text-muted">(facultatif)</span>
+            <label htmlFor={`${uid}-notes`} className="mb-1.5 block text-sm font-medium">
+              Commentaire <span className="font-normal text-muted">(facultatif)</span>
             </label>
             <textarea
-              id="notes"
+              id={`${uid}-notes`}
               name="notes"
               rows={2}
               defaultValue={tache?.notes ?? ""}

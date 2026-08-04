@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Modale from "./modale";
 import { ajouterTemps, modifierTemps } from "@/actions/temps";
@@ -35,6 +35,9 @@ export default function FormulaireTemps({
   libelle: string;
   variante?: "principal" | "discret" | "icone";
 }) {
+  // Plusieurs de ces formulaires cohabitent sur une même page : les identifiants
+  // doivent être uniques, sinon les libellés pointent vers le mauvais champ.
+  const uid = useId();
   const [ouverte, setOuverte] = useState(false);
   const edition = Boolean(entree);
   const [etat, action] = useActionState(edition ? modifierTemps : ajouterTemps, VIDE);
@@ -78,11 +81,11 @@ export default function FormulaireTemps({
           {edition && <input type="hidden" name="id" value={entree!.id} />}
 
           <div>
-            <label htmlFor="etudeId" className="mb-1.5 block text-sm font-medium">
+            <label htmlFor={`${uid}-etudeId`} className="mb-1.5 block text-sm font-medium">
               Étude
             </label>
             <select
-              id="etudeId"
+              id={`${uid}-etudeId`}
               name="etudeId"
               defaultValue={entree?.etudeId ?? etudeIdParDefaut ?? ""}
               className="champ"
@@ -98,11 +101,11 @@ export default function FormulaireTemps({
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label htmlFor="date" className="mb-1.5 block text-sm font-medium">
+              <label htmlFor={`${uid}-date`} className="mb-1.5 block text-sm font-medium">
                 Date
               </label>
               <input
-                id="date"
+                id={`${uid}-date`}
                 name="date"
                 type="date"
                 required
@@ -114,11 +117,11 @@ export default function FormulaireTemps({
             </div>
 
             <div>
-              <label htmlFor="heureDebut" className="mb-1.5 block text-sm font-medium">
+              <label htmlFor={`${uid}-heureDebut`} className="mb-1.5 block text-sm font-medium">
                 Début
               </label>
               <input
-                id="heureDebut"
+                id={`${uid}-heureDebut`}
                 name="heureDebut"
                 type="time"
                 defaultValue={entree ? heureDe(entree.debut) : "09:00"}
@@ -127,11 +130,11 @@ export default function FormulaireTemps({
             </div>
 
             <div>
-              <label htmlFor="duree" className="mb-1.5 block text-sm font-medium">
+              <label htmlFor={`${uid}-duree`} className="mb-1.5 block text-sm font-medium">
                 Durée
               </label>
               <input
-                id="duree"
+                id={`${uid}-duree`}
                 name="duree"
                 required
                 autoFocus
@@ -148,11 +151,11 @@ export default function FormulaireTemps({
           </p>
 
           <div>
-            <label htmlFor="description" className="mb-1.5 block text-sm font-medium">
+            <label htmlFor={`${uid}-description`} className="mb-1.5 block text-sm font-medium">
               Description <span className="font-normal text-muted">(facultatif)</span>
             </label>
             <input
-              id="description"
+              id={`${uid}-description`}
               name="description"
               defaultValue={entree?.description ?? ""}
               placeholder="Réunion de cadrage"

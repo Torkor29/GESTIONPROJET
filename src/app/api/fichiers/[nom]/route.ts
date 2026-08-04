@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { estConnecte } from "@/lib/auth";
-import { dossierUploads, nomSur, typeMime } from "@/lib/fichiers";
+import { dossierUploads, enteteContentDisposition, nomSur, typeMime } from "@/lib/fichiers";
 
 export const runtime = "nodejs";
 
@@ -35,7 +35,7 @@ export async function GET(
         "Cache-Control": "private, max-age=31536000, immutable",
         // Un SVG servi en ligne peut exécuter du script : on force le téléchargement.
         ...(type === "image/svg+xml"
-          ? { "Content-Disposition": `attachment; filename="${nomDemande}"` }
+          ? { "Content-Disposition": enteteContentDisposition("attachment", nomDemande) }
           : {}),
         "X-Content-Type-Options": "nosniff",
       },

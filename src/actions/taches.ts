@@ -100,6 +100,33 @@ export async function basculerTache(donnees: FormData) {
   revalidatePath("/", "layout");
 }
 
+/**
+ * Change uniquement le statut, depuis le sélecteur en ligne du tableau.
+ *
+ * Prend des arguments simples plutôt qu'un FormData : React 19 réinitialise
+ * automatiquement un formulaire après l'exécution de son action, ce qui
+ * ramenait visuellement le sélecteur à son ancienne valeur alors que
+ * l'enregistrement avait bien eu lieu.
+ */
+export async function definirStatutTache(id: number, statut: string) {
+  await exigerSession();
+
+  if (!id || !["a_faire", "en_cours", "terminee"].includes(statut)) {
+    throw new Error("Statut de mission invalide.");
+  }
+
+  await db
+    .update(taches)
+    .set({
+      statut,
+      termineeLe: statut === "terminee" ? maintenant() : null,
+      modifieLe: maintenant(),
+    })
+    .where(eq(taches.id, id));
+
+  revalidatePath("/", "layout");
+}
+
 export async function supprimerTache(donnees: FormData) {
   await exigerSession();
 

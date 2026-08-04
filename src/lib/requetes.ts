@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { etudes, pages, taches, temps } from "@/db/schema";
+import { checklistItems, documents, etudes, faq, pages, taches, temps } from "@/db/schema";
 import { debutDeMois, debutDeSemaine } from "./format";
 
 /** Minutes écoulées d'une entrée de temps ; un chrono en cours compte jusqu'à maintenant. */
@@ -53,18 +53,118 @@ export async function tachesDEtude(etudeId: number) {
     .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
 }
 
-/** Toutes les tâches, avec le nom et la couleur de leur étude. */
+/** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
 export async function toutesLesTaches(filtreStatut?: string) {
   return db
     .select({
       tache: taches,
       etudeNom: etudes.nom,
+      etudeCode: etudes.code,
       etudeCouleur: etudes.couleur,
     })
     .from(taches)
     .leftJoin(etudes, eq(taches.etudeId, etudes.id))
     .where(filtreStatut ? eq(taches.statut, filtreStatut) : undefined)
     .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
+}
+
+// ------------------------------------------------------------- Documents
+
+export async function documentsDEtude(etudeId: number) {
+  return db
+    .select()
+    .from(documents)
+    .where(eq(documents.etudeId, etudeId))
+    .orderBy(asc(documents.categorie), desc(documents.creeLe));
+}
+
+/** Tous les documents, avec leur étude, filtrables par étude et catégorie. */
+export async function tousLesDocuments(filtres: { etudeId?: number | null; categorie?: string }) {
+  const conditions = [];
+  if (filtres.etudeId) conditions.push(eq(documents.etudeId, filtres.etudeId));
+  if (filtres.categorie) conditions.push(eq(documents.categorie, filtres.categorie));
+
+  return db
+    .select({
+      document: documents,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+    })
+    .from(documents)
+    .leftJoin(etudes, eq(documents.etudeId, etudes.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(documents.creeLe));
+}
+
+// ------------------------------------------------------------ Checklists
+
+export async function checklistDEtude(etudeId: number) {
+  return db
+    .select()
+    .from(checklistItems)
+    .where(eq(checklistItems.etudeId, etudeId))
+    .orderBy(asc(checklistItems.referentiel), asc(checklistItems.ordre));
+}
+
+export type Progression = { total: number; faits: number; sansObjet: number; pourcentage: number };
+
+/**
+ * Progression d'une checklist : les lignes « sans objet » sortent du
+ * dénominateur, elles ne doivent ni compter comme faites ni comme en retard.
+ */
+export function progression(lignes: { fait: boolean; sansObjet: boolean }[]): Progression {
+  const sansObjet = lignes.filter((l) => l.sansObjet).length;
+  const total = lignes.length - sansObjet;
+  const faits = lignes.filter((l) => l.fait && !l.sansObjet).length;
+  return {
+    total,
+    faits,
+    sansObjet,
+    pourcentage: total === 0 ? 0 : Math.round((faits / total) * 100),
+  };
+}
+
+/** Progression réglementaire de chaque étude, pour le tableau de bord. */
+export async function progressionParEtude() {
+  const lignes = await db
+    .select({
+      etudeId: checklistItems.etudeId,
+      fait: checklistItems.fait,
+      sansObjet: checklistItems.sansObjet,
+    })
+    .from(checklistItems);
+
+  const parEtude = new Map<number, { fait: boolean; sansObjet: boolean }[]>();
+  for (const l of lignes) {
+    parEtude.set(l.etudeId, [...(parEtude.get(l.etudeId) ?? []), l]);
+  }
+
+  return new Map([...parEtude.entries()].map(([id, l]) => [id, progression(l)]));
+}
+
+// -------------------------------------------------------------------- FAQ
+
+export async function entreesFaq(filtres: { etudeId?: number | null; portee?: string } = {}) {
+  const conditions = [];
+  if (filtres.portee === "generale") conditions.push(isNull(faq.etudeId));
+  else if (filtres.etudeId) conditions.push(eq(faq.etudeId, filtres.etudeId));
+
+  return db
+    .select({
+      entree: faq,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+    })
+    .from(faq)
+    .leftJoin(etudes, eq(faq.etudeId, etudes.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(asc(faq.categorie), asc(faq.ordre), desc(faq.creeLe));
+}
+
+export async function faqDEtude(etudeId: number) {
+  return db.select().from(faq).where(eq(faq.etudeId, etudeId)).orderBy(asc(faq.ordre));
 }
 
 /** Le chronomètre en cours, s'il y en a un. Un seul peut tourner à la fois. */

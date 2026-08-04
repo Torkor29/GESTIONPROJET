@@ -1,7 +1,8 @@
-# Gestion de projet
+# Gestion de projet en recherche clinique
 
-Outil personnel de suivi d'études, de tâches et de temps, à héberger sur votre
-propre serveur. Pages de contenu riche façon Notion, chronomètre, export Excel.
+Outil personnel de gestion d'études cliniques, à héberger sur votre propre
+serveur : suivi de missions, checklists réglementaires, documents, base de
+connaissance, pages façon Notion et suivi du temps.
 
 Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 
@@ -11,15 +12,42 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 
 | Fonction | Détail |
 |---|---|
-| **Études** | Un dossier par projet : client, couleur, tarif horaire, statut |
-| **Pages** | Éditeur riche façon Notion (titres, listes, tableaux, images, code), sauvegarde automatique |
-| **Tâches** | Priorité, échéance, statut, filtre « en retard », rattachées à une étude |
-| **Temps** | Chronomètre en un clic ou saisie manuelle (`1h30`, `1:30`, `90min`, `1,5`) |
-| **Export Excel** | Deux feuilles (détail + récapitulatif), formules de totaux, valorisation au tarif horaire |
-| **Fichiers** | Images et pièces jointes stockées sur votre serveur, jamais chez un tiers |
+| **Études** | Un dossier par étude : acronyme, promoteur, investigateur, ID-RCB, n° CTIS, référence CPP, image de couverture |
+| **Checklists réglementaires** | Générées automatiquement selon le cadre coché : RIPH 1/2/3, règlement 536/2014, MDR, IVDR, ICH E6(R3), CNIL, archivage |
+| **Missions** | Vue tableau, groupée par statut ou par échéance, filtres par étude, statut et texte, commentaire, export Excel |
+| **Documents** | Dépôt de fichiers classés selon les catégories d'un TMF, versions, dates, recherche |
+| **Base de connaissance** | FAQ générale ou propre à une étude, classée par thème |
+| **Pages** | Éditeur riche façon Notion (titres, listes, tableaux, images), sauvegarde automatique |
+| **Temps** | Chronomètre en un clic ou saisie manuelle (`1h30`, `1:30`, `90min`, `1,5`), export Excel valorisé |
 
 L'application est en français, s'adapte au thème clair ou sombre du système, et
 fonctionne sur téléphone.
+
+### Les checklists réglementaires
+
+Cochez le cadre applicable à l'étude et les lignes correspondantes
+apparaissent, regroupées par phase (conception, soumission, mise en place,
+conduite, clôture). Chaque ligne porte sa référence réglementaire, peut être
+cochée, annotée, ou marquée « sans objet » — auquel cas elle sort du calcul de
+progression.
+
+Décocher un référentiel ne détruit jamais le travail déjà fait : les lignes
+cochées ou annotées sont conservées, et l'application vous le signale.
+
+> ⚠️ **Ces checklists sont une aide au travail, pas un avis réglementaire.**
+> Les textes évoluent. Chaque référentiel affiche la date à laquelle son
+> contenu a été vérifié et des liens vers les sources officielles ; vérifiez
+> toujours la version en vigueur auprès de l'ANSM, du CPP, de la CNIL ou de
+> l'EMA avant de vous engager.
+>
+> Le contenu livré a été vérifié le **4 août 2026**, en tenant compte de
+> l'entrée en vigueur des Principes et de l'Annexe 1 d'ICH E6(R3) le
+> 23 juillet 2025, et des versions 2026 des MR-001 et MR-003 de la CNIL
+> (en vigueur depuis le 23 mai 2026).
+>
+> Les référentiels vivent dans `src/lib/referentiels.ts` : vous pouvez les
+> modifier, en ajouter, et le bouton « Actualiser depuis le référentiel »
+> reporte vos changements sur une étude existante.
 
 ---
 
@@ -179,13 +207,17 @@ La migration s'applique ensuite toute seule au démarrage suivant.
 ```
 src/
 ├── app/
-│   ├── (app)/           pages protégées : tableau de bord, études, tâches, temps
-│   ├── api/             export Excel, téléversement et service des fichiers
+│   ├── (app)/           pages protégées : tableau de bord, études, missions,
+│   │                    documents, FAQ, temps
+│   ├── api/             exports Excel, dépôt et service des fichiers
 │   └── connexion/       page de connexion
 ├── actions/             Server Actions (écritures en base)
 ├── components/          composants d'interface
 ├── db/                  schéma Drizzle et connexion SQLite
-└── lib/                 authentification, requêtes, formatage, durées
+└── lib/
+    ├── referentiels.ts  contenu des checklists réglementaires
+    ├── requetes.ts      lectures en base
+    └── …                authentification, formatage, durées, fichiers
 ```
 
 **Choix techniques et raisons :**
@@ -194,9 +226,21 @@ src/
   sauvegarde = une copie. Aucun serveur de base à administrer.
 - **BlockNote** (MPL-2.0) pour l'éditeur : construire un éditeur de texte riche
   soi-même représente des années de travail.
+- **Checklists copiées en base** au moment où le référentiel est coché : si le
+  référentiel évolue plus tard, l'historique d'une étude déjà avancée ne change
+  pas sous vos pieds. La mise à jour est explicite, via un bouton.
 - **Migrations au démarrage** : `docker compose up` suffit, jamais de commande
   manuelle à ne pas oublier.
 - **Un seul mot de passe**, pas de comptes : l'outil est mono-utilisateur.
+
+**Deux pièges contournés, à connaître si vous reprenez le code :**
+
+- Les Server Actions ne signalent pas les erreurs de saisie par une exception :
+  en production, Next masque le message. Elles renvoient un état de formulaire.
+- React 19 réinitialise un formulaire après l'exécution de son action. Le
+  sélecteur de statut du tableau appelle donc l'action dans une transition, et
+  non via `<form action>`, sinon l'ancien statut réapparaît à l'écran alors que
+  l'enregistrement a bien eu lieu.
 
 ---
 

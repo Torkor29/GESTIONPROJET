@@ -10,11 +10,14 @@ export default function Modale({
   ouverte,
   onFermer,
   titre,
+  large = false,
   children,
 }: {
   ouverte: boolean;
   onFermer: () => void;
   titre: string;
+  /** Élargit la modale pour les formulaires longs. */
+  large?: boolean;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -34,10 +37,11 @@ export default function Modale({
         // Un clic sur le fond (la zone du <dialog> hors du contenu) referme.
         if (e.target === ref.current) onFermer();
       }}
-      className="w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-line bg-raised p-0
-                 text-ink backdrop:bg-black/50"
+      className={`${large ? "w-[min(46rem,calc(100vw-2rem))]" : "w-[min(32rem,calc(100vw-2rem))]"}
+                  max-h-[calc(100vh-4rem)] overflow-y-auto rounded-xl border border-line
+                  bg-raised p-0 text-ink backdrop:bg-black/50`}
     >
-      <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
+      <div className="sticky top-0 flex items-center justify-between border-b border-line bg-raised px-5 py-3.5">
         <h2 className="font-semibold">{titre}</h2>
         <button
           type="button"

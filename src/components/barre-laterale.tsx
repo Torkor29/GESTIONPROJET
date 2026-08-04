@@ -9,7 +9,9 @@ import { seDeconnecter } from "@/actions/session";
 const LIENS = [
   { href: "/", libelle: "Tableau de bord", icone: "🏠" },
   { href: "/etudes", libelle: "Études", icone: "📁" },
-  { href: "/taches", libelle: "Tâches", icone: "✓" },
+  { href: "/missions", libelle: "Missions", icone: "✓" },
+  { href: "/documents", libelle: "Documents", icone: "📎" },
+  { href: "/faq", libelle: "Base de connaissance", icone: "💡" },
   { href: "/temps", libelle: "Temps", icone: "⏱" },
 ];
 
@@ -94,6 +96,7 @@ export default function BarreLaterale({ etudes }: { etudes: Etude[] }) {
             <Link
               key={e.id}
               href={`/etudes/${e.id}`}
+              title={e.nom}
               className={`mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition
                           ${
                             chemin.startsWith(`/etudes/${e.id}`)
@@ -106,7 +109,7 @@ export default function BarreLaterale({ etudes }: { etudes: Etude[] }) {
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ backgroundColor: e.couleur }}
               />
-              <span className="truncate">{e.nom}</span>
+              <span className="truncate">{e.code ?? e.nom}</span>
             </Link>
           ))}
         </div>

@@ -7,6 +7,8 @@
  */
 export type EtatFormulaire = {
   erreur?: string;
+  /** Message non bloquant affiché après un enregistrement réussi. */
+  avertissement?: string;
   /** Incrémenté à chaque succès : permet au formulaire de savoir qu'il peut se fermer. */
   succes?: number;
 };
