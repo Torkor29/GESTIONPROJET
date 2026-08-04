@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: 250 250 249;
+  --raised: 255 255 255;
+  --line: 231 229 228;
+  --ink: 28 25 23;
+  --muted: 120 113 108;
+  --accent: 79 70 229;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: 23 23 23;
+    --raised: 32 32 32;
+    --line: 55 55 55;
+    --ink: 237 237 237;
+    --muted: 150 150 150;
+    --accent: 129 140 248;
+    color-scheme: dark;
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: rgb(var(--surface));
+  color: rgb(var(--ink));
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .champ {
+    @apply w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink
+           outline-none transition placeholder:text-muted
+           focus:border-accent focus:ring-2 focus:ring-accent/25;
+  }
+
+  .bouton {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3.5 py-2
+           text-sm font-medium text-white transition hover:opacity-90
+           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+           focus-visible:outline-accent disabled:opacity-50;
+  }
+
+  .bouton-discret {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line
+           bg-raised px-3.5 py-2 text-sm font-medium text-ink transition
+           hover:border-accent/50 hover:text-accent
+           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+           focus-visible:outline-accent disabled:opacity-50;
+  }
+
+  .carte {
+    @apply rounded-xl border border-line bg-raised;
+  }
+
+  .etiquette {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+/* L'éditeur BlockNote hérite du thème de l'application plutôt que du sien. */
+.bn-container,
+.bn-editor {
+  background: transparent !important;
+}
+
+.bn-editor {
+  padding-inline: 0 !important;
+}
+
+/* Le tableau de temps garde des chiffres alignés en colonne. */
+.chiffres {
+  font-variant-numeric: tabular-nums;
+}

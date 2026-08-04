@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      MOT_DE_PASSE: ${MOT_DE_PASSE:?renseignez MOT_DE_PASSE dans le fichier .env}
+      SECRET_SESSION: ${SECRET_SESSION:?renseignez SECRET_SESSION dans le fichier .env}
+      CHEMIN_BASE: /donnees/gestionprojet.db
+      DOSSIER_UPLOADS: /donnees/uploads
+      # Sert à savoir si le site est en HTTPS : le cookie de session n'est
+      # marqué « secure » que dans ce cas, sinon la connexion serait impossible.
+      DOMAINE: ${DOMAINE:-}
+    volumes:
+      # Toutes vos données vivent ici : base SQLite et fichiers téléversés.
+      # C'est le seul dossier à sauvegarder.
+      - ./donnees:/donnees
+    # Aucun port publié : seul Caddy joint l'application, sur le réseau interne.
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Mettez votre domaine ici (via .env). Sans domaine, laissez la valeur
+      # par défaut : le site répond en HTTP sur l'IP du serveur.
+      DOMAINE: ${DOMAINE:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:

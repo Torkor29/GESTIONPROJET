@@ -1,0 +1,20 @@
+# Caddy obtient et renouvelle le certificat HTTPS tout seul, gratuitement,
+# dès qu'un vrai nom de domaine est renseigné dans DOMAINE.
+{$DOMAINE} {
+	encode zstd gzip
+
+	# Corps de requête plafonné : correspond à la limite de téléversement
+	# appliquée côté application (25 Mo) avec une marge pour l'enveloppe.
+	request_body {
+		max_size 30MB
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	reverse_proxy app:3000
+}

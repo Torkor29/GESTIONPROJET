@@ -1,0 +1,24 @@
+import { redirect } from "next/navigation";
+import { estConnecte } from "@/lib/auth";
+import { chronoEnCours, listerEtudes } from "@/lib/requetes";
+import BarreLaterale from "@/components/barre-laterale";
+import ChronoFlottant from "@/components/chrono-flottant";
+
+export default async function LayoutApplication({ children }: { children: React.ReactNode }) {
+  if (!(await estConnecte())) redirect("/connexion");
+
+  const [etudes, chrono] = await Promise.all([listerEtudes(), chronoEnCours()]);
+
+  return (
+    <div className="flex min-h-screen">
+      <BarreLaterale etudes={etudes} />
+      <div className="min-w-0 flex-1">
+        {/* pt-20 sur mobile : laisse la place à la barre supérieure fixe. */}
+        <main className="mx-auto max-w-6xl px-4 pb-28 pt-20 sm:px-8 sm:pb-24 lg:pt-6">
+          {children}
+        </main>
+      </div>
+      <ChronoFlottant chrono={chrono} />
+    </div>
+  );
+}
