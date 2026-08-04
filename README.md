@@ -53,6 +53,12 @@ cochées ou annotées sont conservées, et l'application vous le signale.
 
 ## Installation sur un VPS Ubuntu
 
+> 📖 **Vous partez de zéro ?** Le guide [INSTALLATION.md](INSTALLATION.md)
+> reprend tout pas à pas, depuis l'activation du VPS chez OVHcloud jusqu'aux
+> sauvegardes automatiques, avec le dépannage. Comptez 30 à 45 minutes.
+>
+> Le résumé ci-dessous suffit si vous êtes déjà à l'aise avec un serveur Linux.
+
 ### 1. Préparer le serveur
 
 Connectez-vous en SSH, puis installez Docker :
