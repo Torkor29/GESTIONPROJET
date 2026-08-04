@@ -17,7 +17,8 @@ de Linux n'est nécessaire : chaque commande est donnée telle quelle, à copier
 7. [Vérifier que tout marche](#7-vérifier-que-tout-marche)
 8. [Sauvegardes automatiques](#8-sauvegardes-automatiques)
 9. [Mettre à jour l'application](#9-mettre-à-jour-lapplication)
-10. [Dépannage](#10-dépannage)
+10. [Piloter le serveur depuis un téléphone](#10-piloter-le-serveur-depuis-un-téléphone)
+11. [Dépannage](#11-dépannage)
 
 ---
 
@@ -438,7 +439,121 @@ sauve des soirées.
 
 ---
 
-## 10. Dépannage
+## 10. Piloter le serveur depuis un téléphone
+
+Deux besoins distincts, deux outils. Les deux sont gratuits.
+
+### 10.1 Taper des commandes : Termius
+
+**Termius** (iOS et Android) est le client SSH le plus confortable sur mobile :
+clavier adapté avec les touches Ctrl/Tab/flèches, connexions enregistrées,
+raccourcis de commandes.
+
+1. Installez Termius depuis l'App Store ou le Play Store.
+2. **New Host** → renseignez :
+   - *Hostname* : l'IPv4 de votre VPS
+   - *Username* : `ubuntu`
+   - *Password* : votre mot de passe (ou importez votre clé SSH dans
+     **Keychain**, plus pratique et plus sûr)
+3. Touchez l'hôte pour vous connecter.
+
+Alternatives : **Blink Shell** (iOS, payant, excellent) ou **JuiceSSH**
+(Android, gratuit).
+
+### 10.2 Voir et administrer sans ligne de commande : Cockpit
+
+**Cockpit** est une console web d'administration développée par Red Hat,
+présente dans les dépôts Ubuntu. Elle affiche dans le navigateur : charge CPU
+et mémoire, espace disque, services, journaux système, mises à jour, comptes,
+réseau, gestionnaire de fichiers — **et un vrai terminal intégré**.
+
+C'est le seul outil à installer : il couvre le visuel *et* la ligne de
+commande, et son interface fonctionne correctement sur écran de téléphone.
+
+#### Installation
+
+```bash
+sudo apt update
+sudo apt install -y cockpit cockpit-storaged cockpit-networkmanager cockpit-packagekit
+sudo systemctl enable --now cockpit.socket
+```
+
+#### Accès
+
+```bash
+sudo ufw allow 9090/tcp
+```
+
+Ouvrez ensuite **`https://VOTRE_IP:9090`** dans le navigateur du téléphone.
+
+> Le navigateur affiche un avertissement de sécurité : Cockpit utilise un
+> certificat auto-signé. **La connexion est bien chiffrée**, c'est seulement le
+> certificat qui n'est pas signé par une autorité connue. Touchez
+> « Paramètres avancés » puis « Continuer ». À faire une fois par appareil.
+
+Connectez-vous avec **`ubuntu`** et votre mot de passe système. Cochez
+**« Utiliser le mot de passe pour les tâches d'administration »** pour agir en
+`sudo` depuis l'interface.
+
+#### Protéger cet accès
+
+Cockpit publié sur Internet devient une cible de tentatives de connexion
+automatisées. Deux mesures, à faire tout de suite :
+
+```bash
+sudo apt install -y fail2ban
+sudo systemctl enable --now fail2ban
+```
+
+Et surtout : un **mot de passe système long**. C'est lui qui protège l'accès.
+
+> **Variante plus sûre, sans rien exposer.** Plutôt que d'ouvrir le port 9090,
+> vous pouvez le faire transiter par le tunnel SSH. Depuis un ordinateur :
+>
+> ```bash
+> ssh -L 9090:127.0.0.1:9090 ubuntu@VOTRE_IP
+> ```
+>
+> puis ouvrez `https://127.0.0.1:9090` sur cet ordinateur. Termius sait faire
+> la même chose (fonction *Port Forwarding*). Plus sûr, mais moins immédiat
+> depuis un téléphone : à vous de choisir selon votre usage.
+
+#### Ce que vous ferez le plus souvent dans Cockpit
+
+| Besoin | Où |
+|---|---|
+| Vérifier que le serveur va bien | **Aperçu** — CPU, mémoire, disque |
+| Voir pourquoi quelque chose ne marche pas | **Journaux** |
+| Taper une commande | **Terminal** |
+| Récupérer ou déposer un fichier | **Navigateur de fichiers** |
+| Appliquer les mises à jour de sécurité | **Mises à jour logicielles** |
+| Redémarrer le serveur | Bouton en haut à droite de l'**Aperçu** |
+
+Les commandes de l'application (`docker compose ...`) se tapent dans l'onglet
+**Terminal** de Cockpit, exactement comme en SSH.
+
+### 10.3 Et pour Docker en particulier ?
+
+Vous n'avez que deux conteneurs et un seul fichier `docker-compose.yml` : le
+terminal de Cockpit suffit largement, et ajouter un outil de plus, c'est une
+surface d'attaque et une maintenance de plus.
+
+Si vous y tenez, **Portainer** est la référence maintenue pour piloter Docker
+depuis une interface web. **Dockge**, souvent cité et plus léger, n'a plus
+connu de version depuis mars 2025 : je ne le conseille pas pour des données de
+travail.
+
+### 10.4 Rappel : la console KVM d'OVHcloud
+
+Manager → **Accueil** → bouton **`...`** à côté du VPS → **KVM**.
+
+Ce n'est pas un outil du quotidien — l'affichage est rudimentaire et la saisie
+peu confortable. C'est votre accès de secours quand ni SSH ni Cockpit ne
+répondent plus. Elle passe par OVHcloud, pas par le réseau de votre serveur.
+
+---
+
+## 11. Dépannage
 
 ### « Permission denied » à la connexion SSH
 
