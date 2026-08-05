@@ -6,16 +6,36 @@ export default async function PageConnexion() {
   if (await estConnecte()) redirect("/");
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-xl">
+    <main className="min-h-screen px-4 py-16">
+      <div className="mx-auto flex max-w-4xl flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-between">
+        <section className="max-w-lg">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-xl">
             📁
           </div>
-          <h1 className="text-xl font-semibold">Gestion de projet</h1>
-          <p className="mt-1 text-sm text-muted">Suivi d&apos;études, de tâches et de temps</p>
+          <h1 className="text-2xl font-semibold">
+            Gestion de projet en recherche clinique
+          </h1>
+          <p className="mt-2 text-muted">
+            Outil professionnel de suivi d&apos;études cliniques, réservé aux
+            personnes autorisées : missions, documents, checklists
+            réglementaires et pages de travail par étude.
+          </p>
+          <ul className="mt-6 space-y-2 text-sm text-muted">
+            <li>• Un dossier par étude : promoteur, investigateur, ID-RCB, n° CTIS</li>
+            <li>• Suivi des missions, groupées par statut ou par échéance, avec filtres et export Excel</li>
+            <li>• Dépôt de documents classés selon les catégories d&apos;un TMF</li>
+            <li>
+              • Checklists réglementaires générées selon le cadre applicable :
+              RIPH, règlement (UE) 536/2014, MDR, IVDR, ICH E6(R3), CNIL/RGPD
+            </li>
+            <li>• Base de connaissance et pages de travail façon Notion, par étude</li>
+            <li>• Suivi du temps, chronomètre et export valorisé</li>
+          </ul>
+        </section>
+
+        <div className="w-full max-w-sm shrink-0">
+          <FormulaireConnexion />
         </div>
-        <FormulaireConnexion />
       </div>
     </main>
   );
