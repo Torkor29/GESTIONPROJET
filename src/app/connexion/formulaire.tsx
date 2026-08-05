@@ -17,7 +17,7 @@ export default function FormulaireConnexion() {
   const [etat, action] = useActionState(seConnecter, {});
 
   return (
-    <form action={action} className="carte space-y-4 p-6">
+    <form action={action} className="carte space-y-4 p-6 !shadow-douce">
       <div>
         <label htmlFor="motDePasse" className="mb-1.5 block text-sm font-medium">
           Mot de passe
