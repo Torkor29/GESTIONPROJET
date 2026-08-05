@@ -18,3 +18,10 @@
 
 	reverse_proxy app:3000
 }
+
+# « www » renvoie vers le domaine nu, pour que les deux écritures fonctionnent
+# sans dupliquer l'adresse du site. Sans nom de domaine configuré, DOMAINE_WWW
+# vaut une adresse locale inerte : ce bloc n'est alors joignable par personne.
+{$DOMAINE_WWW} {
+	redir https://{$DOMAINE}{uri} permanent
+}

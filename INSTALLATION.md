@@ -212,20 +212,35 @@ bureau d'enregistrement.
 
 ### 4.2 Le faire pointer vers le VPS
 
-Si le domaine est chez OVHcloud :
+Si le domaine est chez OVHcloud : Manager → **Web Cloud** → **Noms de domaine**
+→ votre domaine → onglet **Zone DNS**.
 
-1. Manager → **Web Cloud** → **Noms de domaine** → votre domaine.
-2. Onglet **Zone DNS** → **Ajouter une entrée**.
-3. Type **A**.
-4. Sous-domaine : `projets` (ou laissez vide pour le domaine nu).
-5. Cible : **l'IPv4 de votre VPS**.
-6. Validez.
+Un domaine fraîchement acheté possède déjà des enregistrements qui pointent vers
+la page de parking d'OVHcloud. Il faut les **modifier**, pas seulement en
+ajouter.
+
+| Type | Sous-domaine | Cible |
+|---|---|---|
+| **A** | *(vide)* | l'**IPv4** de votre VPS |
+| **AAAA** | *(vide)* | l'**IPv6** de votre VPS |
+| **A** | `www` | l'**IPv4** de votre VPS |
+| **AAAA** | `www` | l'**IPv6** de votre VPS |
+
+> ⚠️ **Ne négligez pas les enregistrements AAAA.** S'ils continuent de pointer
+> vers OVHcloud, les appareils qui préfèrent l'IPv6 — un téléphone en 5G, par
+> exemple — tomberont sur la page de parking, et la délivrance du certificat
+> peut échouer. C'est l'erreur la plus fréquente à cette étape.
+>
+> Vous trouvez l'IPv6 de votre VPS avec `ip -6 addr show` (ou dans le manager).
+
+`www.mondomaine.fr` redirige automatiquement vers `mondomaine.fr` : les deux
+écritures fonctionnent, une seule adresse fait autorité.
 
 La propagation prend de quelques minutes à quelques heures. Pour vérifier
 depuis le VPS :
 
 ```bash
-getent hosts projets.mondomaine.fr
+getent hosts mondomaine.fr
 ```
 
 Quand cette commande affiche l'IP de votre VPS, c'est prêt. Tant qu'elle ne
