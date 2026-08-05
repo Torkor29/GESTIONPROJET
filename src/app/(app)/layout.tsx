@@ -5,7 +5,7 @@ import BarreLaterale from "@/components/barre-laterale";
 import ChronoFlottant from "@/components/chrono-flottant";
 
 export default async function LayoutApplication({ children }: { children: React.ReactNode }) {
-  if (!(await estConnecte())) redirect("/connexion");
+  if (!(await estConnecte())) redirect("/presentation");
 
   const [etudes, chrono] = await Promise.all([listerEtudes(), chronoEnCours()]);
 
