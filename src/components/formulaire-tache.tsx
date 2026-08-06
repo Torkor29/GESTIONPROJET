@@ -49,7 +49,7 @@ export default function FormulaireTache({
   const classes = {
     principal: "bouton",
     discret: "bouton-discret",
-    icone: "rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-accent",
+    icone: "rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-accent",
   }[variante];
 
   return (
@@ -156,7 +156,7 @@ export default function FormulaireTache({
 
           <div>
             <label htmlFor={`${uid}-notes`} className="mb-1.5 block text-sm font-medium">
-              Commentaire <span className="font-normal text-muted">(facultatif)</span>
+              Commentaire <span className="font-normal text-attenue">(facultatif)</span>
             </label>
             <textarea
               id={`${uid}-notes`}
@@ -168,7 +168,7 @@ export default function FormulaireTache({
           </div>
 
           {etat.erreur && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="text-sm text-alerte">
               {etat.erreur}
             </p>
           )}

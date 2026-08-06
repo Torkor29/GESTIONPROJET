@@ -31,8 +31,8 @@ function BoutonEnvoyer({ libelle }: { libelle: string }) {
 
 function Section({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
-    <fieldset className="border-t border-line pt-4">
-      <legend className="pr-2 text-xs font-semibold uppercase tracking-wide text-muted">
+    <fieldset className="border-t border-ligne pt-4">
+      <legend className="pr-2 text-xs font-semibold uppercase tracking-wide text-attenue">
         {titre}
       </legend>
       <div className="space-y-4">{children}</div>
@@ -120,7 +120,7 @@ export default function FormulaireEtude({
 
           <div>
             <label htmlFor={`${uid}-description`} className="mb-1.5 block text-sm font-medium">
-              Description <span className="font-normal text-muted">(facultatif)</span>
+              Description <span className="font-normal text-attenue">(facultatif)</span>
             </label>
             <textarea
               id={`${uid}-description`}
@@ -132,7 +132,7 @@ export default function FormulaireEtude({
           </div>
 
           <Section titre="Cadre réglementaire">
-            <p className="text-xs text-muted">
+            <p className="text-xs text-attenue">
               Cochez le type de recherche : les checklists correspondantes seront créées
               automatiquement pour cette étude.
             </p>
@@ -141,7 +141,7 @@ export default function FormulaireEtude({
               {types.map((r) => (
                 <label
                   key={r.cle}
-                  className="flex cursor-pointer gap-2.5 rounded-lg border border-line p-3 transition hover:border-accent/50"
+                  className="flex cursor-pointer gap-2.5 rounded-lg border border-ligne p-3 transition hover:border-accent/50"
                 >
                   <input
                     type="checkbox"
@@ -152,20 +152,20 @@ export default function FormulaireEtude({
                   />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium">{r.nom}</span>
-                    <span className="mt-0.5 block text-xs text-muted">{r.resume}</span>
+                    <span className="mt-0.5 block text-xs text-attenue">{r.resume}</span>
                   </span>
                 </label>
               ))}
             </div>
 
-            <p className="pt-1 text-xs font-medium uppercase tracking-wide text-muted">
+            <p className="pt-1 text-xs font-medium uppercase tracking-wide text-attenue">
               Référentiels transversaux
             </p>
             <div className="space-y-2">
               {transversaux.map((r) => (
                 <label
                   key={r.cle}
-                  className="flex cursor-pointer gap-2.5 rounded-lg border border-line p-3 transition hover:border-accent/50"
+                  className="flex cursor-pointer gap-2.5 rounded-lg border border-ligne p-3 transition hover:border-accent/50"
                 >
                   <input
                     type="checkbox"
@@ -176,7 +176,7 @@ export default function FormulaireEtude({
                   />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium">{r.nom}</span>
-                    <span className="mt-0.5 block text-xs text-muted">{r.resume}</span>
+                    <span className="mt-0.5 block text-xs text-attenue">{r.resume}</span>
                   </span>
                 </label>
               ))}
@@ -283,17 +283,17 @@ export default function FormulaireEtude({
             <div>
               <label htmlFor={`${uid}-imageCouverture`} className="mb-1.5 block text-sm font-medium">
                 Image de couverture{" "}
-                <span className="font-normal text-muted">(facultatif)</span>
+                <span className="font-normal text-attenue">(facultatif)</span>
               </label>
               <input
                 id={`${uid}-imageCouverture`}
                 name="imageCouverture"
                 type="file"
                 accept="image/*"
-                className="champ file:mr-3 file:rounded file:border-0 file:bg-line file:px-3 file:py-1 file:text-sm file:text-ink"
+                className="champ file:mr-3 file:rounded file:border-0 file:bg-creux file:px-3 file:py-1 file:text-sm file:text-encre"
               />
               {etude?.imageCouverture && (
-                <p className="mt-1 text-xs text-muted">
+                <p className="mt-1 text-xs text-attenue">
                   Une image est déjà en place. En choisir une nouvelle la remplacera.
                 </p>
               )}
@@ -324,7 +324,7 @@ export default function FormulaireEtude({
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor={`${uid}-tarifHoraire`} className="mb-1.5 block text-sm font-medium">
-                  Tarif horaire <span className="font-normal text-muted">(€/h, facultatif)</span>
+                  Tarif horaire <span className="font-normal text-attenue">(€/h, facultatif)</span>
                 </label>
                 <input
                   id={`${uid}-tarifHoraire`}
@@ -352,20 +352,20 @@ export default function FormulaireEtude({
           </Section>
 
           {etat.erreur && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="text-sm text-alerte">
               {etat.erreur}
             </p>
           )}
           {etat.avertissement && (
             <p
               role="status"
-              className="rounded-lg bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300"
+              className="rounded-lg bg-attention-voile/50 p-3 text-sm text-attenue"
             >
               {etat.avertissement}
             </p>
           )}
 
-          <div className="flex justify-end gap-2 border-t border-line pt-4">
+          <div className="flex justify-end gap-2 border-t border-ligne pt-4">
             <button type="button" onClick={() => setOuverte(false)} className="bouton-discret">
               {etat.avertissement ? "Fermer" : "Annuler"}
             </button>

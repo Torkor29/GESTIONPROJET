@@ -6,6 +6,7 @@ import FormulaireFaq from "@/components/formulaire-faq";
 import FormulaireTache from "@/components/formulaire-tache";
 import TableauMissions from "@/components/tableau-missions";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
+import { Icone, type NomIcone } from "@/components/icones";
 import { debutDeSemaine, formaterDuree } from "@/lib/format";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
 import {
@@ -23,26 +24,39 @@ function Chiffre({
   valeur,
   detail,
   alerte,
+  icone,
   href,
 }: {
   libelle: string;
   valeur: string;
   detail?: string;
   alerte?: boolean;
+  icone: NomIcone;
   href?: string;
 }) {
   const contenu = (
     <>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted">{libelle}</p>
-      <p className={`chiffres mt-1.5 text-2xl font-semibold ${alerte ? "text-red-500" : ""}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="sur-titre">{libelle}</p>
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+            alerte ? "bg-alerte-voile text-alerte" : "bg-accent-voile text-accent-appuye"
+          }`}
+        >
+          <Icone nom={icone} className="h-4 w-4" />
+        </span>
+      </div>
+      <p
+        className={`chiffres mt-2 font-titre text-3xl font-bold ${alerte ? "text-alerte" : ""}`}
+      >
         {valeur}
       </p>
-      {detail && <p className="mt-0.5 text-xs text-muted">{detail}</p>}
+      {detail && <p className="mt-0.5 text-xs text-attenue">{detail}</p>}
     </>
   );
 
   return href ? (
-    <Link href={href} className="carte p-4 transition hover:border-accent/50">
+    <Link href={href} className="carte-active p-4">
       {contenu}
     </Link>
   ) : (
@@ -81,8 +95,7 @@ export default async function TableauDeBord() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-semibold">Tableau de bord</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="sur-titre">
           {new Date().toLocaleDateString("fr-FR", {
             weekday: "long",
             day: "numeric",
@@ -90,23 +103,22 @@ export default async function TableauDeBord() {
             year: "numeric",
           })}
         </p>
+        <h1 className="mt-1.5 font-titre text-3xl font-bold">Tableau de bord</h1>
       </header>
 
       {/* --------------------------------------------------- Ajouts rapides */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-          Ajouts rapides
-        </h2>
+        <h2 className="sur-titre mb-3">Ajouts rapides</h2>
         <div className="flex flex-wrap gap-2">
-          <FormulaireTache etudes={etudes} libelle="✓ Nouvelle mission" variante="discret" />
-          <FormulaireDocument etudes={etudes} libelle="📎 Nouveau document" variante="discret" />
-          <FormulaireFaq etudes={etudes} libelle="💡 Nouvelle question" variante="discret" />
+          <FormulaireTache etudes={etudes} libelle="Nouvelle mission" variante="discret" />
+          <FormulaireDocument etudes={etudes} libelle="Nouveau document" variante="discret" />
+          <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
           <form action={creerPage}>
             <button type="submit" className="bouton-discret">
-              📄 Nouvelle page
+              Nouvelle page
             </button>
           </form>
-          <FormulaireEtude libelle="📁 Nouvelle étude" variante="discret" />
+          <FormulaireEtude libelle="Nouvelle étude" variante="discret" />
         </div>
       </section>
 
@@ -117,6 +129,7 @@ export default async function TableauDeBord() {
           valeur={String(stats.tachesOuvertes)}
           detail={stats.tachesEnRetard > 0 ? `dont ${stats.tachesEnRetard} en retard` : "à jour"}
           alerte={stats.tachesEnRetard > 0}
+          icone="drapeau"
           href="/missions?masquerTerminees=1"
         />
         <Chiffre
@@ -127,17 +140,20 @@ export default async function TableauDeBord() {
               ? "aucune checklist active"
               : `sur ${avecChecklist.length} étude(s)`
           }
+          icone="checklist"
         />
         <Chiffre
           libelle="Cette semaine"
           valeur={formaterDuree(stats.minutesSemaine)}
           detail="temps saisi"
+          icone="chrono"
           href="/temps?periode=semaine"
         />
         <Chiffre
           libelle="Études actives"
           valeur={String(stats.etudesActives)}
           detail={`${etudes.length} au total`}
+          icone="dossier"
           href="/etudes"
         />
       </div>
@@ -145,8 +161,11 @@ export default async function TableauDeBord() {
       {/* --------------------------------------------------- Missions du jour */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">À traiter en priorité</h2>
-          <Link href="/missions" className="text-sm text-accent hover:underline">
+          <h2 className="font-titre text-lg font-bold">À traiter en priorité</h2>
+          <Link
+            href="/missions"
+            className="text-sm font-medium text-accent transition-opacity hover:opacity-70"
+          >
             Toutes les missions
           </Link>
         </div>
@@ -160,15 +179,18 @@ export default async function TableauDeBord() {
       {/* ---------------------------------------------------------- Projets */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Projets</h2>
-          <Link href="/etudes" className="text-sm text-accent hover:underline">
+          <h2 className="font-titre text-lg font-bold">Projets</h2>
+          <Link
+            href="/etudes"
+            className="text-sm font-medium text-accent transition-opacity hover:opacity-70"
+          >
             Tout voir
           </Link>
         </div>
 
         {etudes.length === 0 ? (
-          <div className="carte p-8 text-center">
-            <p className="text-sm text-muted">Aucune étude pour l&apos;instant.</p>
+          <div className="carte p-10 text-center">
+            <p className="text-sm text-attenue">Aucune étude pour l&apos;instant.</p>
             <div className="mt-4 inline-flex">
               <FormulaireEtude libelle="Créer ma première étude" />
             </div>
@@ -185,7 +207,7 @@ export default async function TableauDeBord() {
                 <Link
                   key={e.id}
                   href={`/etudes/${e.id}`}
-                  className="carte overflow-hidden transition hover:border-accent/50"
+                  className="carte-active overflow-hidden"
                 >
                   {e.imageCouverture ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -203,25 +225,25 @@ export default async function TableauDeBord() {
                       <span className="flex min-w-0 items-center gap-2">
                         <span
                           aria-hidden
-                          className="h-2 w-2 shrink-0 rounded-full"
+                          className="h-2 w-2 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
                           style={{ backgroundColor: e.couleur }}
                         />
                         {e.code && (
-                          <span className="truncate text-xs font-semibold text-muted">
+                          <span className="truncate text-xs font-bold tracking-tight text-attenue">
                             {e.code}
                           </span>
                         )}
                       </span>
                       <EtiquetteStatutEtude statut={e.statut} />
                     </div>
-                    <p className="truncate text-sm font-medium">{e.nom}</p>
+                    <p className="truncate font-titre text-sm font-bold">{e.nom}</p>
                     {type && (
-                      <p className="mt-1.5 truncate text-xs text-muted">
+                      <p className="mt-1.5 truncate text-xs text-attenue">
                         {type.nom.split("—")[0].trim()}
                       </p>
                     )}
                     {prog && prog.total > 0 && (
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
+                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-creux">
                         <div
                           className="h-full rounded-full"
                           style={{
@@ -243,8 +265,11 @@ export default async function TableauDeBord() {
       {repartition.length > 0 && (
         <section className="carte p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Temps de la semaine</h2>
-            <Link href="/temps" className="text-sm text-accent hover:underline">
+            <h2 className="font-titre text-lg font-bold">Temps de la semaine</h2>
+            <Link
+              href="/temps"
+              className="text-sm font-medium text-accent transition-opacity hover:opacity-70"
+            >
               Détail
             </Link>
           </div>
@@ -252,10 +277,14 @@ export default async function TableauDeBord() {
             {repartition.map((r) => (
               <li key={r.etudeId}>
                 <div className="mb-1 flex items-baseline justify-between gap-3">
-                  <span className="inline-flex items-center gap-2 text-sm">
+                  {/* `min-w-0` est indispensable : sans lui, un élément de
+                      flexbox refuse de descendre sous la largeur de son
+                      contenu, `truncate` n'opère pas, et un nom d'étude long
+                      pousse la durée hors de l'écran. */}
+                  <span className="inline-flex min-w-0 items-center gap-2 text-sm">
                     <span
                       aria-hidden
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
                       style={{ backgroundColor: r.couleur }}
                     />
                     <span className="truncate">{r.nom}</span>
@@ -264,7 +293,7 @@ export default async function TableauDeBord() {
                     {formaterDuree(r.minutes)}
                   </span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-line">
+                <div className="h-1.5 overflow-hidden rounded-full bg-creux">
                   <div
                     className="h-full rounded-full"
                     style={{

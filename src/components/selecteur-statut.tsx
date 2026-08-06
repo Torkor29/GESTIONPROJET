@@ -5,15 +5,15 @@ import { definirStatutTache } from "@/actions/taches";
 import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 
 const COULEURS: Record<string, string> = {
-  a_faire: "text-red-600 dark:text-red-400",
-  en_cours: "text-blue-600 dark:text-blue-400",
-  terminee: "text-emerald-600 dark:text-emerald-400",
+  a_faire: "text-alerte",
+  en_cours: "text-info",
+  terminee: "text-reussite",
 };
 
 const PASTILLES: Record<string, string> = {
-  a_faire: "bg-red-500",
-  en_cours: "bg-blue-500",
-  terminee: "bg-emerald-500",
+  a_faire: "bg-alerte",
+  en_cours: "bg-info",
+  terminee: "bg-reussite",
 };
 
 /**
@@ -34,7 +34,7 @@ export default function SelecteurStatut({ id, statut }: { id: number; statut: st
     <span className="inline-flex items-center gap-1.5">
       <span
         aria-hidden
-        className={`h-2 w-2 shrink-0 rounded-full ${PASTILLES[valeur] ?? "bg-stone-400"}`}
+        className={`h-2 w-2 shrink-0 rounded-full ${PASTILLES[valeur] ?? "bg-efface"}`}
       />
       <select
         value={valeur}
@@ -54,10 +54,10 @@ export default function SelecteurStatut({ id, statut }: { id: number; statut: st
           });
         }}
         className={`cursor-pointer appearance-none bg-transparent text-xs font-medium outline-none
-                    disabled:opacity-60 ${COULEURS[valeur] ?? "text-muted"}`}
+                    disabled:opacity-60 ${COULEURS[valeur] ?? "text-attenue"}`}
       >
         {Object.entries(LIBELLES_STATUT_MISSION).map(([v, l]) => (
-          <option key={v} value={v} className="text-ink">
+          <option key={v} value={v} className="text-encre">
             {l}
           </option>
         ))}

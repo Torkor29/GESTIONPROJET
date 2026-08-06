@@ -33,7 +33,7 @@ export default function ListeDocuments({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-8 text-center text-sm text-muted">{message}</p>;
+    return <p className="carte p-8 text-center text-sm text-attenue">{message}</p>;
   }
 
   // Regroupement par catégorie, dans l'ordre du TMF.
@@ -49,14 +49,14 @@ export default function ListeDocuments({
     <div className="space-y-5">
       {categories.map((categorie) => (
         <section key={categorie}>
-          <h3 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted">
+          <h3 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-attenue">
             {CATEGORIES_DOCUMENT[categorie] ?? categorie}
             <span className="chiffres ml-2 font-normal opacity-70">
               {parCategorie.get(categorie)!.length}
             </span>
           </h3>
 
-          <ul className="carte divide-y divide-line">
+          <ul className="carte divide-y divide-ligne">
             {parCategorie.get(categorie)!.map(({ document, etudeNom, etudeCode, etudeCouleur }) => (
               <li key={document.id} className="group flex items-center gap-3 px-4 py-3">
                 <span aria-hidden className="text-lg leading-none">
@@ -72,11 +72,11 @@ export default function ListeDocuments({
                   >
                     {document.nom}
                     {document.version && (
-                      <span className="ml-1.5 font-normal text-muted">v{document.version}</span>
+                      <span className="ml-1.5 font-normal text-attenue">v{document.version}</span>
                     )}
                   </a>
 
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-attenue">
                     {afficherEtude && etudeNom && (
                       <span className="inline-flex items-center gap-1.5">
                         <span
@@ -95,7 +95,7 @@ export default function ListeDocuments({
                   </p>
 
                   {document.description && (
-                    <p className="mt-1 text-xs text-muted">{document.description}</p>
+                    <p className="mt-1 text-xs text-attenue">{document.description}</p>
                   )}
                 </div>
 
@@ -105,7 +105,7 @@ export default function ListeDocuments({
                     download
                     title="Télécharger"
                     aria-label={`Télécharger ${document.nom}`}
-                    className="rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-accent"
+                    className="rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-accent"
                   >
                     ⬇
                   </a>
@@ -121,7 +121,7 @@ export default function ListeDocuments({
                       type="submit"
                       title="Supprimer le document"
                       aria-label={`Supprimer ${document.nom}`}
-                      className="rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-red-500"
+                      className="rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-alerte"
                     >
                       ✕
                     </button>

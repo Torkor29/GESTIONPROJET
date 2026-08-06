@@ -54,7 +54,7 @@ export default function FormulaireTemps({
   const classes = {
     principal: "bouton",
     discret: "bouton-discret",
-    icone: "rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-accent",
+    icone: "rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-accent",
   }[variante];
 
   const dureeInitiale =
@@ -145,14 +145,14 @@ export default function FormulaireTemps({
             </div>
           </div>
 
-          <p className="-mt-2 text-xs text-muted">
+          <p className="-mt-2 text-xs text-attenue">
             Durée acceptée sous plusieurs formes : <code>1h30</code>, <code>1:30</code>,{" "}
             <code>90min</code>, <code>1,5</code>.
           </p>
 
           <div>
             <label htmlFor={`${uid}-description`} className="mb-1.5 block text-sm font-medium">
-              Description <span className="font-normal text-muted">(facultatif)</span>
+              Description <span className="font-normal text-attenue">(facultatif)</span>
             </label>
             <input
               id={`${uid}-description`}
@@ -164,7 +164,7 @@ export default function FormulaireTemps({
           </div>
 
           {etat.erreur && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="text-sm text-alerte">
               {etat.erreur}
             </p>
           )}

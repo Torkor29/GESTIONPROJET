@@ -34,8 +34,8 @@ export default async function PageDocuments({
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Documents</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="font-titre text-3xl font-bold">Documents</h1>
+          <p className="mt-1 text-sm text-attenue">
             {lignes.length} document{lignes.length > 1 ? "s" : ""} ·{" "}
             <span className="chiffres">{octetsLisibles(volumeTotal)}</span>
           </p>
@@ -45,7 +45,7 @@ export default async function PageDocuments({
 
       <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-48 flex-1">
-          <label htmlFor="q" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="q" className="mb-1.5 block text-xs text-attenue">
             Rechercher
           </label>
           <input
@@ -58,7 +58,7 @@ export default async function PageDocuments({
         </div>
 
         <div className="min-w-44">
-          <label htmlFor="etude" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="etude" className="mb-1.5 block text-xs text-attenue">
             Étude
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
@@ -72,7 +72,7 @@ export default async function PageDocuments({
         </div>
 
         <div className="min-w-52">
-          <label htmlFor="categorie" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="categorie" className="mb-1.5 block text-xs text-attenue">
             Catégorie
           </label>
           <select
@@ -94,7 +94,7 @@ export default async function PageDocuments({
           Filtrer
         </button>
         {(params.q || params.etude || params.categorie) && (
-          <Link href="/documents" className="pb-2 text-sm text-muted hover:text-ink">
+          <Link href="/documents" className="pb-2 text-sm text-attenue hover:text-encre">
             Réinitialiser
           </Link>
         )}

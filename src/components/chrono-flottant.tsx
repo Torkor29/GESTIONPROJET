@@ -43,7 +43,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
         <Link
           href="/temps"
-          className="pointer-events-auto rounded-full border border-line bg-raised px-4 py-2.5 text-sm font-medium shadow-lg transition hover:border-accent/50 hover:text-accent"
+          className="pointer-events-auto rounded-full border border-ligne bg-relief px-4 py-2.5 text-sm font-medium shadow-lg transition hover:border-accent/50 hover:text-accent"
         >
           ⏱ Démarrer un chronomètre
         </Link>
@@ -53,7 +53,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
-      <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-line bg-raised py-2 pl-4 pr-2 shadow-lg">
+      <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-ligne bg-relief py-2 pl-4 pr-2 shadow-lg">
         <span
           aria-hidden
           className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full"
@@ -63,7 +63,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
           <p className="truncate text-sm font-medium leading-tight">
             {chrono.etudeNom ?? "Sans étude"}
           </p>
-          <p className="truncate text-xs leading-tight text-muted">
+          <p className="truncate text-xs leading-tight text-attenue">
             {chrono.tacheTitre ?? chrono.entree.description ?? "En cours"}
           </p>
         </div>
@@ -80,7 +80,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
             type="submit"
             title="Annuler sans enregistrer"
             aria-label="Annuler sans enregistrer"
-            className="rounded-full px-2 py-1.5 text-sm text-muted transition hover:text-red-500"
+            className="rounded-full px-2 py-1.5 text-sm text-attenue transition hover:text-alerte"
           >
             ✕
           </button>

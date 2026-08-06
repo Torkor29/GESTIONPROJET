@@ -29,8 +29,8 @@ export default async function PageFaq({
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Base de connaissance</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="font-titre text-3xl font-bold">Base de connaissance</h1>
+          <p className="mt-1 text-sm text-attenue">
             Vos réponses de référence, à écrire une fois et à retrouver ensuite.
           </p>
         </div>
@@ -39,7 +39,7 @@ export default async function PageFaq({
 
       <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-48 flex-1">
-          <label htmlFor="q" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="q" className="mb-1.5 block text-xs text-attenue">
             Rechercher
           </label>
           <input
@@ -52,7 +52,7 @@ export default async function PageFaq({
         </div>
 
         <div className="min-w-44">
-          <label htmlFor="portee" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="portee" className="mb-1.5 block text-xs text-attenue">
             Portée
           </label>
           <select id="portee" name="portee" defaultValue={params.portee ?? ""} className="champ">
@@ -62,7 +62,7 @@ export default async function PageFaq({
         </div>
 
         <div className="min-w-44">
-          <label htmlFor="etude" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="etude" className="mb-1.5 block text-xs text-attenue">
             Étude
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
@@ -79,7 +79,7 @@ export default async function PageFaq({
           Filtrer
         </button>
         {(params.q || params.etude || params.portee) && (
-          <Link href="/faq" className="pb-2 text-sm text-muted hover:text-ink">
+          <Link href="/faq" className="pb-2 text-sm text-attenue hover:text-encre">
             Réinitialiser
           </Link>
         )}

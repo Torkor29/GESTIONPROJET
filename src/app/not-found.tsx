@@ -8,7 +8,7 @@ export default function Introuvable() {
           🔍
         </p>
         <h1 className="mt-3 text-xl font-semibold">Page introuvable</h1>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-sm text-attenue">
           Cette page n&apos;existe pas ou a été supprimée.
         </p>
         <Link href="/" className="bouton mt-5">

@@ -20,8 +20,8 @@ export default async function PageEtudes() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Études</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="font-titre text-3xl font-bold">Études</h1>
+          <p className="mt-1 text-sm text-attenue">
             {etudes.length} {etudes.length > 1 ? "études" : "étude"}
           </p>
         </div>
@@ -30,7 +30,7 @@ export default async function PageEtudes() {
 
       {etudes.length === 0 ? (
         <div className="carte p-10 text-center">
-          <p className="text-sm text-muted">
+          <p className="text-sm text-attenue">
             Créez une étude pour y ranger ses pages, ses missions, ses documents et ses checklists
             réglementaires.
           </p>
@@ -76,7 +76,7 @@ export default async function PageEtudes() {
                         style={{ backgroundColor: e.couleur }}
                       />
                       {e.code && (
-                        <span className="truncate text-xs font-semibold tracking-wide text-muted">
+                        <span className="truncate text-xs font-semibold tracking-wide text-attenue">
                           {e.code}
                         </span>
                       )}
@@ -86,7 +86,7 @@ export default async function PageEtudes() {
 
                   <h2 className="font-medium leading-snug">{e.nom}</h2>
                   {e.promoteur && (
-                    <p className="mt-0.5 truncate text-sm text-muted">{e.promoteur}</p>
+                    <p className="mt-0.5 truncate text-sm text-attenue">{e.promoteur}</p>
                   )}
 
                   {typePrincipal && (
@@ -100,11 +100,11 @@ export default async function PageEtudes() {
                   <div className="mt-auto pt-3">
                     {prog && prog.total > 0 && (
                       <div className="mb-2">
-                        <div className="mb-1 flex items-baseline justify-between text-xs text-muted">
+                        <div className="mb-1 flex items-baseline justify-between text-xs text-attenue">
                           <span>Conformité réglementaire</span>
                           <span className="chiffres">{prog.pourcentage} %</span>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-line">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-creux">
                           <div
                             className="h-full rounded-full transition-all"
                             style={{
@@ -115,7 +115,7 @@ export default async function PageEtudes() {
                         </div>
                       </div>
                     )}
-                    <p className="chiffres border-t border-line pt-2.5 text-xs text-muted">
+                    <p className="chiffres border-t border-ligne pt-2.5 text-xs text-attenue">
                       {minutes > 0 ? formaterDuree(minutes) : "aucun temps saisi"}
                     </p>
                   </div>

@@ -22,7 +22,7 @@ export default function ListeFaq({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-8 text-center text-sm text-muted">{message}</p>;
+    return <p className="carte p-8 text-center text-sm text-attenue">{message}</p>;
   }
 
   const parCategorie = new Map<string, LigneFaq[]>();
@@ -37,24 +37,24 @@ export default function ListeFaq({
     <div className="space-y-5">
       {categories.map((categorie) => (
         <section key={categorie}>
-          <h3 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted">
+          <h3 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-attenue">
             {CATEGORIES_FAQ[categorie] ?? categorie}
           </h3>
 
-          <div className="carte divide-y divide-line">
+          <div className="carte divide-y divide-ligne">
             {parCategorie.get(categorie)!.map(({ entree, etudeCode, etudeNom, etudeCouleur }) => (
               <details key={entree.id} className="group px-4 py-3">
                 <summary className="flex cursor-pointer list-none items-start gap-3">
                   <span
                     aria-hidden
-                    className="mt-1 text-xs text-muted transition group-open:rotate-90"
+                    className="mt-1 text-xs text-attenue transition group-open:rotate-90"
                   >
                     ▶
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium">{entree.question}</span>
                     {afficherPortee && (
-                      <span className="mt-0.5 block text-xs text-muted">
+                      <span className="mt-0.5 block text-xs text-attenue">
                         {etudeNom ? (
                           <span className="inline-flex items-center gap-1.5">
                             <span
@@ -86,7 +86,7 @@ export default function ListeFaq({
                       <input type="hidden" name="id" value={entree.id} />
                       <button
                         type="submit"
-                        className="rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-red-500"
+                        className="rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-alerte"
                       >
                         ✕ Supprimer
                       </button>

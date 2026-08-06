@@ -18,19 +18,19 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
   return (
     <article className="mx-auto max-w-3xl">
       <nav className="mb-6 flex items-center justify-between gap-3 text-sm">
-        <div className="flex min-w-0 items-center gap-1.5 text-muted">
+        <div className="flex min-w-0 items-center gap-1.5 text-attenue">
           {etude ? (
             <>
-              <Link href="/etudes" className="hover:text-ink">
+              <Link href="/etudes" className="hover:text-encre">
                 Études
               </Link>
               <span aria-hidden>/</span>
-              <Link href={`/etudes/${etude.id}`} className="truncate hover:text-ink">
+              <Link href={`/etudes/${etude.id}`} className="truncate hover:text-encre">
                 {etude.nom}
               </Link>
             </>
           ) : (
-            <Link href="/etudes" className="hover:text-ink">
+            <Link href="/etudes" className="hover:text-encre">
               Pages libres
             </Link>
           )}
@@ -40,7 +40,7 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
           <input type="hidden" name="id" value={page.id} />
           <button
             type="submit"
-            className="shrink-0 rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-red-500"
+            className="shrink-0 rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-alerte"
           >
             Supprimer
           </button>
@@ -49,7 +49,7 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
 
       <TitrePage pageId={page.id} titreInitial={page.titre} iconeInitiale={page.icone} />
 
-      <p className="mt-1 text-xs text-muted">
+      <p className="mt-1 text-xs text-attenue">
         Modifiée le {formaterDateHeure(page.modifieLe)}
       </p>
 

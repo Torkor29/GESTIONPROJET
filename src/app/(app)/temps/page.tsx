@@ -56,7 +56,7 @@ export default async function PageTemps({
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Temps</h1>
+        <h1 className="font-titre text-3xl font-bold">Temps</h1>
         <div className="flex flex-wrap gap-2">
           <a
             href={`/api/export?${parametresExport.toString()}`}
@@ -73,7 +73,7 @@ export default async function PageTemps({
         <h2 className="mb-3 text-sm font-medium">Démarrer un chronomètre</h2>
         <form action={demarrerChrono} className="flex flex-wrap items-end gap-3">
           <div className="min-w-48 flex-1">
-            <label htmlFor="chrono-etude" className="mb-1.5 block text-xs text-muted">
+            <label htmlFor="chrono-etude" className="mb-1.5 block text-xs text-attenue">
               Étude
             </label>
             <select id="chrono-etude" name="etudeId" className="champ" defaultValue={etudeId ?? ""}>
@@ -86,7 +86,7 @@ export default async function PageTemps({
             </select>
           </div>
           <div className="min-w-48 flex-[2]">
-            <label htmlFor="chrono-description" className="mb-1.5 block text-xs text-muted">
+            <label htmlFor="chrono-description" className="mb-1.5 block text-xs text-attenue">
               Sur quoi travaillez-vous ?
             </label>
             <input
@@ -104,7 +104,7 @@ export default async function PageTemps({
 
       <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
         <div>
-          <label htmlFor="periode" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="periode" className="mb-1.5 block text-xs text-attenue">
             Période
           </label>
           <select id="periode" name="periode" defaultValue={periode.cle} className="champ">
@@ -117,21 +117,21 @@ export default async function PageTemps({
         </div>
 
         <div>
-          <label htmlFor="du" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="du" className="mb-1.5 block text-xs text-attenue">
             Du
           </label>
           <input id="du" name="du" type="date" defaultValue={params.du ?? ""} className="champ" />
         </div>
 
         <div>
-          <label htmlFor="au" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="au" className="mb-1.5 block text-xs text-attenue">
             Au
           </label>
           <input id="au" name="au" type="date" defaultValue={params.au ?? ""} className="champ" />
         </div>
 
         <div className="min-w-48">
-          <label htmlFor="etude" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="etude" className="mb-1.5 block text-xs text-attenue">
             Étude
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
@@ -151,23 +151,23 @@ export default async function PageTemps({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="carte p-4">
-          <p className="text-xs uppercase tracking-wide text-muted">Total</p>
+          <p className="text-xs uppercase tracking-wide text-attenue">Total</p>
           <p className="chiffres mt-1 text-2xl font-semibold">{formaterDuree(minutesTotal)}</p>
-          <p className="chiffres mt-0.5 text-xs text-muted">
+          <p className="chiffres mt-0.5 text-xs text-attenue">
             {heuresDecimales(minutesTotal).toLocaleString("fr-FR")} h décimales
           </p>
         </div>
         <div className="carte p-4">
-          <p className="text-xs uppercase tracking-wide text-muted">Valorisé</p>
+          <p className="text-xs uppercase tracking-wide text-attenue">Valorisé</p>
           <p className="chiffres mt-1 text-2xl font-semibold">
             {montantTotal > 0 ? formaterMontant(montantTotal) : "—"}
           </p>
-          <p className="mt-0.5 text-xs text-muted">selon les tarifs horaires</p>
+          <p className="mt-0.5 text-xs text-attenue">selon les tarifs horaires</p>
         </div>
         <div className="carte p-4">
-          <p className="text-xs uppercase tracking-wide text-muted">Saisies</p>
+          <p className="text-xs uppercase tracking-wide text-attenue">Saisies</p>
           <p className="chiffres mt-1 text-2xl font-semibold">{lignes.length}</p>
-          <p className="mt-0.5 text-xs text-muted">{periode.libelle.toLowerCase()}</p>
+          <p className="mt-0.5 text-xs text-attenue">{periode.libelle.toLowerCase()}</p>
         </div>
       </div>
 
@@ -180,7 +180,7 @@ export default async function PageTemps({
                 <PastilleEtude couleur={r.couleur} nom={r.nom} />
                 <span className="chiffres shrink-0 text-sm">
                   {formaterDuree(r.minutes)}
-                  <span className="ml-2 text-muted">
+                  <span className="ml-2 text-attenue">
                     {Math.round((r.minutes / Math.max(1, minutesTotal)) * 100)} %
                   </span>
                 </span>
@@ -191,7 +191,7 @@ export default async function PageTemps({
       )}
 
       {lignes.length === 0 ? (
-        <p className="carte p-10 text-center text-sm text-muted">
+        <p className="carte p-10 text-center text-sm text-attenue">
           Aucune saisie sur cette période.
         </p>
       ) : (
@@ -204,12 +204,12 @@ export default async function PageTemps({
                 <section key={jour}>
                   <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
                     <h2 className="text-sm font-medium">{formaterDate(jour)}</h2>
-                    <span className="chiffres text-sm text-muted">
+                    <span className="chiffres text-sm text-attenue">
                       {formaterDuree(minutesJour)}
                     </span>
                   </div>
 
-                  <ul className="carte divide-y divide-line">
+                  <ul className="carte divide-y divide-ligne">
                     {entrees.map(({ entree, etudeNom, etudeCouleur, tacheTitre }) => (
                       <li
                         key={entree.id}
@@ -225,13 +225,13 @@ export default async function PageTemps({
                           <p className="truncate text-sm">
                             {entree.description ?? tacheTitre ?? "Sans description"}
                           </p>
-                          <p className="truncate text-xs text-muted">
+                          <p className="truncate text-xs text-attenue">
                             {etudeNom ?? "Sans étude"}
                             {tacheTitre && entree.description ? ` · ${tacheTitre}` : ""}
                           </p>
                         </div>
 
-                        <span className="chiffres hidden shrink-0 text-xs text-muted sm:block">
+                        <span className="chiffres hidden shrink-0 text-xs text-attenue sm:block">
                           {formaterHeure(entree.debut)} – {formaterHeure(entree.fin)}
                         </span>
 
@@ -252,7 +252,7 @@ export default async function PageTemps({
                               type="submit"
                               title="Supprimer la saisie"
                               aria-label="Supprimer la saisie"
-                              className="rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-red-500"
+                              className="rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-alerte"
                             >
                               ✕
                             </button>

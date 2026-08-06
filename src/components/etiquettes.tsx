@@ -1,22 +1,29 @@
 import { LIBELLES_PRIORITE, LIBELLES_STATUT_ETUDE, LIBELLES_STATUT_TACHE } from "@/lib/format";
 
+/**
+ * Les étiquettes puisent dans les quatre couleurs de statut de la charte
+ * plutôt que dans la palette Tailwind brute : elles suivent ainsi le thème
+ * clair comme sombre sans variante à écrire.
+ */
+const NEUTRE = "bg-creux text-attenue";
+
 const COULEURS_STATUT_TACHE: Record<string, string> = {
-  a_faire: "bg-stone-500/15 text-stone-600 dark:text-stone-300",
-  en_cours: "bg-blue-500/15 text-blue-600 dark:text-blue-300",
-  terminee: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
+  a_faire: NEUTRE,
+  en_cours: "bg-info-voile text-info",
+  terminee: "bg-reussite-voile text-reussite",
 };
 
 const COULEURS_PRIORITE: Record<string, string> = {
-  basse: "bg-stone-500/15 text-stone-600 dark:text-stone-300",
-  normale: "bg-amber-500/15 text-amber-600 dark:text-amber-300",
-  haute: "bg-red-500/15 text-red-600 dark:text-red-300",
+  basse: NEUTRE,
+  normale: "bg-attention-voile text-attention",
+  haute: "bg-alerte-voile text-alerte",
 };
 
 const COULEURS_STATUT_ETUDE: Record<string, string> = {
-  active: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
-  en_pause: "bg-amber-500/15 text-amber-600 dark:text-amber-300",
-  terminee: "bg-blue-500/15 text-blue-600 dark:text-blue-300",
-  archivee: "bg-stone-500/15 text-stone-600 dark:text-stone-300",
+  active: "bg-reussite-voile text-reussite",
+  en_pause: "bg-attention-voile text-attention",
+  terminee: "bg-info-voile text-info",
+  archivee: NEUTRE,
 };
 
 export function EtiquetteStatutTache({ statut }: { statut: string }) {
@@ -49,7 +56,7 @@ export function PastilleEtude({ couleur, nom }: { couleur: string; nom?: string 
     <span className="inline-flex items-center gap-2 text-sm">
       <span
         aria-hidden
-        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
         style={{ backgroundColor: couleur }}
       />
       {nom && <span className="truncate">{nom}</span>}

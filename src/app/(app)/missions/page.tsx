@@ -54,12 +54,12 @@ export default async function PageMissions({
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Suivi de missions</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="font-titre text-3xl font-bold">Suivi de missions</h1>
+          <p className="mt-1 text-sm text-attenue">
             {lignes.length} mission{lignes.length > 1 ? "s" : ""} affichée
             {lignes.length > 1 ? "s" : ""}
             {enRetard.length > 0 && (
-              <span className="text-red-500"> · {enRetard.length} en retard</span>
+              <span className="text-alerte"> · {enRetard.length} en retard</span>
             )}
           </p>
         </div>
@@ -93,7 +93,7 @@ export default async function PageMissions({
                           ${
                             vue === v.cle
                               ? "border-accent bg-accent/10 font-medium text-accent"
-                              : "border-line text-muted hover:text-ink"
+                              : "border-ligne text-attenue hover:text-encre"
                           }`}
             >
               {v.libelle}
@@ -107,7 +107,7 @@ export default async function PageMissions({
         <input type="hidden" name="vue" value={vue} />
 
         <div className="min-w-48 flex-1">
-          <label htmlFor="q" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="q" className="mb-1.5 block text-xs text-attenue">
             Rechercher
           </label>
           <input
@@ -120,7 +120,7 @@ export default async function PageMissions({
         </div>
 
         <div className="min-w-44">
-          <label htmlFor="etude" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="etude" className="mb-1.5 block text-xs text-attenue">
             Étude
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
@@ -134,7 +134,7 @@ export default async function PageMissions({
         </div>
 
         <div className="min-w-40">
-          <label htmlFor="statut" className="mb-1.5 block text-xs text-muted">
+          <label htmlFor="statut" className="mb-1.5 block text-xs text-attenue">
             Statut
           </label>
           <select id="statut" name="statut" defaultValue={params.statut ?? ""} className="champ">
@@ -162,7 +162,7 @@ export default async function PageMissions({
           Filtrer
         </button>
         {(params.q || params.etude || params.statut || masquerTerminees) && (
-          <Link href={`/missions?vue=${vue}`} className="pb-2 text-sm text-muted hover:text-ink">
+          <Link href={`/missions?vue=${vue}`} className="pb-2 text-sm text-attenue hover:text-encre">
             Réinitialiser
           </Link>
         )}
@@ -177,7 +177,7 @@ export default async function PageMissions({
               <section key={statut}>
                 <h2 className="mb-2 px-1 text-sm font-medium">
                   {libelle}
-                  <span className="chiffres ml-2 text-xs text-muted">{duGroupe.length}</span>
+                  <span className="chiffres ml-2 text-xs text-attenue">{duGroupe.length}</span>
                 </h2>
                 <TableauMissions lignes={duGroupe} etudes={etudes} />
               </section>
@@ -230,7 +230,7 @@ function VueEcheances({
   ].filter((g) => g.lignes.length > 0);
 
   if (groupes.length === 0) {
-    return <p className="carte p-8 text-center text-sm text-muted">Aucune mission ouverte.</p>;
+    return <p className="carte p-8 text-center text-sm text-attenue">Aucune mission ouverte.</p>;
   }
 
   return (
@@ -239,7 +239,7 @@ function VueEcheances({
         <section key={g.titre}>
           <h2 className="mb-2 px-1 text-sm font-medium">
             {g.titre}
-            <span className="chiffres ml-2 text-xs text-muted">{g.lignes.length}</span>
+            <span className="chiffres ml-2 text-xs text-attenue">{g.lignes.length}</span>
           </h2>
           <TableauMissions lignes={g.lignes} etudes={etudes} />
         </section>

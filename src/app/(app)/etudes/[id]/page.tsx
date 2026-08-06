@@ -105,11 +105,11 @@ export default async function PageEtude({
                 style={{ backgroundColor: etude.couleur }}
               />
               {etude.code && (
-                <span className="text-sm font-semibold tracking-wide text-muted">
+                <span className="text-sm font-semibold tracking-wide text-attenue">
                   {etude.code}
                 </span>
               )}
-              <h1 className="text-2xl font-semibold">{etude.nom}</h1>
+              <h1 className="font-titre text-3xl font-bold">{etude.nom}</h1>
               <EtiquetteStatutEtude statut={etude.statut} />
             </div>
 
@@ -137,7 +137,7 @@ export default async function PageEtude({
       </header>
 
       {/* ------------------------------------------------------- Sections */}
-      <nav className="flex flex-wrap gap-1.5 border-b border-line pb-2">
+      <nav className="flex flex-wrap gap-1.5 border-b border-ligne pb-2">
         {SECTIONS.map((s) => (
           <Link
             key={s.cle}
@@ -147,7 +147,7 @@ export default async function PageEtude({
                         ${
                           section === s.cle
                             ? "bg-accent/10 font-medium text-accent"
-                            : "text-muted hover:bg-line/50 hover:text-ink"
+                            : "text-attenue hover:bg-creux hover:text-encre"
                         }`}
           >
             {s.libelle}
@@ -163,12 +163,12 @@ export default async function PageEtude({
         <div className="space-y-6">
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-muted">Conformité</dt>
+              <dt className="text-xs uppercase tracking-wide text-attenue">Conformité</dt>
               <dd className="chiffres mt-1 text-lg font-semibold">
                 {prog.total > 0 ? `${prog.pourcentage} %` : "—"}
               </dd>
               {prog.total > 0 && (
-                <dd className="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
+                <dd className="mt-1 h-1.5 overflow-hidden rounded-full bg-creux">
                   <div
                     className="h-full rounded-full"
                     style={{ width: `${prog.pourcentage}%`, backgroundColor: etude.couleur }}
@@ -177,25 +177,25 @@ export default async function PageEtude({
               )}
             </div>
             <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-muted">Missions ouvertes</dt>
+              <dt className="text-xs uppercase tracking-wide text-attenue">Missions ouvertes</dt>
               <dd className="chiffres mt-1 text-lg font-semibold">
                 {ouvertes.length}
                 {enRetard.length > 0 && (
-                  <span className="ml-2 text-sm font-medium text-red-500">
+                  <span className="ml-2 text-sm font-medium text-alerte">
                     {enRetard.length} en retard
                   </span>
                 )}
               </dd>
             </div>
             <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-muted">Temps total</dt>
+              <dt className="text-xs uppercase tracking-wide text-attenue">Temps total</dt>
               <dd className="chiffres mt-1 text-lg font-semibold">{formaterDuree(minutesTotal)}</dd>
               {valorise !== null && (
-                <dd className="chiffres mt-0.5 text-xs text-muted">{formaterMontant(valorise)}</dd>
+                <dd className="chiffres mt-0.5 text-xs text-attenue">{formaterMontant(valorise)}</dd>
               )}
             </div>
             <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-muted">Documents</dt>
+              <dt className="text-xs uppercase tracking-wide text-attenue">Documents</dt>
               <dd className="chiffres mt-1 text-lg font-semibold">{documents.length}</dd>
             </div>
           </dl>
@@ -214,18 +214,18 @@ export default async function PageEtude({
                 ["Date de fin prévue", etude.dateFin ? formaterDate(etude.dateFin) : null],
               ].map(([libelle, valeur]) => (
                 <div key={libelle as string}>
-                  <dt className="text-xs uppercase tracking-wide text-muted">{libelle}</dt>
-                  <dd className={valeur ? "mt-0.5" : "mt-0.5 text-muted"}>{valeur || "—"}</dd>
+                  <dt className="text-xs uppercase tracking-wide text-attenue">{libelle}</dt>
+                  <dd className={valeur ? "mt-0.5" : "mt-0.5 text-attenue"}>{valeur || "—"}</dd>
                 </div>
               ))}
             </dl>
 
             {etude.imageCouverture && (
-              <form action={retirerCouverture} className="mt-4 border-t border-line pt-3">
+              <form action={retirerCouverture} className="mt-4 border-t border-ligne pt-3">
                 <input type="hidden" name="id" value={etude.id} />
                 <button
                   type="submit"
-                  className="text-xs text-muted underline-offset-2 hover:text-red-500 hover:underline"
+                  className="text-xs text-attenue underline-offset-2 hover:text-alerte hover:underline"
                 >
                   Retirer l&apos;image de couverture
                 </button>
@@ -235,7 +235,7 @@ export default async function PageEtude({
 
           {enRetard.length > 0 && (
             <section>
-              <h2 className="mb-2 font-semibold text-red-500">Missions en retard</h2>
+              <h2 className="mb-2 font-semibold text-alerte">Missions en retard</h2>
               <TableauMissions
                 lignes={enRetard.map((t) => ({ tache: t }))}
                 etudes={toutesEtudes}
@@ -244,12 +244,12 @@ export default async function PageEtude({
             </section>
           )}
 
-          <section className="border-t border-line pt-6">
+          <section className="border-t border-ligne pt-6">
             <details>
-              <summary className="cursor-pointer text-sm text-muted hover:text-red-500">
+              <summary className="cursor-pointer text-sm text-attenue hover:text-alerte">
                 Supprimer cette étude
               </summary>
-              <div className="carte mt-3 border-red-500/30 p-4">
+              <div className="carte mt-3 border-alerte/30 p-4">
                 <p className="text-sm">
                   La suppression retire définitivement l&apos;étude, ses{" "}
                   <strong>{pages.length} page(s)</strong>, <strong>{missions.length} mission(s)</strong>,{" "}
@@ -262,7 +262,7 @@ export default async function PageEtude({
                   <input type="hidden" name="id" value={etude.id} />
                   <button
                     type="submit"
-                    className="rounded-lg border border-red-500/40 px-3.5 py-2 text-sm font-medium text-red-500 transition hover:bg-red-500/10"
+                    className="rounded-lg border border-alerte/40 px-3.5 py-2 text-sm font-medium text-alerte transition hover:bg-alerte/10"
                   >
                     Supprimer définitivement
                   </button>
@@ -277,7 +277,7 @@ export default async function PageEtude({
       {section === "missions" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">Missions</h2>
+            <h2 className="font-titre text-lg font-bold">Missions</h2>
             <FormulaireTache
               etudes={toutesEtudes}
               etudeIdParDefaut={etude.id}
@@ -301,7 +301,7 @@ export default async function PageEtude({
       {section === "documents" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">Documents</h2>
+            <h2 className="font-titre text-lg font-bold">Documents</h2>
             <FormulaireDocument
               etudes={toutesEtudes}
               etudeIdParDefaut={etude.id}
@@ -322,7 +322,7 @@ export default async function PageEtude({
       {section === "pages" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">Pages</h2>
+            <h2 className="font-titre text-lg font-bold">Pages</h2>
             <form action={creerPage}>
               <input type="hidden" name="etudeId" value={etude.id} />
               <button type="submit" className="bouton-discret">
@@ -332,7 +332,7 @@ export default async function PageEtude({
           </div>
 
           {pages.length === 0 ? (
-            <p className="carte p-8 text-center text-sm text-muted">
+            <p className="carte p-8 text-center text-sm text-attenue">
               Aucune page. Créez-en une pour vos comptes rendus de visite, vos notes de réunion ou
               vos modes opératoires.
             </p>
@@ -349,7 +349,7 @@ export default async function PageEtude({
                   </span>
                   <div className="min-w-0">
                     <p className="truncate font-medium">{p.titre}</p>
-                    <p className="mt-0.5 text-xs text-muted">
+                    <p className="mt-0.5 text-xs text-attenue">
                       modifiée le {formaterDate(p.modifieLe)}
                     </p>
                   </div>
@@ -364,7 +364,7 @@ export default async function PageEtude({
       {section === "faq" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">FAQ de l&apos;étude</h2>
+            <h2 className="font-titre text-lg font-bold">FAQ de l&apos;étude</h2>
             <FormulaireFaq
               etudes={toutesEtudes}
               etudeIdParDefaut={etude.id}
@@ -385,25 +385,25 @@ export default async function PageEtude({
       {section === "temps" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">Temps saisi</h2>
+            <h2 className="font-titre text-lg font-bold">Temps saisi</h2>
             <Link href={`/temps?etude=${etude.id}`} className="bouton-discret">
               Détail et export
             </Link>
           </div>
 
           {temps.length === 0 ? (
-            <p className="carte p-8 text-center text-sm text-muted">
+            <p className="carte p-8 text-center text-sm text-attenue">
               Aucun temps saisi sur cette étude.
             </p>
           ) : (
-            <ul className="carte divide-y divide-line">
+            <ul className="carte divide-y divide-ligne">
               {temps.slice(0, 20).map(({ entree, tacheTitre }) => (
                 <li key={entree.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm">
                       {entree.description ?? tacheTitre ?? "Sans description"}
                     </p>
-                    <p className="text-xs text-muted">{formaterDate(entree.debut)}</p>
+                    <p className="text-xs text-attenue">{formaterDate(entree.debut)}</p>
                   </div>
                   <span className="chiffres shrink-0 text-sm font-medium">
                     {formaterDuree(dureeMinutes(entree))}

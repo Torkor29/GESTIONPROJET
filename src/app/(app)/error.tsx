@@ -20,7 +20,7 @@ export default function Erreur({
         ⚠️
       </p>
       <h1 className="mt-2 font-semibold">Une erreur est survenue</h1>
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-sm text-attenue">
         L&apos;action n&apos;a pas pu aboutir. Si vous étiez absent un long moment, votre session a
         peut-être expiré.
       </p>

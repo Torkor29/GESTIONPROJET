@@ -34,7 +34,7 @@ export default function NoteChecklist({
       <button
         type="button"
         onClick={() => setOuvert(true)}
-        className="text-xs text-muted underline-offset-2 transition hover:text-accent hover:underline"
+        className="text-xs text-attenue underline-offset-2 transition hover:text-accent hover:underline"
       >
         + Ajouter une note
       </button>
@@ -51,7 +51,7 @@ export default function NoteChecklist({
         aria-label="Note sur cette ligne"
         className="champ resize-y text-xs"
       />
-      <p className="mt-0.5 h-3 text-right text-[10px] text-muted">
+      <p className="mt-0.5 h-3 text-right text-[10px] text-attenue">
         {etat === "enregistre" && "Note enregistrée"}
       </p>
     </div>

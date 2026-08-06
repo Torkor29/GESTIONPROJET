@@ -92,11 +92,11 @@ export default function Editeur({
 
   return (
     <div>
-      <div className="mb-2 h-4 text-right text-xs text-muted" aria-live="polite">
+      <div className="mb-2 h-4 text-right text-xs text-attenue" aria-live="polite">
         {etat === "en_cours" && "Enregistrement…"}
         {etat === "enregistre" && "Enregistré"}
         {etat === "erreur" && (
-          <span className="text-red-500">
+          <span className="text-alerte">
             Échec de l&apos;enregistrement — vérifiez votre connexion.
           </span>
         )}

@@ -38,13 +38,13 @@ export default function TitrePage({
         onClick={() => setChoixOuvert((o) => !o)}
         aria-label="Changer l'icône de la page"
         aria-expanded={choixOuvert}
-        className="rounded-lg px-1 text-4xl transition hover:bg-line/60"
+        className="rounded-lg px-1 text-4xl transition hover:bg-creux"
       >
         {icone}
       </button>
 
       {choixOuvert && (
-        <div className="absolute z-10 mt-1 flex max-w-xs flex-wrap gap-1 rounded-xl border border-line bg-raised p-2 shadow-lg">
+        <div className="absolute z-10 mt-1 flex max-w-xs flex-wrap gap-1 rounded-xl border border-ligne bg-relief p-2 shadow-lg">
           {ICONES.map((i) => (
             <button
               key={i}
@@ -54,7 +54,7 @@ export default function TitrePage({
                 setChoixOuvert(false);
                 void enregistrerPage({ id: pageId, icone: i });
               }}
-              className="rounded-lg px-2 py-1 text-xl transition hover:bg-line/60"
+              className="rounded-lg px-2 py-1 text-xl transition hover:bg-creux"
             >
               {i}
             </button>
@@ -67,7 +67,7 @@ export default function TitrePage({
         onChange={(e) => setTitre(e.target.value)}
         placeholder="Sans titre"
         aria-label="Titre de la page"
-        className="mt-2 w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-muted"
+        className="mt-2 w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-attenue"
       />
     </div>
   );

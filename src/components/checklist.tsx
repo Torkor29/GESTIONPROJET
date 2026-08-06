@@ -15,7 +15,7 @@ export default function Checklist({
   if (lignes.length === 0) {
     return (
       <div className="carte p-8 text-center">
-        <p className="text-sm text-muted">
+        <p className="text-sm text-attenue">
           Aucune checklist pour cette étude. Modifiez l&apos;étude et cochez le cadre
           réglementaire applicable pour les générer automatiquement.
         </p>
@@ -41,14 +41,14 @@ export default function Checklist({
             <span className="ml-2 font-semibold">{globale.pourcentage} %</span>
           </span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-line">
+        <div className="h-2 overflow-hidden rounded-full bg-creux">
           <div
             className="h-full rounded-full bg-accent transition-all"
             style={{ width: `${globale.pourcentage}%` }}
           />
         </div>
         {globale.sansObjet > 0 && (
-          <p className="mt-1.5 text-xs text-muted">
+          <p className="mt-1.5 text-xs text-attenue">
             {globale.sansObjet} ligne(s) marquée(s) sans objet, exclue(s) du calcul.
           </p>
         )}
@@ -66,19 +66,19 @@ export default function Checklist({
 
         return (
           <section key={cle} className="carte overflow-hidden">
-            <header className="border-b border-line p-4">
+            <header className="border-b border-ligne p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="font-semibold">{ref?.nom ?? cle}</h3>
-                  {ref?.resume && <p className="mt-1 text-sm text-muted">{ref.resume}</p>}
+                  {ref?.resume && <p className="mt-1 text-sm text-attenue">{ref.resume}</p>}
                 </div>
-                <span className="chiffres shrink-0 text-sm text-muted">
+                <span className="chiffres shrink-0 text-sm text-attenue">
                   {prog.faits} / {prog.total}
                 </span>
               </div>
 
               {ref && (
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-attenue">
                   <span>Contenu vérifié le {formaterDate(dateIso(ref.verifieLe))}</span>
                   {ref.sources.map((s) => (
                     <a
@@ -97,7 +97,7 @@ export default function Checklist({
                     <button
                       type="submit"
                       title="Recharger les libellés depuis le référentiel"
-                      className="underline-offset-2 transition hover:text-ink hover:underline"
+                      className="underline-offset-2 transition hover:text-encre hover:underline"
                     >
                       Actualiser depuis le référentiel
                     </button>
@@ -108,10 +108,10 @@ export default function Checklist({
 
             {ORDRE_PHASES.filter((p) => parPhase.has(p)).map((phase) => (
               <div key={phase}>
-                <h4 className="border-b border-line bg-surface/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                <h4 className="border-b border-ligne bg-surface/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-attenue">
                   {LIBELLES_PHASE[phase]}
                 </h4>
-                <ul className="divide-y divide-line">
+                <ul className="divide-y divide-ligne">
                   {parPhase.get(phase)!.map((item) => (
                     <li
                       key={item.id}
@@ -127,8 +127,8 @@ export default function Checklist({
                           className={`flex h-5 w-5 items-center justify-center rounded-md border text-xs transition
                                       ${
                                         item.fait
-                                          ? "border-emerald-500 bg-emerald-500 text-white"
-                                          : "border-line hover:border-accent"
+                                          ? "border-reussite bg-reussite text-relief"
+                                          : "border-ligne hover:border-accent"
                                       }`}
                         >
                           {item.fait ? "✓" : ""}
@@ -138,26 +138,26 @@ export default function Checklist({
                       <div className="min-w-0 flex-1">
                         <p
                           className={`text-sm ${
-                            item.fait ? "text-muted line-through" : "font-medium"
+                            item.fait ? "text-attenue line-through" : "font-medium"
                           }`}
                         >
                           {item.titre}
                           {!item.obligatoire && (
-                            <span className="ml-2 etiquette bg-stone-500/15 text-stone-600 dark:text-stone-300">
+                            <span className="ml-2 etiquette bg-creux text-attenue">
                               recommandé
                             </span>
                           )}
                         </p>
 
                         {item.description && (
-                          <p className="mt-1 text-xs leading-relaxed text-muted">
+                          <p className="mt-1 text-xs leading-relaxed text-attenue">
                             {item.description}
                           </p>
                         )}
 
-                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-attenue">
                           {item.reference && (
-                            <span className="rounded bg-line/60 px-1.5 py-0.5 font-medium">
+                            <span className="rounded bg-creux px-1.5 py-0.5 font-medium">
                               {item.reference}
                             </span>
                           )}
@@ -168,7 +168,7 @@ export default function Checklist({
                             <input type="hidden" name="id" value={item.id} />
                             <button
                               type="submit"
-                              className="underline-offset-2 transition hover:text-ink hover:underline"
+                              className="underline-offset-2 transition hover:text-encre hover:underline"
                             >
                               {item.sansObjet ? "Rendre applicable" : "Sans objet"}
                             </button>
@@ -186,7 +186,7 @@ export default function Checklist({
         );
       })}
 
-      <p className="rounded-lg bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+      <p className="rounded-lg bg-attention-voile/50 p-3 text-xs leading-relaxed text-attenue">
         <strong>⚠️ {AVERTISSEMENT}</strong>
       </p>
     </div>

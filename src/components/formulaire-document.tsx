@@ -50,7 +50,7 @@ export default function FormulaireDocument({
   const classes = {
     principal: "bouton",
     discret: "bouton-discret",
-    icone: "rounded-lg px-2 py-1 text-sm text-muted transition hover:bg-line/60 hover:text-accent",
+    icone: "rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-accent",
   }[variante];
 
   return (
@@ -83,16 +83,16 @@ export default function FormulaireDocument({
                 name="fichier"
                 type="file"
                 required
-                className="champ file:mr-3 file:rounded file:border-0 file:bg-line file:px-3 file:py-1 file:text-sm file:text-ink"
+                className="champ file:mr-3 file:rounded file:border-0 file:bg-creux file:px-3 file:py-1 file:text-sm file:text-encre"
               />
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-attenue">
                 Le fichier est stocké sur votre serveur, jamais chez un tiers.
               </p>
             </div>
           )}
 
           {edition && (
-            <p className="rounded-lg bg-line/40 p-3 text-xs text-muted">
+            <p className="rounded-lg bg-creux p-3 text-xs text-attenue">
               Fichier d&apos;origine : <strong>{document!.nomOriginal}</strong>. Pour remplacer le
               contenu, ajoutez un nouveau document avec un numéro de version.
             </p>
@@ -111,7 +111,7 @@ export default function FormulaireDocument({
               className="champ"
             />
             {!edition && (
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-attenue">
                 Laissez vide pour reprendre le nom du fichier.
               </p>
             )}
@@ -157,7 +157,7 @@ export default function FormulaireDocument({
 
             <div>
               <label htmlFor={`${uid}-version`} className="mb-1.5 block text-sm font-medium">
-                Version <span className="font-normal text-muted">(facultatif)</span>
+                Version <span className="font-normal text-attenue">(facultatif)</span>
               </label>
               <input
                 id={`${uid}-version`}
@@ -184,7 +184,7 @@ export default function FormulaireDocument({
 
           <div>
             <label htmlFor={`${uid}-description`} className="mb-1.5 block text-sm font-medium">
-              Description <span className="font-normal text-muted">(facultatif)</span>
+              Description <span className="font-normal text-attenue">(facultatif)</span>
             </label>
             <textarea
               id={`${uid}-description`}
@@ -196,7 +196,7 @@ export default function FormulaireDocument({
           </div>
 
           {etat.erreur && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="text-sm text-alerte">
               {etat.erreur}
             </p>
           )}
