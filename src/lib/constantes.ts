@@ -92,3 +92,47 @@ export const STATUTS_VISITE_OUVERTS = [
   "rapport_redige",
   "lettre_envoyee",
 ];
+
+/** Nature d'un écart, calquée sur les rubriques d'un rapport de monitorage. */
+export const CATEGORIES_ECART: Record<string, string> = {
+  protocole: "Protocole",
+  consentement: "Consentement",
+  produit: "Produit / dispositif",
+  donnees: "Données et CRF",
+  procedure: "Procédure interne",
+  autre: "Autre",
+};
+
+/** Gravité d'un écart. Détermine l'urgence des suites à donner. */
+export const GRAVITES_ECART: Record<string, string> = {
+  mineur: "Mineur",
+  majeur: "Majeur",
+  critique: "Critique",
+};
+
+export const STATUTS_ECART: Record<string, string> = {
+  ouvert: "Ouvert",
+  en_cours: "En cours de traitement",
+  clos: "Clos",
+};
+
+/** Une action est corrective quand l'écart existe, préventive quand on l'anticipe. */
+export const NATURES_ACTION: Record<string, string> = {
+  corrective: "Corrective",
+  preventive: "Préventive",
+};
+
+/**
+ * Étapes d'une action. « Faite » ne suffit pas à clore : on vérifie ensuite
+ * qu'elle produit l'effet attendu, d'où l'étape « vérifiée ».
+ */
+export const STATUTS_ACTION: Record<string, string> = {
+  a_faire: "À faire",
+  en_cours: "En cours",
+  faite: "Faite",
+  verifiee: "Vérifiée",
+  abandonnee: "Abandonnée",
+};
+
+/** Une action reste à traiter tant qu'elle n'est ni vérifiée ni abandonnée. */
+export const STATUTS_ACTION_OUVERTS = ["a_faire", "en_cours", "faite"];

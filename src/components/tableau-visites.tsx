@@ -1,7 +1,9 @@
 import { supprimerVisite } from "@/actions/visites";
 import FormulaireVisite from "./formulaire-visite";
-import SelecteurStatutVisite from "./selecteur-statut-visite";
-import { STATUTS_VISITE_OUVERTS, TYPES_VISITE } from "@/lib/constantes";
+import SelecteurStatutGenerique from "./selecteur-statut-generique";
+import { COULEURS_VISITE, PASTILLES_VISITE } from "./statuts-monitorage";
+import { definirStatutVisite } from "@/actions/visites";
+import { STATUTS_VISITE, STATUTS_VISITE_OUVERTS, TYPES_VISITE } from "@/lib/constantes";
 import { formaterDate } from "@/lib/format";
 import type { Etude, Visite } from "@/db/schema";
 
@@ -95,7 +97,15 @@ export default function TableauVisites({
                 )}
 
                 <td className="px-3 py-3">
-                  <SelecteurStatutVisite id={visite.id} statut={visite.statut} />
+                  <SelecteurStatutGenerique
+                    id={visite.id}
+                    statut={visite.statut}
+                    libelles={STATUTS_VISITE}
+                    couleurs={COULEURS_VISITE}
+                    pastilles={PASTILLES_VISITE}
+                    enregistrer={definirStatutVisite}
+                    etiquette="Statut de la visite"
+                  />
                 </td>
 
                 <td className="chiffres px-3 py-3">

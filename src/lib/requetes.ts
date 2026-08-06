@@ -3,8 +3,10 @@ import { cache } from "react";
 import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  actionsCorrectives,
   checklistItems,
   documents,
+  ecarts,
   etudes,
   faq,
   pages,
@@ -629,4 +631,110 @@ export async function toutesLesVisites(filtres: { etudeId?: number | null; statu
 
 export async function visitesDEtude(etudeId: number) {
   return toutesLesVisites({ etudeId });
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Écarts et actions correctives                                             */
+/* -------------------------------------------------------------------------- */
+
+/** Les écarts, avec leur étude et le nombre d'actions ouvertes qu'ils portent. */
+export async function tousLesEcarts(
+  filtres: { etudeId?: number | null; statut?: string; gravite?: string } = {},
+) {
+  const id = await moi();
+  const conditions = [objetAccessible(ecarts.proprietaireId, ecarts.etudeId, id)];
+  if (filtres.etudeId) conditions.push(eq(ecarts.etudeId, filtres.etudeId));
+  if (filtres.statut) conditions.push(eq(ecarts.statut, filtres.statut));
+  if (filtres.gravite) conditions.push(eq(ecarts.gravite, filtres.gravite));
+
+  const lignes = await db
+    .select({
+      ecart: ecarts,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+    })
+    .from(ecarts)
+    .leftJoin(etudes, eq(ecarts.etudeId, etudes.id))
+    .where(and(...conditions))
+    // Les plus graves d'abord, puis les plus récents : c'est l'ordre dans
+    // lequel on veut les traiter, pas l'ordre de saisie.
+    .orderBy(
+      sql`case ${ecarts.gravite} when 'critique' then 0 when 'majeur' then 1 else 2 end`,
+      desc(ecarts.dateConstat),
+      desc(ecarts.creeLe),
+    );
+
+  // Compte des actions non closes, pour signaler un écart clos qui traîne
+  // encore des actions ouvertes.
+  const compteurs = await db
+    .select({
+      ecartId: actionsCorrectives.ecartId,
+      ouvertes: sql<number>`sum(case when ${actionsCorrectives.statut} in ('a_faire','en_cours','faite') then 1 else 0 end)`,
+      total: sql<number>`count(*)`,
+    })
+    .from(actionsCorrectives)
+    .where(objetAccessible(actionsCorrectives.proprietaireId, actionsCorrectives.etudeId, id))
+    .groupBy(actionsCorrectives.ecartId);
+
+  const parEcart = new Map(compteurs.map((c) => [c.ecartId, c]));
+
+  return lignes.map((l) => ({
+    ...l,
+    actionsOuvertes: parEcart.get(l.ecart.id)?.ouvertes ?? 0,
+    actionsTotal: parEcart.get(l.ecart.id)?.total ?? 0,
+  }));
+}
+
+/** Les actions correctives, avec leur étude et l'écart dont elles découlent. */
+export async function toutesLesActions(
+  filtres: { etudeId?: number | null; statut?: string; ecartId?: number | null } = {},
+) {
+  const id = await moi();
+  const conditions = [
+    objetAccessible(actionsCorrectives.proprietaireId, actionsCorrectives.etudeId, id),
+  ];
+  if (filtres.etudeId) conditions.push(eq(actionsCorrectives.etudeId, filtres.etudeId));
+  if (filtres.statut) conditions.push(eq(actionsCorrectives.statut, filtres.statut));
+  if (filtres.ecartId) conditions.push(eq(actionsCorrectives.ecartId, filtres.ecartId));
+
+  return db
+    .select({
+      action: actionsCorrectives,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+      ecartTitre: ecarts.titre,
+      ecartReference: ecarts.reference,
+    })
+    .from(actionsCorrectives)
+    .leftJoin(etudes, eq(actionsCorrectives.etudeId, etudes.id))
+    .leftJoin(ecarts, eq(actionsCorrectives.ecartId, ecarts.id))
+    .where(and(...conditions))
+    // Les échéances les plus proches d'abord ; celles sans date ferment la marche.
+    .orderBy(
+      sql`${actionsCorrectives.echeance} is null`,
+      asc(actionsCorrectives.echeance),
+      desc(actionsCorrectives.creeLe),
+    );
+}
+
+/** Écarts accessibles, en version courte : sert à les proposer dans un menu. */
+export async function ecartsPourChoix() {
+  const id = await moi();
+  return db
+    .select({ id: ecarts.id, titre: ecarts.titre, reference: ecarts.reference })
+    .from(ecarts)
+    .where(objetAccessible(ecarts.proprietaireId, ecarts.etudeId, id))
+    .orderBy(desc(ecarts.creeLe));
+}
+
+/** Visites accessibles, en version courte : sert à rattacher un écart. */
+export async function visitesPourChoix() {
+  const id = await moi();
+  return db
+    .select({ id: visites.id, type: visites.type, centre: visites.centre, date: visites.datePrevue })
+    .from(visites)
+    .where(objetAccessible(visites.proprietaireId, visites.etudeId, id))
+    .orderBy(desc(visites.datePrevue));
 }

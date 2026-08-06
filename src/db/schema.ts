@@ -280,6 +280,95 @@ export const visites = sqliteTable(
 export type Visite = typeof visites.$inferSelect;
 
 /**
+ * Un écart au protocole, ou à une procédure. Constaté en visite ou en dehors.
+ *
+ * On décrit ce qui n'a pas été fait comme prévu — pas qui en a fait l'objet.
+ */
+export const ecarts = sqliteTable(
+  "ecarts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
+    etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
+    /**
+     * Visite lors de laquelle l'écart a été relevé, s'il y en a une. Supprimer
+     * la visite ne supprime pas l'écart : il garde sa valeur propre.
+     */
+    visiteId: integer("visite_id").references(() => visites.id, { onDelete: "set null" }),
+    /** Référence interne, telle qu'elle figure au rapport de monitorage. */
+    reference: text("reference"),
+    titre: text("titre").notNull(),
+    description: text("description"),
+    centre: text("centre"),
+    // "protocole" | "consentement" | "produit" | "donnees" | "procedure" | "autre"
+    categorie: text("categorie").notNull().default("protocole"),
+    // "mineur" | "majeur" | "critique"
+    gravite: text("gravite").notNull().default("mineur"),
+    dateConstat: integer("date_constat"),
+    // "ouvert" | "en_cours" | "clos"
+    statut: text("statut").notNull().default("ouvert"),
+    dateCloture: integer("date_cloture"),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+    modifieLe: integer("modifie_le").notNull().default(maintenant),
+  },
+  (t) => [
+    index("idx_ecarts_etude").on(t.etudeId),
+    index("idx_ecarts_statut").on(t.statut),
+    index("idx_ecarts_visite").on(t.visiteId),
+  ],
+);
+
+export type Ecart = typeof ecarts.$inferSelect;
+
+/**
+ * Une action corrective ou préventive. Un même écart en appelle souvent
+ * plusieurs — d'où une table à part plutôt que des champs sur l'écart.
+ *
+ * Une action peut aussi exister seule : toutes ne naissent pas d'un écart
+ * constaté, certaines viennent d'un audit ou d'une revue.
+ */
+export const actionsCorrectives = sqliteTable(
+  "actions_correctives",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
+    etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
+    /** Écart à l'origine de l'action. Nul si elle vient d'ailleurs. */
+    ecartId: integer("ecart_id").references(() => ecarts.id, { onDelete: "cascade" }),
+    // "corrective" | "preventive"
+    nature: text("nature").notNull().default("corrective"),
+    titre: text("titre").notNull(),
+    description: text("description"),
+    /** Qui porte l'action. Du texte libre : ce n'est pas toujours un compte. */
+    responsable: text("responsable"),
+    echeance: integer("echeance"),
+    // "a_faire" | "en_cours" | "faite" | "verifiee" | "abandonnee"
+    statut: text("statut").notNull().default("a_faire"),
+    /**
+     * Vérification de l'efficacité : une action faite n'est close qu'une fois
+     * qu'on a constaté qu'elle produisait l'effet attendu.
+     */
+    efficacite: text("efficacite"),
+    dateCloture: integer("date_cloture"),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+    modifieLe: integer("modifie_le").notNull().default(maintenant),
+  },
+  (t) => [
+    index("idx_capa_etude").on(t.etudeId),
+    index("idx_capa_statut").on(t.statut),
+    index("idx_capa_ecart").on(t.ecartId),
+  ],
+);
+
+export type ActionCorrective = typeof actionsCorrectives.$inferSelect;
+
+/**
  * Un partage : une personne conviée sur une ressource dont elle n'est pas
  * propriétaire. Partager une étude donne accès à tout ce qui s'y rattache —
  * missions, documents, pages, FAQ, temps.

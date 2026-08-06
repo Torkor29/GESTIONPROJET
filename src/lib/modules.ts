@@ -99,9 +99,11 @@ export const MODULES: Module[] = [
   {
     cle: "ecarts",
     nom: "Écarts et déviations",
-    description: "Déviations au protocole, gravité, suites données.",
+    description:
+      "Déviations au protocole : catégorie, gravité, circonstances et suites données.",
     icone: "drapeau",
     domaine: "Monitorage et qualité",
+    href: "/ecarts",
     roles: ["arc", "cp"],
   },
   {
@@ -123,9 +125,11 @@ export const MODULES: Module[] = [
   {
     cle: "capa",
     nom: "Actions correctives",
-    description: "Du constat à la clôture : action, responsable, échéance.",
+    description:
+      "Du constat à la clôture : responsable, échéance, et vérification de l'efficacité.",
     icone: "eclair",
     domaine: "Monitorage et qualité",
+    href: "/actions",
     roles: ["arc", "cp"],
   },
 
