@@ -7,14 +7,7 @@ import type { Etude } from "@/db/schema";
 import { seDeconnecter } from "@/actions/session";
 import { Icone, type NomIcone } from "@/components/icones";
 
-const LIENS: { href: string; libelle: string; icone: NomIcone }[] = [
-  { href: "/", libelle: "Tableau de bord", icone: "graphique" },
-  { href: "/etudes", libelle: "Études", icone: "dossier" },
-  { href: "/missions", libelle: "Missions", icone: "drapeau" },
-  { href: "/documents", libelle: "Documents", icone: "document" },
-  { href: "/faq", libelle: "Base de connaissance", icone: "question" },
-  { href: "/temps", libelle: "Temps", icone: "chrono" },
-];
+export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
 
 function Marque() {
   return (
@@ -41,10 +34,13 @@ export default function BarreLaterale({
   etudes,
   nom,
   role,
+  liens,
 }: {
   etudes: Etude[];
   nom: string;
   role: string;
+  /** Construits côté serveur à partir des modules activés par la personne. */
+  liens: LienNavigation[];
 }) {
   const chemin = usePathname();
   const [ouvert, setOuvert] = useState(false);
@@ -103,7 +99,7 @@ export default function BarreLaterale({
         </div>
 
         <nav className="space-y-0.5 px-3">
-          {LIENS.map((l) => (
+          {liens.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -149,6 +145,32 @@ export default function BarreLaterale({
         </div>
 
         <div className="border-t border-ligne p-3">
+          <Link
+            href="/parametres"
+            aria-current={chemin === "/parametres" ? "page" : undefined}
+            className={`mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-200
+                        ${
+                          chemin === "/parametres"
+                            ? "bg-accent-voile font-semibold text-accent-appuye"
+                            : "font-medium text-attenue hover:bg-creux hover:text-encre"
+                        }`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-[18px] w-[18px] shrink-0"
+              aria-hidden
+            >
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+            </svg>
+            Modules
+          </Link>
+
           <div className="flex items-center gap-2.5 rounded-xl px-3 py-2">
             <span
               aria-hidden

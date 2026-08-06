@@ -17,6 +17,11 @@ export const utilisateurs = sqliteTable("utilisateurs", {
   nom: text("nom").notNull(),
   // "arc" | "tec" | "cp" | "autre"
   role: text("role").notNull().default("autre"),
+  /**
+   * Clés des modules activés, en JSON : ["missions","documents","temps"].
+   * Vide au départ : la sélection suggérée par le métier s'applique alors.
+   */
+  modules: text("modules"),
   /** Un compte désactivé conserve ses données mais ne peut plus se connecter. */
   actif: integer("actif", { mode: "boolean" }).notNull().default(true),
   creeLe: integer("cree_le").notNull().default(maintenant),

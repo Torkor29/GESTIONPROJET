@@ -13,6 +13,7 @@ import {
   motDePasseCorrespond,
   ouvrirSession,
 } from "@/lib/auth";
+import { modulesSuggeres } from "@/lib/modules";
 
 /**
  * React 19 réinitialise un formulaire dès que son action a tourné. Sans
@@ -98,20 +99,27 @@ export async function sInscrire(
     return { erreur: "Clé d'installation incorrecte.", ...saisi };
   }
 
+  const metier = ROLES.has(role) ? role : "autre";
+
   const cree = db
     .insert(utilisateurs)
     .values({
       email,
       nom,
       motDePasse: hacherMotDePasse(motDePasse),
-      role: ROLES.has(role) ? role : "autre",
+      role: metier,
+      // La sélection suggérée par le métier est figée dès la création : la
+      // personne arrive sur une navigation déjà pertinente, et peut l'ajuster.
+      modules: JSON.stringify(modulesSuggeres(metier)),
       derniereConnexion: Math.floor(Date.now() / 1000),
     })
     .returning({ id: utilisateurs.id })
     .get();
 
   await ouvrirSession(cree.id);
-  redirect("/");
+  // On arrive sur les modules : c'est le moment où l'on comprend le mieux ce
+  // que l'outil sait faire, et où l'on a envie d'ajuster.
+  redirect("/parametres");
 }
 
 export async function seDeconnecter(): Promise<void> {
