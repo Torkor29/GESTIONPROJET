@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const maintenant = sql`(unixepoch())`;
 
@@ -36,6 +36,10 @@ export type Utilisateur = typeof utilisateurs.$inferSelect;
  */
 export const etudes = sqliteTable("etudes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+  proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+    onDelete: "cascade",
+  }),
   nom: text("nom").notNull(),
   /** Acronyme court affiché comme étiquette : INASED, LIBERTY, PAPAYE… */
   code: text("code"),
@@ -78,6 +82,10 @@ export const pages = sqliteTable(
   "pages",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     parentId: integer("parent_id"),
     titre: text("titre").notNull().default("Sans titre"),
@@ -98,6 +106,10 @@ export const taches = sqliteTable(
   "taches",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     titre: text("titre").notNull(),
     notes: text("notes"),
@@ -122,6 +134,10 @@ export const temps = sqliteTable(
   "temps",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     tacheId: integer("tache_id").references(() => taches.id, { onDelete: "set null" }),
     description: text("description"),
@@ -141,6 +157,10 @@ export const documents = sqliteTable(
   "documents",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     nom: text("nom").notNull(),
     description: text("description"),
@@ -204,6 +224,10 @@ export const faq = sqliteTable(
   "faq",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     question: text("question").notNull(),
     reponse: text("reponse").notNull(),
@@ -215,6 +239,60 @@ export const faq = sqliteTable(
   (t) => [index("idx_faq_etude").on(t.etudeId)],
 );
 
+/**
+ * Un partage : une personne conviée sur une ressource dont elle n'est pas
+ * propriétaire. Partager une étude donne accès à tout ce qui s'y rattache —
+ * missions, documents, pages, FAQ, temps.
+ */
+export const partages = sqliteTable(
+  "partages",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    // "etude" | "page" | "tache"
+    type: text("type").notNull(),
+    ressourceId: integer("ressource_id").notNull(),
+    utilisateurId: integer("utilisateur_id")
+      .notNull()
+      .references(() => utilisateurs.id, { onDelete: "cascade" }),
+    // "lecture" | "ecriture"
+    niveau: text("niveau").notNull().default("lecture"),
+    /** Qui a convié. Sert à retracer l'origine d'un accès. */
+    partagePar: integer("partage_par").references(() => utilisateurs.id, {
+      onDelete: "set null",
+    }),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+  },
+  (t) => [
+    index("idx_partages_beneficiaire").on(t.utilisateurId, t.type),
+    // Une personne n'est conviée qu'une fois sur une même ressource : un
+    // second partage remplace le niveau plutôt que d'empiler des lignes.
+    uniqueIndex("idx_partages_unicite").on(t.type, t.ressourceId, t.utilisateurId),
+  ],
+);
+
+/**
+ * Une invitation à rejoindre l'instance. Faute de serveur de courrier, le
+ * lien est remis de la main à la main : le propriétaire le copie et l'envoie
+ * par ses propres moyens.
+ */
+export const invitations = sqliteTable("invitations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  /** Aléa signant le lien d'invitation. */
+  jeton: text("jeton").notNull().unique(),
+  email: text("email").notNull(),
+  // "arc" | "tec" | "cp" | "autre"
+  role: text("role").notNull().default("autre"),
+  inviteePar: integer("invitee_par").references(() => utilisateurs.id, {
+    onDelete: "cascade",
+  }),
+  expireLe: integer("expire_le").notNull(),
+  /** Renseigné à l'usage : une invitation ne sert qu'une fois. */
+  utiliseeLe: integer("utilisee_le"),
+  creeLe: integer("cree_le").notNull().default(maintenant),
+});
+
+export type Partage = typeof partages.$inferSelect;
+export type Invitation = typeof invitations.$inferSelect;
 export type Etude = typeof etudes.$inferSelect;
 export type Page = typeof pages.$inferSelect;
 export type Tache = typeof taches.$inferSelect;

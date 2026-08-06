@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { pages } from "@/db/schema";
+import { exigerAcces } from "@/lib/acces";
 import { exigerSession } from "@/lib/auth";
 
 const maintenant = () => Math.floor(Date.now() / 1000);
 
 export async function creerPage(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const etudeIdBrut = donnees.get("etudeId");
   const parentIdBrut = donnees.get("parentId");
@@ -18,6 +19,7 @@ export async function creerPage(donnees: FormData) {
   const [creee] = await db
     .insert(pages)
     .values({
+      proprietaireId: compte.id,
       etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
       parentId: parentIdBrut ? Number(parentIdBrut) : null,
       titre: String(donnees.get("titre") ?? "").trim() || "Sans titre",
@@ -36,8 +38,9 @@ export async function enregistrerPage(entree: {
   icone?: string;
   contenu?: string;
 }) {
-  await exigerSession();
+  const compte = await exigerSession();
   if (!entree.id) throw new Error("Page manquante.");
+  await exigerAcces("pages", entree.id, compte.id);
 
   const modifs: Record<string, unknown> = { modifieLe: maintenant() };
   if (entree.titre !== undefined) modifs.titre = entree.titre.trim() || "Sans titre";
@@ -57,10 +60,11 @@ export async function enregistrerPage(entree: {
 }
 
 export async function supprimerPage(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Page manquante.");
+  await exigerAcces("pages", id, compte.id);
 
   const [page] = await db
     .select({ etudeId: pages.etudeId })

@@ -8,7 +8,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { etudes } from "@/db/schema";
-import { estConnecte, exigerSession } from "@/lib/auth";
+import { exigerAcces } from "@/lib/acces";
+import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { TAILLE_MAX_OCTETS, dossierUploads, nomSur } from "@/lib/fichiers";
 import { depuisChampDate } from "@/lib/format";
 import { REFERENTIELS_PAR_CLE } from "@/lib/referentiels";
@@ -86,7 +87,8 @@ export async function creerEtude(
   let nouvelId: number;
 
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const champs = champsCommuns(donnees);
     if (!champs.nom) return { erreur: "Le nom de l'étude est obligatoire." };
@@ -99,7 +101,12 @@ export async function creerEtude(
 
     const [creee] = await db
       .insert(etudes)
-      .values({ ...champs, tarifHoraire: tarif.tarif, imageCouverture: couverture.url })
+      .values({
+        ...champs,
+        proprietaireId: compte.id,
+        tarifHoraire: tarif.tarif,
+        imageCouverture: couverture.url,
+      })
       .returning({ id: etudes.id });
 
     nouvelId = creee.id;
@@ -119,10 +126,12 @@ export async function modifierEtude(
   donnees: FormData,
 ): Promise<EtatFormulaire> {
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const id = Number(donnees.get("id"));
     if (!id) return { erreur: "Étude introuvable." };
+    await exigerAcces("etudes", id, compte.id);
 
     const champs = champsCommuns(donnees);
     if (!champs.nom) return { erreur: "Le nom de l'étude est obligatoire." };
@@ -164,20 +173,22 @@ export async function modifierEtude(
 
 /** Retire l'image de couverture d'une étude. */
 export async function retirerCouverture(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Étude manquante.");
+  await exigerAcces("etudes", id, compte.id);
 
   await db.update(etudes).set({ imageCouverture: null }).where(eq(etudes.id, id));
   revalidatePath("/", "layout");
 }
 
 export async function supprimerEtude(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Étude manquante.");
+  await exigerAcces("etudes", id, compte.id);
 
   // Pages, tâches, temps, documents, checklists et FAQ partent avec (CASCADE).
   await db.delete(etudes).where(eq(etudes.id, id));

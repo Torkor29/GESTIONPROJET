@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { taches } from "@/db/schema";
-import { estConnecte, exigerSession } from "@/lib/auth";
+import { exigerAcces } from "@/lib/acces";
+import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { depuisChampDate } from "@/lib/format";
 import { type EtatFormulaire, messageErreur } from "./etat";
 
@@ -15,7 +16,8 @@ export async function creerTache(
   donnees: FormData,
 ): Promise<EtatFormulaire> {
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const titre = String(donnees.get("titre") ?? "").trim();
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
@@ -23,6 +25,7 @@ export async function creerTache(
     const etudeIdBrut = donnees.get("etudeId");
 
     await db.insert(taches).values({
+      proprietaireId: compte.id,
       etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
       titre,
       notes: String(donnees.get("notes") ?? "").trim() || null,
@@ -42,11 +45,13 @@ export async function modifierTache(
   donnees: FormData,
 ): Promise<EtatFormulaire> {
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const id = Number(donnees.get("id"));
     const titre = String(donnees.get("titre") ?? "").trim();
     if (!id) return { erreur: "Tâche introuvable." };
+    await exigerAcces("taches", id, compte.id);
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
     const statut = String(donnees.get("statut") ?? "a_faire");
@@ -75,10 +80,11 @@ export async function modifierTache(
 
 /** Coche / décoche une tâche depuis la liste. */
 export async function basculerTache(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Tâche manquante.");
+  await exigerAcces("taches", id, compte.id);
 
   const [tache] = await db
     .select({ statut: taches.statut })
@@ -109,11 +115,12 @@ export async function basculerTache(donnees: FormData) {
  * l'enregistrement avait bien eu lieu.
  */
 export async function definirStatutTache(id: number, statut: string) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   if (!id || !["a_faire", "en_cours", "terminee"].includes(statut)) {
     throw new Error("Statut de mission invalide.");
   }
+  await exigerAcces("taches", id, compte.id);
 
   await db
     .update(taches)
@@ -128,10 +135,11 @@ export async function definirStatutTache(id: number, statut: string) {
 }
 
 export async function supprimerTache(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Tâche manquante.");
+  await exigerAcces("taches", id, compte.id);
 
   await db.delete(taches).where(eq(taches.id, id));
   revalidatePath("/", "layout");

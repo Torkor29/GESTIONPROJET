@@ -7,7 +7,8 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { documents } from "@/db/schema";
-import { estConnecte, exigerSession } from "@/lib/auth";
+import { exigerAcces } from "@/lib/acces";
+import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { TAILLE_MAX_OCTETS, dossierUploads, nomSur } from "@/lib/fichiers";
 import { depuisChampDate } from "@/lib/format";
 import { type EtatFormulaire, messageErreur } from "./etat";
@@ -18,7 +19,8 @@ export async function televerserDocument(
   donnees: FormData,
 ): Promise<EtatFormulaire> {
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const fichier = donnees.get("fichier");
     if (!(fichier instanceof File) || fichier.size === 0) {
@@ -42,6 +44,7 @@ export async function televerserDocument(
     const etudeIdBrut = donnees.get("etudeId");
 
     await db.insert(documents).values({
+      proprietaireId: compte.id,
       etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
       nom: String(donnees.get("nom") ?? "").trim() || fichier.name,
       description: String(donnees.get("description") ?? "").trim() || null,
@@ -67,10 +70,12 @@ export async function modifierDocument(
   donnees: FormData,
 ): Promise<EtatFormulaire> {
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const id = Number(donnees.get("id"));
     if (!id) return { erreur: "Document introuvable." };
+    await exigerAcces("documents", id, compte.id);
 
     const nom = String(donnees.get("nom") ?? "").trim();
     if (!nom) return { erreur: "Le nom du document est obligatoire." };
@@ -97,10 +102,11 @@ export async function modifierDocument(
 }
 
 export async function supprimerDocument(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Document manquant.");
+  await exigerAcces("documents", id, compte.id);
 
   const [doc] = await db
     .select({ nomFichier: documents.nomFichier })

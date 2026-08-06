@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { documents } from "@/db/schema";
-import { estConnecte } from "@/lib/auth";
+import { objetAccessible } from "@/lib/acces";
+import { utilisateurActuel } from "@/lib/auth";
 import { dossierUploads, enteteContentDisposition, nomSur } from "@/lib/fichiers";
 
 export const runtime = "nodejs";
@@ -17,15 +18,25 @@ export async function GET(
   requete: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await estConnecte())) {
+  const compte = await utilisateurActuel();
+  if (!compte) {
     return NextResponse.json({ erreur: "Non autorisé." }, { status: 401 });
   }
 
   const { id } = await params;
+  // Le filtre d'accès est dans la requête elle-même : être connecté ne suffit
+  // pas, il faut posséder le document ou être convié sur son étude. Sans ce
+  // filtre, n'importe quel compte téléchargerait les pièces d'un autre en
+  // faisant défiler les identifiants.
   const [doc] = await db
     .select()
     .from(documents)
-    .where(eq(documents.id, Number(id)))
+    .where(
+      and(
+        eq(documents.id, Number(id)),
+        objetAccessible(documents.proprietaireId, documents.etudeId, compte.id),
+      ),
+    )
     .limit(1);
 
   if (!doc) {

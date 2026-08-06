@@ -4,6 +4,7 @@ import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { checklistItems, etudes } from "@/db/schema";
+import { exigerAcces, exigerAccesChecklist } from "@/lib/acces";
 import { exigerSession } from "@/lib/auth";
 import { REFERENTIELS_PAR_CLE, lireReglementations } from "@/lib/referentiels";
 
@@ -82,10 +83,11 @@ export async function synchroniserChecklists(
 
 /** Coche ou décoche une ligne de checklist. */
 export async function basculerChecklist(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Ligne manquante.");
+  await exigerAccesChecklist(id, compte.id);
 
   const [ligne] = await db
     .select({ fait: checklistItems.fait })
@@ -109,10 +111,11 @@ export async function basculerChecklist(donnees: FormData) {
 
 /** Marque une ligne comme sans objet pour cette étude. */
 export async function basculerSansObjet(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Ligne manquante.");
+  await exigerAccesChecklist(id, compte.id);
 
   const [ligne] = await db
     .select({ sansObjet: checklistItems.sansObjet })
@@ -131,8 +134,9 @@ export async function basculerSansObjet(donnees: FormData) {
 
 /** Enregistre la note associée à une ligne de checklist. */
 export async function noterChecklist(entree: { id: number; notes: string }) {
-  await exigerSession();
+  const compte = await exigerSession();
   if (!entree.id) throw new Error("Ligne manquante.");
+  await exigerAccesChecklist(entree.id, compte.id);
 
   await db
     .update(checklistItems)
@@ -144,12 +148,13 @@ export async function noterChecklist(entree: { id: number; notes: string }) {
 
 /** Réinitialise un référentiel : remet les libellés à jour depuis la source. */
 export async function actualiserReferentiel(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const etudeId = Number(donnees.get("etudeId"));
   const cle = String(donnees.get("referentiel") ?? "");
   const ref = REFERENTIELS_PAR_CLE.get(cle);
   if (!etudeId || !ref) throw new Error("Référentiel introuvable.");
+  await exigerAcces("etudes", etudeId, compte.id);
 
   const clesActuelles = ref.items.map((i) => i.cle);
 

@@ -4,7 +4,8 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { temps } from "@/db/schema";
-import { estConnecte, exigerSession } from "@/lib/auth";
+import { exigerAcces } from "@/lib/acces";
+import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { analyserDuree, analyserHeure } from "@/lib/duree";
 import { depuisChampDate } from "@/lib/format";
 import { type EtatFormulaire, messageErreur } from "./etat";
@@ -16,10 +17,17 @@ const maintenant = () => Math.floor(Date.now() / 1000);
  * Un chrono arrêté en moins d'une minute est jeté plutôt qu'enregistré : c'est
  * un démarrage par erreur, et ça évite de polluer la liste de lignes à 0 min.
  */
-async function arreterChronosOuverts(): Promise<void> {
+/**
+ * Arrête les chronomètres encore ouverts **de cette personne**. Sans le
+ * filtre sur le propriétaire, démarrer un chronomètre arrêterait — et, sous la
+ * minute, supprimerait — celui d'un collègue.
+ */
+async function arreterChronosOuverts(utilisateurId: number): Promise<void> {
   const seuil = maintenant() - 60;
-  await db.delete(temps).where(and(isNull(temps.fin), gt(temps.debut, seuil)));
-  await db.update(temps).set({ fin: maintenant() }).where(isNull(temps.fin));
+  const sien = eq(temps.proprietaireId, utilisateurId);
+  // Un chronomètre arrêté en moins d'une minute est un clic accidentel.
+  await db.delete(temps).where(and(sien, isNull(temps.fin), gt(temps.debut, seuil)));
+  await db.update(temps).set({ fin: maintenant() }).where(and(sien, isNull(temps.fin)));
 }
 
 /**
@@ -27,14 +35,15 @@ async function arreterChronosOuverts(): Promise<void> {
  * arrêté automatiquement, on ne peut donc pas compter deux fois la même heure.
  */
 export async function demarrerChrono(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
-  await arreterChronosOuverts();
+  await arreterChronosOuverts(compte.id);
 
   const etudeIdBrut = donnees.get("etudeId");
   const tacheIdBrut = donnees.get("tacheId");
 
   await db.insert(temps).values({
+    proprietaireId: compte.id,
     etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
     tacheId: tacheIdBrut ? Number(tacheIdBrut) : null,
     description: String(donnees.get("description") ?? "").trim() || null,
@@ -46,15 +55,17 @@ export async function demarrerChrono(donnees: FormData) {
 }
 
 export async function arreterChrono() {
-  await exigerSession();
-  await arreterChronosOuverts();
+  const compte = await exigerSession();
+  await arreterChronosOuverts(compte.id);
   revalidatePath("/", "layout");
 }
 
-/** Annule le chronomètre en cours sans rien enregistrer. */
+/** Annule le chronomètre en cours sans rien enregistrer — le sien, pas celui d'un autre. */
 export async function annulerChrono() {
-  await exigerSession();
-  await db.delete(temps).where(isNull(temps.fin));
+  const compte = await exigerSession();
+  await db
+    .delete(temps)
+    .where(and(isNull(temps.fin), eq(temps.proprietaireId, compte.id)));
   revalidatePath("/", "layout");
 }
 
@@ -91,7 +102,8 @@ export async function ajouterTemps(
   donnees: FormData,
 ): Promise<EtatFormulaire> {
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const lu = lireSaisie(donnees);
     if (lu.erreur) return { erreur: lu.erreur };
@@ -99,6 +111,7 @@ export async function ajouterTemps(
     const tacheIdBrut = donnees.get("tacheId");
     await db.insert(temps).values({
       ...lu.valeurs,
+      proprietaireId: compte.id,
       tacheId: tacheIdBrut ? Number(tacheIdBrut) : null,
     });
 
@@ -114,10 +127,12 @@ export async function modifierTemps(
   donnees: FormData,
 ): Promise<EtatFormulaire> {
   try {
-    if (!(await estConnecte())) return { erreur: "Session expirée. Reconnectez-vous." };
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
 
     const id = Number(donnees.get("id"));
     if (!id) return { erreur: "Saisie introuvable." };
+    await exigerAcces("temps", id, compte.id);
 
     const lu = lireSaisie(donnees);
     if (lu.erreur) return { erreur: lu.erreur };
@@ -132,10 +147,11 @@ export async function modifierTemps(
 }
 
 export async function supprimerTemps(donnees: FormData) {
-  await exigerSession();
+  const compte = await exigerSession();
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Entrée manquante.");
+  await exigerAcces("temps", id, compte.id);
 
   await db.delete(temps).where(eq(temps.id, id));
   revalidatePath("/", "layout");
