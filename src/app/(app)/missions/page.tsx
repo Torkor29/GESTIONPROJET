@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FormulaireTache from "@/components/formulaire-tache";
+import MenuExport from "@/components/menu-export";
 import TableauMissions from "@/components/tableau-missions";
 import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 import { listerEtudes, toutesLesTaches } from "@/lib/requetes";
@@ -64,15 +65,14 @@ export default async function PageMissions({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a
-            href={`/api/export-missions?${new URLSearchParams(
-              Object.entries(params).filter(([, v]) => v) as [string, string][],
-            ).toString()}`}
-            className="bouton-discret"
-            download
-          >
-            ⬇ Exporter
-          </a>
+          <MenuExport
+            base="/api/export-missions"
+            parametres={
+              Object.fromEntries(
+                Object.entries(params).filter(([, v]) => v),
+              ) as Record<string, string>
+            }
+          />
           <FormulaireTache etudes={etudes} libelle="Nouvelle mission" />
         </div>
       </header>
@@ -103,7 +103,7 @@ export default async function PageMissions({
       </nav>
 
       {/* Filtres */}
-      <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
+      <form method="get" className="sans-impression carte flex flex-wrap items-end gap-3 p-4">
         <input type="hidden" name="vue" value={vue} />
 
         <div className="min-w-48 flex-1">

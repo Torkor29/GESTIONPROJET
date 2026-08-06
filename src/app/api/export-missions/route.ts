@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { estConnecte } from "@/lib/auth";
 import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 import { LIBELLES_PRIORITE } from "@/lib/format";
+import { horodatage, reponseCsv, versCsv } from "@/lib/export";
+import { formaterDate } from "@/lib/format";
 import { toutesLesTaches } from "@/lib/requetes";
 
 export const runtime = "nodejs";
@@ -29,6 +31,46 @@ export async function GET(requete: Request) {
     }
     return true;
   });
+
+  const maintenantCsv = Math.floor(Date.now() / 1000);
+
+  // Le CSV s'ouvre dans n'importe quel tableur et se retravaille sans effort ;
+  // le XLSX apporte la mise en forme et les filtres.
+  if (params.get("format") === "csv") {
+    const contenu = versCsv(
+      [
+        { entete: "Mission", valeur: (l) => l.tache.titre },
+        {
+          entete: "Étude",
+          valeur: (l) =>
+            l.etudeCode ? `${l.etudeCode} — ${l.etudeNom}` : (l.etudeNom ?? "Sans étude"),
+        },
+        {
+          entete: "Statut",
+          valeur: (l) => LIBELLES_STATUT_MISSION[l.tache.statut] ?? l.tache.statut,
+        },
+        {
+          entete: "Priorité",
+          valeur: (l) => LIBELLES_PRIORITE[l.tache.priorite] ?? l.tache.priorite,
+        },
+        { entete: "Échéance", valeur: (l) => (l.tache.echeance ? formaterDate(l.tache.echeance) : "") },
+        {
+          entete: "En retard",
+          valeur: (l) =>
+            l.tache.statut !== "terminee" && l.tache.echeance && l.tache.echeance < maintenantCsv
+              ? "OUI"
+              : "",
+        },
+        { entete: "Commentaire", valeur: (l) => l.tache.notes ?? "" },
+        {
+          entete: "Terminée le",
+          valeur: (l) => (l.tache.termineeLe ? formaterDate(l.tache.termineeLe) : ""),
+        },
+      ],
+      lignes,
+    );
+    return reponseCsv(contenu, `missions-${horodatage()}.csv`);
+  }
 
   const classeur = new ExcelJS.Workbook();
   classeur.creator = "Gestion de projet";

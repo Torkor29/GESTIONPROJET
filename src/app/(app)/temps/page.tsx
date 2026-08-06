@@ -1,5 +1,6 @@
 import { demarrerChrono, supprimerTemps } from "@/actions/temps";
 import FormulaireTemps from "@/components/formulaire-temps";
+import MenuExport from "@/components/menu-export";
 import { PastilleEtude } from "@/components/etiquettes";
 import {
   formaterDate,
@@ -58,13 +59,10 @@ export default async function PageTemps({
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-titre text-3xl font-bold">Temps</h1>
         <div className="flex flex-wrap gap-2">
-          <a
-            href={`/api/export?${parametresExport.toString()}`}
-            className="bouton-discret"
-            download
-          >
-            ⬇ Exporter en Excel
-          </a>
+          <MenuExport
+            base="/api/export"
+            parametres={Object.fromEntries(parametresExport.entries())}
+          />
           <FormulaireTemps etudes={etudes} libelle="Ajouter du temps" />
         </div>
       </header>
@@ -102,7 +100,7 @@ export default async function PageTemps({
         </form>
       </section>
 
-      <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
+      <form method="get" className="sans-impression carte flex flex-wrap items-end gap-3 p-4">
         <div>
           <label htmlFor="periode" className="mb-1.5 block text-xs text-attenue">
             Période

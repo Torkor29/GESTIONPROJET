@@ -40,7 +40,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
 
   if (!chrono) {
     return (
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
+      <div className="sans-impression pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
         <Link
           href="/temps"
           className="pointer-events-auto rounded-full border border-ligne bg-relief px-4 py-2.5 text-sm font-medium shadow-lg transition hover:border-accent/50 hover:text-accent"
@@ -52,7 +52,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
+    <div className="sans-impression pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
       <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-ligne bg-relief py-2 pl-4 pr-2 shadow-lg">
         <span
           aria-hidden

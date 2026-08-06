@@ -1,7 +1,8 @@
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { estConnecte } from "@/lib/auth";
-import { formaterDuree, heuresDecimales } from "@/lib/format";
+import { horodatage as dateDuJour, reponseCsv, versCsv } from "@/lib/export";
+import { formaterDate, formaterDuree, heuresDecimales } from "@/lib/format";
 import { resoudrePeriode } from "@/lib/periode";
 import { dureeMinutes, entreesTemps, totauxParEtude } from "@/lib/requetes";
 
@@ -36,6 +37,36 @@ export async function GET(requete: Request) {
     entreesTemps(filtres),
     totauxParEtude(filtres),
   ]);
+
+  if (url.searchParams.get("format") === "csv") {
+    const contenu = versCsv(
+      [
+        { entete: "Date", valeur: (l) => formaterDate(l.entree.debut) },
+        { entete: "Étude", valeur: (l) => l.etudeNom ?? "Sans étude" },
+        { entete: "Client", valeur: (l) => l.etudeClient ?? "" },
+        { entete: "Mission", valeur: (l) => l.tacheTitre ?? "" },
+        { entete: "Description", valeur: (l) => l.entree.description ?? "" },
+        { entete: "Durée", valeur: (l) => formaterDuree(dureeMinutes(l.entree)) },
+        // Les heures décimales servent à la facturation : on les donne avec la
+        // virgule décimale française, sinon Excel les lit comme du texte.
+        {
+          entete: "Heures décimales",
+          valeur: (l) => String(heuresDecimales(dureeMinutes(l.entree))).replace(".", ","),
+        },
+        {
+          entete: "Montant",
+          valeur: (l) =>
+            l.etudeTarif
+              ? String(
+                  Math.round(heuresDecimales(dureeMinutes(l.entree)) * l.etudeTarif * 100) / 100,
+                ).replace(".", ",")
+              : "",
+        },
+      ],
+      lignes,
+    );
+    return reponseCsv(contenu, `temps-${dateDuJour()}.csv`);
+  }
 
   const classeur = new ExcelJS.Workbook();
   classeur.creator = "Gestion de projet";

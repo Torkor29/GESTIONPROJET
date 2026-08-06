@@ -204,6 +204,105 @@ p {
   scrollbar-width: thin;
 }
 
+/* ---------------------------------------------------------------------------
+   Impression et export PDF
+   « Enregistrer au format PDF » du navigateur fait le travail : pagination,
+   en-têtes et numéros de page sont gérés nativement, sans bibliothèque à
+   embarquer ni calcul à faire tourner sur le serveur.
+--------------------------------------------------------------------------- */
+
+@media print {
+  @page {
+    margin: 15mm 12mm;
+  }
+
+  /* Le thème sombre à l'impression viderait une cartouche d'encre. */
+  :root {
+    --creux: 245 245 245;
+    --surface: 255 255 255;
+    --relief: 255 255 255;
+    --ligne: 210 210 210;
+    --ligne-forte: 170 170 170;
+    --encre: 0 0 0;
+    --attenue: 70 70 70;
+    --efface: 110 110 110;
+    --ombre-posee: none;
+    --ombre-douce: none;
+    --ombre-elevee: none;
+    color-scheme: light;
+  }
+
+  /* Navigation, boutons et halos n'ont rien à faire sur le papier. */
+  aside,
+  nav,
+  dialog,
+  .sans-impression,
+  button,
+  [role="button"] {
+    display: none !important;
+  }
+
+  /* La zone de contenu reprend toute la largeur. */
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  body {
+    background: #fff !important;
+    font-size: 10.5pt;
+  }
+
+  /* Un tableau ne défile pas sur du papier : il se déplie. */
+  .carte {
+    border-color: rgb(var(--ligne)) !important;
+    break-inside: avoid;
+  }
+
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Les en-têtes de tableau se répètent en haut de chaque page. */
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  li {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  /* Une adresse invisible à l'écran est utile sur une pièce archivée. */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: rgb(var(--efface));
+  }
+}
+
+/* Bloc réservé au papier : rappel de provenance sur un document archivé. */
+.impression-seule {
+  display: none;
+}
+
+@media print {
+  .impression-seule {
+    display: block;
+  }
+}
+
 /* Respecte le réglage système « réduire les animations ». */
 @media (prefers-reduced-motion: reduce) {
   *,

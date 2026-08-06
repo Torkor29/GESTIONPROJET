@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FormulaireDocument from "@/components/formulaire-document";
+import MenuExport from "@/components/menu-export";
 import ListeDocuments from "@/components/liste-documents";
 import { CATEGORIES_DOCUMENT, octetsLisibles } from "@/lib/constantes";
 import { listerEtudes, tousLesDocuments } from "@/lib/requetes";
@@ -40,10 +41,22 @@ export default async function PageDocuments({
             <span className="chiffres">{octetsLisibles(volumeTotal)}</span>
           </p>
         </div>
-        <FormulaireDocument etudes={etudes} libelle="Ajouter un document" />
+        <div className="flex flex-wrap gap-2">
+          <MenuExport
+            base="/api/export-documents"
+            parametres={
+              Object.fromEntries(
+                Object.entries({ etude: etudeId ? String(etudeId) : "", categorie: params.categorie ?? "" }).filter(
+                  ([, v]) => v,
+                ),
+              ) as Record<string, string>
+            }
+          />
+          <FormulaireDocument etudes={etudes} libelle="Ajouter un document" />
+        </div>
       </header>
 
-      <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
+      <form method="get" className="sans-impression carte flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-48 flex-1">
           <label htmlFor="q" className="mb-1.5 block text-xs text-attenue">
             Rechercher

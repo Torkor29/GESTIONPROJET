@@ -31,6 +31,17 @@ export default async function LayoutApplication({ children }: { children: React.
       <div className="min-w-0 flex-1">
         {/* pt-20 sur mobile : laisse la place à la barre supérieure fixe. */}
         <main className="mx-auto max-w-6xl px-4 pb-28 pt-20 sm:px-8 sm:pb-24 lg:pt-6">
+          {/* Une pièce imprimée ou archivée doit dire d'où elle vient et de
+              quand elle date : sans cela, un tirage retrouvé dans un classeur
+              six mois plus tard n'est plus interprétable. */}
+          <div className="impression-seule mb-4 border-b border-ligne pb-2 text-xs text-attenue">
+            Vigie — {compte.nom} — édité le{" "}
+            {new Date().toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </div>
           {children}
         </main>
       </div>

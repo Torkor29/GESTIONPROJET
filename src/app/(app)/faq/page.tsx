@@ -37,7 +37,7 @@ export default async function PageFaq({
         <FormulaireFaq etudes={etudes} libelle="Nouvelle question" />
       </header>
 
-      <form method="get" className="carte flex flex-wrap items-end gap-3 p-4">
+      <form method="get" className="sans-impression carte flex flex-wrap items-end gap-3 p-4">
         <div className="min-w-48 flex-1">
           <label htmlFor="q" className="mb-1.5 block text-xs text-attenue">
             Rechercher

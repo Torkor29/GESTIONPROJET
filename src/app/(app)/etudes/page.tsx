@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FormulaireEtude from "@/components/formulaire-etude";
+import MenuExport from "@/components/menu-export";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { formaterDuree } from "@/lib/format";
 import { listerEtudes, progressionParEtude, totauxParEtude } from "@/lib/requetes";
@@ -25,7 +26,10 @@ export default async function PageEtudes() {
             {etudes.length} {etudes.length > 1 ? "études" : "étude"}
           </p>
         </div>
-        <FormulaireEtude libelle="Nouvelle étude" />
+        <div className="flex flex-wrap gap-2">
+          <MenuExport base="/api/export-etudes" />
+          <FormulaireEtude libelle="Nouvelle étude" />
+        </div>
       </header>
 
       {etudes.length === 0 ? (
