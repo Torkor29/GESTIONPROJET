@@ -2,14 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { aucunCompte, estConnecte } from "@/lib/auth";
 import { Icone } from "@/components/icones";
-import FormulaireConnexion from "./formulaire";
+import FormulaireInscription from "./formulaire";
 
 export const dynamic = "force-dynamic";
 
-export default async function PageConnexion() {
+export default async function PageInscription() {
   if (await estConnecte()) redirect("/");
-  // Installation neuve : il n'y a encore personne, on va créer le compte.
-  if (aucunCompte()) redirect("/inscription");
+  // Une fois le premier compte créé, cette page n'a plus lieu d'être.
+  if (!aucunCompte()) redirect("/connexion");
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
@@ -18,32 +18,27 @@ export default async function PageConnexion() {
         className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[100px]"
       />
 
-      <div className="relative w-full max-w-sm animate-apparait">
+      <div className="relative w-full max-w-md animate-apparait">
         <div className="text-center">
           <Link
             href="/presentation"
             className="inline-flex items-center gap-2.5 font-titre text-lg font-bold tracking-tight"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sur-accent shadow-douce">
-              <Icone nom="eclair" className="h-4.5 w-4.5" />
+              <Icone nom="eclair" className="h-4 w-4" />
             </span>
             Vigie
           </Link>
-          <h1 className="mt-6 font-titre text-2xl font-bold">Bon retour</h1>
-          <p className="mt-1.5 text-sm text-attenue">
-            Connectez-vous pour accéder à vos études.
+          <h1 className="mt-6 font-titre text-2xl font-bold">Créer le compte propriétaire</h1>
+          <p className="mx-auto mt-1.5 max-w-sm text-sm text-attenue">
+            C&apos;est le premier compte de cette installation. Les suivants se
+            créeront sur invitation.
           </p>
         </div>
 
         <div className="mt-8">
-          <FormulaireConnexion />
+          <FormulaireInscription />
         </div>
-
-        <p className="mt-6 text-center text-sm text-efface">
-          <Link href="/presentation" className="transition-colors hover:text-accent">
-            Découvrir Vigie
-          </Link>
-        </p>
       </div>
     </main>
   );

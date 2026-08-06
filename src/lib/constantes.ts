@@ -1,5 +1,20 @@
 /** Libellés partagés entre le serveur et le navigateur. */
 
+/**
+ * Longueur minimale d'un mot de passe. Vit ici plutôt que dans `lib/auth`
+ * parce que le formulaire d'inscription, qui tourne dans le navigateur, ne
+ * peut pas importer un module touchant à la base ni à `node:crypto`.
+ */
+export const LONGUEUR_MOT_DE_PASSE = 10;
+
+/** Métiers proposés à l'inscription. Détermine les modules suggérés. */
+export const LIBELLES_ROLE: Record<string, string> = {
+  arc: "Attaché de recherche clinique",
+  tec: "Technicien d'étude clinique",
+  cp: "Chef de projet",
+  autre: "Autre",
+};
+
 /** Catégories de documents, calquées sur le contenu réel d'un TMF. */
 export const CATEGORIES_DOCUMENT: Record<string, string> = {
   protocole: "Protocole et amendements",

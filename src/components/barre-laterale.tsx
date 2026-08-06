@@ -27,7 +27,25 @@ function Marque() {
   );
 }
 
-export default function BarreLaterale({ etudes }: { etudes: Etude[] }) {
+/** Initiales tirées du nom, pour la pastille d'identité. */
+function initiales(nom: string): string {
+  return nom
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((m) => m[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export default function BarreLaterale({
+  etudes,
+  nom,
+  role,
+}: {
+  etudes: Etude[];
+  nom: string;
+  role: string;
+}) {
   const chemin = usePathname();
   const [ouvert, setOuvert] = useState(false);
 
@@ -130,11 +148,25 @@ export default function BarreLaterale({ etudes }: { etudes: Etude[] }) {
           ))}
         </div>
 
-        <form action={seDeconnecter} className="border-t border-ligne p-3">
-          <button
-            type="submit"
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium text-attenue transition-all duration-200 hover:bg-creux hover:text-encre"
-          >
+        <div className="border-t border-ligne p-3">
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2">
+            <span
+              aria-hidden
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-voile font-titre text-xs font-bold text-accent-appuye"
+            >
+              {initiales(nom)}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold">{nom}</span>
+              <span className="block truncate text-xs text-efface">{role}</span>
+            </span>
+          </div>
+
+          <form action={seDeconnecter}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium text-attenue transition-all duration-200 hover:bg-creux hover:text-encre"
+            >
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -145,11 +177,12 @@ export default function BarreLaterale({ etudes }: { etudes: Etude[] }) {
               className="h-[18px] w-[18px] shrink-0"
               aria-hidden
             >
-              <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
-            </svg>
-            Se déconnecter
-          </button>
-        </form>
+                <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
+              </svg>
+              Se déconnecter
+            </button>
+          </form>
+        </div>
       </aside>
     </>
   );

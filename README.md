@@ -84,9 +84,14 @@ nano .env
 Deux valeurs à renseigner :
 
 ```bash
-MOT_DE_PASSE=votre-mot-de-passe-long-et-unique
+MOT_DE_PASSE=votre-cle-d-installation-longue-et-unique
 SECRET_SESSION=<coller ici le résultat de : openssl rand -hex 32>
 ```
+
+`MOT_DE_PASSE` est la **clé d'installation** : elle n'ouvre pas l'application,
+elle autorise seulement la création du tout premier compte. Vous la saisirez
+une fois, à la création de votre compte, puis vous vous connecterez avec votre
+adresse et votre propre mot de passe.
 
 Générez la clé de session avec :
 
@@ -116,7 +121,10 @@ marqué `secure` que lorsqu'un domaine est configuré).
 docker compose up -d --build
 ```
 
-C'est tout. Ouvrez `https://votre-domaine` et saisissez votre mot de passe.
+C'est tout. Ouvrez `https://votre-domaine` : l'écran de création de compte
+s'affiche. Renseignez votre nom, votre adresse, un mot de passe et la clé
+d'installation. Une fois ce compte créé, l'écran d'inscription se referme —
+les comptes suivants passeront par une invitation.
 
 La base de données est créée automatiquement au premier démarrage ; il n'y a
 aucune commande de migration à lancer.
@@ -237,7 +245,10 @@ src/
   pas sous vos pieds. La mise à jour est explicite, via un bouton.
 - **Migrations au démarrage** : `docker compose up` suffit, jamais de commande
   manuelle à ne pas oublier.
-- **Un seul mot de passe**, pas de comptes : l'outil est mono-utilisateur.
+- **Comptes individuels** : chacun sa session, son mot de passe (haché avec
+  scrypt et un sel propre) et son métier. Le jeton de session porte
+  l'identifiant du compte et il est resigné à chaque connexion ; un compte
+  désactivé perd l'accès immédiatement, sans attendre l'expiration du cookie.
 
 **Deux pièges contournés, à connaître si vous reprenez le code :**
 

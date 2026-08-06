@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { seConnecter } from "@/actions/session";
 
@@ -15,9 +15,29 @@ function BoutonEnvoyer() {
 
 export default function FormulaireConnexion() {
   const [etat, action] = useActionState(seConnecter, {});
+  // Piloté par l'état : React 19 vide le formulaire après chaque tentative,
+  // et retaper son adresse à chaque essai serait pénible.
+  const [email, setEmail] = useState(etat.valeurs?.email ?? "");
 
   return (
     <form action={action} className="carte space-y-4 p-6 !shadow-douce">
+      <div>
+        <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
+          Adresse électronique
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="username"
+          autoFocus
+          required
+          className="champ"
+        />
+      </div>
+
       <div>
         <label htmlFor="motDePasse" className="mb-1.5 block text-sm font-medium">
           Mot de passe
@@ -27,7 +47,6 @@ export default function FormulaireConnexion() {
           name="motDePasse"
           type="password"
           autoComplete="current-password"
-          autoFocus
           required
           className="champ"
         />

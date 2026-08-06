@@ -4,6 +4,28 @@ import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core
 const maintenant = sql`(unixepoch())`;
 
 /**
+ * Une personne qui se connecte. Chacune a sa session, son mot de passe et son
+ * métier — ce dernier détermine les modules qui lui sont proposés.
+ *
+ * Le mot de passe est stocké sous la forme « sel:empreinte », jamais en clair.
+ */
+export const utilisateurs = sqliteTable("utilisateurs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  /** Sert d'identifiant de connexion. Toujours rangé en minuscules. */
+  email: text("email").notNull().unique(),
+  motDePasse: text("mot_de_passe").notNull(),
+  nom: text("nom").notNull(),
+  // "arc" | "tec" | "cp" | "autre"
+  role: text("role").notNull().default("autre"),
+  /** Un compte désactivé conserve ses données mais ne peut plus se connecter. */
+  actif: integer("actif", { mode: "boolean" }).notNull().default(true),
+  creeLe: integer("cree_le").notNull().default(maintenant),
+  derniereConnexion: integer("derniere_connexion"),
+});
+
+export type Utilisateur = typeof utilisateurs.$inferSelect;
+
+/**
  * Une étude = un dossier de travail (un projet, un client, un chantier).
  * Tout le reste — pages, tâches, temps — s'y rattache.
  */
