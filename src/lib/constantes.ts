@@ -136,3 +136,23 @@ export const STATUTS_ACTION: Record<string, string> = {
 
 /** Une action reste à traiter tant qu'elle n'est ni vérifiée ni abandonnée. */
 export const STATUTS_ACTION_OUVERTS = ["a_faire", "en_cours", "faite"];
+
+/** Types de document contractuel rattaché à une étude. */
+export const TYPES_CONVENTION: Record<string, string> = {
+  convention: "Convention",
+  avenant: "Avenant",
+  cta: "Contrat unique / CTA",
+  autre: "Autre contrat",
+};
+
+/** Cycle de vie d'une convention, de la négociation au solde. */
+export const STATUTS_CONVENTION: Record<string, string> = {
+  en_negociation: "En négociation",
+  signee: "Signée",
+  en_cours: "Facturation en cours",
+  soldee: "Soldée",
+  annulee: "Annulée",
+};
+
+/** Une convention reste à suivre tant qu'elle n'est ni soldée ni annulée. */
+export const STATUTS_CONVENTION_OUVERTS = ["en_negociation", "signee", "en_cours"];

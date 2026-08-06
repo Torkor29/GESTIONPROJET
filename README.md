@@ -20,6 +20,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 | **Pages** | Éditeur riche façon Notion (titres, listes, tableaux, images), sauvegarde automatique |
 | **Temps** | Chronomètre en un clic ou saisie manuelle (`1h30`, `1:30`, `90min`, `1,5`), export Excel valorisé |
 | **Monitorage** | Visites planifiées et réalisées par centre ; écarts et déviations avec gravité ; actions correctives jusqu'à vérification de leur efficacité |
+| **Budget** | Conventions et avenants : montant contractualisé, déjà perçu, reste à percevoir, échéances dépassées |
 | **Portefeuille** | L'état de chaque étude en une ligne — missions, visites, écarts, actions, conformité — et la charge de chacun sur les études que vous portez |
 | **Indicateurs** | Charge, retards, respect des échéances, conformité par référentiel, tendances du temps et des missions |
 | **Exports** | Chaque tableau s'exporte en Excel, en CSV ou en PDF (via l'impression du navigateur) |

@@ -261,9 +261,11 @@ export const MODULES: Module[] = [
   {
     cle: "budget",
     nom: "Budget et conventions",
-    description: "Conventions, avenants et versements reçus.",
+    description:
+      "Conventions et avenants : montant contractualisé, déjà perçu, reste à percevoir.",
     icone: "document",
     domaine: "Administratif et financier",
+    href: "/budget",
     roles: ["cp"],
   },
   {

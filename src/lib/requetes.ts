@@ -1,10 +1,12 @@
 import "server-only";
 import { cache } from "react";
 import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
   actionsCorrectives,
   checklistItems,
+  conventions,
   partages,
   utilisateurs,
   documents,
@@ -901,4 +903,55 @@ export async function equipeParEtude(): Promise<Map<number, { nom: string; nivea
     parEtude.set(l.etudeId, [...(parEtude.get(l.etudeId) ?? []), { nom: l.nom, niveau: l.niveau }]);
   }
   return parEtude;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Conventions et budget                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Les conventions, avec leur étude et le nom de la convention parente. */
+export async function toutesLesConventions(
+  filtres: { etudeId?: number | null; statut?: string } = {},
+) {
+  const id = await moi();
+  const conditions = [objetAccessible(conventions.proprietaireId, conventions.etudeId, id)];
+  if (filtres.etudeId) conditions.push(eq(conventions.etudeId, filtres.etudeId));
+  if (filtres.statut) conditions.push(eq(conventions.statut, filtres.statut));
+
+  const parent = alias(conventions, "parent");
+
+  return db
+    .select({
+      convention: conventions,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+      parentReference: parent.reference,
+      parentType: parent.type,
+    })
+    .from(conventions)
+    .leftJoin(etudes, eq(conventions.etudeId, etudes.id))
+    .leftJoin(parent, eq(conventions.parentId, parent.id))
+    .where(and(...conditions))
+    // Les échéances les plus proches d'abord ; celles sans date ferment la marche.
+    .orderBy(
+      sql`${conventions.dateEcheance} is null`,
+      asc(conventions.dateEcheance),
+      desc(conventions.creeLe),
+    );
+}
+
+/** Conventions accessibles, en version courte : sert à rattacher un avenant. */
+export async function conventionsPourChoix() {
+  const id = await moi();
+  return db
+    .select({
+      id: conventions.id,
+      type: conventions.type,
+      reference: conventions.reference,
+      partie: conventions.partie,
+    })
+    .from(conventions)
+    .where(objetAccessible(conventions.proprietaireId, conventions.etudeId, id))
+    .orderBy(desc(conventions.creeLe));
 }

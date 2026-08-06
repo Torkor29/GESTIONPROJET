@@ -369,6 +369,49 @@ export const actionsCorrectives = sqliteTable(
 export type ActionCorrective = typeof actionsCorrectives.$inferSelect;
 
 /**
+ * Une convention, un avenant ou un contrat rattaché à une étude.
+ *
+ * Le suivi financier tient en deux montants : ce qui est prévu et ce qui est
+ * arrivé. Le reste à percevoir s'en déduit — inutile d'une table de versements
+ * tant qu'on ne suit pas chaque échéance séparément.
+ */
+export const conventions = sqliteTable(
+  "conventions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
+    etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
+    /** Convention initiale dont ce document est l'avenant, le cas échéant. */
+    parentId: integer("parent_id"),
+    // "convention" | "avenant" | "cta" | "autre"
+    type: text("type").notNull().default("convention"),
+    reference: text("reference"),
+    /** Avec qui elle est passée : promoteur, CRO, centre associé… */
+    partie: text("partie"),
+    /** Montants en euros. `real` suffit : on suit des budgets, pas des écritures comptables. */
+    montantTotal: real("montant_total"),
+    montantRecu: real("montant_recu").notNull().default(0),
+    dateSignature: integer("date_signature"),
+    /** Échéance de la dernière facturation attendue. */
+    dateEcheance: integer("date_echeance"),
+    // "en_negociation" | "signee" | "en_cours" | "soldee" | "annulee"
+    statut: text("statut").notNull().default("en_negociation"),
+    notes: text("notes"),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+    modifieLe: integer("modifie_le").notNull().default(maintenant),
+  },
+  (t) => [
+    index("idx_conventions_etude").on(t.etudeId),
+    index("idx_conventions_statut").on(t.statut),
+  ],
+);
+
+export type Convention = typeof conventions.$inferSelect;
+
+/**
  * Un partage : une personne conviée sur une ressource dont elle n'est pas
  * propriétaire. Partager une étude donne accès à tout ce qui s'y rattache —
  * missions, documents, pages, FAQ, temps.

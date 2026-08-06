@@ -120,3 +120,26 @@ export const LIBELLES_PRIORITE: Record<string, string> = {
   normale: "Normale",
   haute: "Haute",
 };
+
+/**
+ * Lit un montant saisi à la française : « 12 500,50 », « 12500.5 », « 1 200 € ».
+ *
+ * Sans cela, une virgule décimale — l'usage courant en France — produirait
+ * `NaN` et le montant serait perdu sans que rien ne le signale.
+ * Rend `null` si la saisie est vide, `undefined` si elle est illisible.
+ */
+export function analyserMontant(saisie: string): number | null | undefined {
+  const nettoye = saisie
+    .replace(/[\s  ]/g, "") // espaces, y compris insécables
+    .replace(/€/g, "")
+    .replace(",", ".")
+    .trim();
+
+  if (nettoye === "") return null;
+
+  const valeur = Number(nettoye);
+  if (!Number.isFinite(valeur) || valeur < 0) return undefined;
+
+  // Deux décimales : au-delà, on manipule des centimes qui n'existent pas.
+  return Math.round(valeur * 100) / 100;
+}
