@@ -7,6 +7,9 @@ import { etudeAccessible, idsEtudesAccessibles, objetAccessible } from "./acces"
 import { utilisateurActuel } from "./auth";
 import { debutDeMois, debutDeSemaine } from "./format";
 
+/** Une semaine en jours : évite un 7 magique au milieu des calculs de fenêtre. */
+const SECONDES_SEMAINE_JOURS = 86400;
+
 /**
  * Identifiant de la personne connectée.
  *
@@ -374,4 +377,217 @@ export async function totauxParEtude(filtres: FiltresTemps = {}) {
   return [...parEtude.entries()]
     .map(([id, v]) => ({ etudeId: id, ...v }))
     .sort((a, b) => b.minutes - a.minutes);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Indicateurs                                                               */
+/* -------------------------------------------------------------------------- */
+
+/** Un point de tendance : une période, et ce qu'on y a mesuré. */
+export type PointTendance = { debut: number; valeur: number };
+
+/**
+ * Minutes saisies par semaine, sur les N dernières semaines.
+ *
+ * L'agrégation se fait en JavaScript plutôt qu'en SQL : `strftime('%W')` de
+ * SQLite ne suit pas la numérotation ISO des semaines, et un décalage d'un jour
+ * en janvier fausserait la première barre.
+ */
+export async function tempsParSemaine(nbSemaines = 12): Promise<PointTendance[]> {
+  const id = await moi();
+  const maintenant = Math.floor(Date.now() / 1000);
+  const premiere = debutDeSemaine(maintenant) - (nbSemaines - 1) * 7 * SECONDES_SEMAINE_JOURS;
+
+  const lignes = await db
+    .select({ debut: temps.debut, fin: temps.fin })
+    .from(temps)
+    .where(
+      and(
+        eq(temps.proprietaireId, id),
+        sql`${temps.fin} is not null`,
+        gte(temps.debut, premiere),
+      ),
+    );
+
+  // Toutes les semaines de la fenêtre existent, même vides : un trou dans la
+  // série se lit comme « aucun temps saisi », pas comme une semaine manquante.
+  const paniers = new Map<number, number>();
+  for (let i = 0; i < nbSemaines; i++) {
+    paniers.set(premiere + i * 7 * SECONDES_SEMAINE_JOURS, 0);
+  }
+  for (const l of lignes) {
+    const semaine = debutDeSemaine(l.debut);
+    if (paniers.has(semaine)) {
+      paniers.set(semaine, (paniers.get(semaine) ?? 0) + dureeMinutes(l));
+    }
+  }
+
+  return [...paniers.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([debut, valeur]) => ({ debut, valeur }));
+}
+
+/** Missions créées et terminées, mois par mois. */
+export type FluxMois = { debut: number; creees: number; terminees: number };
+
+export async function fluxMissionsParMois(nbMois = 6): Promise<FluxMois[]> {
+  const id = await moi();
+  const maintenant = Math.floor(Date.now() / 1000);
+
+  // On remonte mois par mois plutôt qu'en soustrayant 30 jours : les mois n'ont
+  // pas tous la même durée, et l'écart décalerait les paniers.
+  const debuts: number[] = [];
+  const curseur = new Date(debutDeMois(maintenant) * 1000);
+  for (let i = 0; i < nbMois; i++) {
+    debuts.unshift(Math.floor(curseur.getTime() / 1000));
+    curseur.setMonth(curseur.getMonth() - 1);
+  }
+  const premier = debuts[0];
+
+  const lignes = await db
+    .select({ creeLe: taches.creeLe, termineeLe: taches.termineeLe })
+    .from(taches)
+    .where(
+      and(
+        objetAccessible(taches.proprietaireId, taches.etudeId, id),
+        sql`(${taches.creeLe} >= ${premier} or ${taches.termineeLe} >= ${premier})`,
+      ),
+    );
+
+  const paniers = new Map<number, { creees: number; terminees: number }>(
+    debuts.map((d) => [d, { creees: 0, terminees: 0 }]),
+  );
+
+  /** Rattache un instant au début de son mois, s'il est dans la fenêtre. */
+  const panier = (instant: number | null) => {
+    if (!instant) return null;
+    const mois = debutDeMois(instant);
+    return paniers.get(mois) ?? null;
+  };
+
+  for (const l of lignes) {
+    const creation = panier(l.creeLe);
+    if (creation) creation.creees += 1;
+    const fin = panier(l.termineeLe);
+    if (fin) fin.terminees += 1;
+  }
+
+  return debuts.map((debut) => ({ debut, ...paniers.get(debut)! }));
+}
+
+/** Avancement de chaque référentiel réglementaire, toutes études confondues. */
+export async function progressionParReferentiel(): Promise<Map<string, Progression>> {
+  const id = await moi();
+  const lignes = await db
+    .select({
+      referentiel: checklistItems.referentiel,
+      fait: checklistItems.fait,
+      sansObjet: checklistItems.sansObjet,
+    })
+    .from(checklistItems)
+    .where(sql`${checklistItems.etudeId} in ${idsEtudesAccessibles(id)}`);
+
+  const parRef = new Map<string, { fait: boolean; sansObjet: boolean }[]>();
+  for (const l of lignes) {
+    parRef.set(l.referentiel, [...(parRef.get(l.referentiel) ?? []), l]);
+  }
+  return new Map([...parRef.entries()].map(([cle, l]) => [cle, progression(l)]));
+}
+
+/** Une ligne du tableau de bord par étude : l'essentiel en un coup d'œil. */
+export type SyntheseEtude = {
+  id: number;
+  nom: string;
+  code: string | null;
+  couleur: string;
+  statut: string;
+  missionsOuvertes: number;
+  missionsEnRetard: number;
+  conformite: number | null;
+  minutes: number;
+  documents: number;
+};
+
+export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
+  const maintenant = Math.floor(Date.now() / 1000);
+
+  const [etudesLues, missions, progressions, docs, tempsLu] = await Promise.all([
+    listerEtudes({ avecArchivees: true }),
+    toutesLesTaches(),
+    progressionParEtude(),
+    tousLesDocuments({}),
+    entreesTemps(),
+  ]);
+
+  const compter = <T>(liste: T[], cle: (x: T) => number | null | undefined) => {
+    const m = new Map<number, number>();
+    for (const x of liste) {
+      const k = cle(x);
+      if (k) m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  };
+
+  const ouvertes = compter(
+    missions.filter(({ tache }) => tache.statut !== "terminee"),
+    ({ tache }) => tache.etudeId,
+  );
+  const enRetard = compter(
+    missions.filter(
+      ({ tache }) =>
+        tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant,
+    ),
+    ({ tache }) => tache.etudeId,
+  );
+  const nbDocs = compter(docs, (d) => d.document.etudeId);
+
+  const minutes = new Map<number, number>();
+  for (const l of tempsLu) {
+    const k = l.entree.etudeId;
+    if (k) minutes.set(k, (minutes.get(k) ?? 0) + dureeMinutes(l.entree));
+  }
+
+  return etudesLues.map((e) => {
+    const p = progressions.get(e.id);
+    return {
+      id: e.id,
+      nom: e.nom,
+      code: e.code,
+      couleur: e.couleur,
+      statut: e.statut,
+      missionsOuvertes: ouvertes.get(e.id) ?? 0,
+      missionsEnRetard: enRetard.get(e.id) ?? 0,
+      conformite: p && p.total > 0 ? p.pourcentage : null,
+      minutes: minutes.get(e.id) ?? 0,
+      documents: nbDocs.get(e.id) ?? 0,
+    };
+  });
+}
+
+/** Respect des échéances : parmi les missions terminées, celles rendues à temps. */
+export async function respectDesEcheances(): Promise<{
+  aLHeure: number;
+  enRetard: number;
+  pourcentage: number | null;
+}> {
+  const id = await moi();
+  const lignes = await db
+    .select({ echeance: taches.echeance, termineeLe: taches.termineeLe })
+    .from(taches)
+    .where(
+      and(
+        objetAccessible(taches.proprietaireId, taches.etudeId, id),
+        eq(taches.statut, "terminee"),
+        sql`${taches.echeance} is not null`,
+        sql`${taches.termineeLe} is not null`,
+      ),
+    );
+
+  const aLHeure = lignes.filter((l) => (l.termineeLe ?? 0) <= (l.echeance ?? 0)).length;
+  const enRetard = lignes.length - aLHeure;
+  return {
+    aLHeure,
+    enRetard,
+    pourcentage: lignes.length > 0 ? Math.round((aLHeure / lignes.length) * 100) : null,
+  };
 }

@@ -19,6 +19,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 | **Base de connaissance** | FAQ générale ou propre à une étude, classée par thème |
 | **Pages** | Éditeur riche façon Notion (titres, listes, tableaux, images), sauvegarde automatique |
 | **Temps** | Chronomètre en un clic ou saisie manuelle (`1h30`, `1:30`, `90min`, `1,5`), export Excel valorisé |
+| **Indicateurs** | Charge, retards, respect des échéances, conformité par référentiel, tendances du temps et des missions |
 | **Exports** | Chaque tableau s'exporte en Excel, en CSV ou en PDF (via l'impression du navigateur) |
 | **Comptes et partage** | Chacun sa session et ses modules ; une étude se partage en lecture ou en écriture, et n'est visible que de son propriétaire et des personnes conviées |
 

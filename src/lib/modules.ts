@@ -297,10 +297,13 @@ export const MODULES: Module[] = [
   {
     cle: "indicateurs",
     nom: "Indicateurs",
-    description: "Métriques par module, présentables en réunion.",
+    description:
+      "Charge, retards, conformité réglementaire et tendances — des chiffres présentables en réunion.",
     icone: "graphique",
     domaine: "Management",
-    roles: ["cp"],
+    href: "/indicateurs",
+    // Utile à tous les métiers : un ARC y suit ses écarts, un TEC sa charge.
+    roles: TOUS,
   },
 ];
 
