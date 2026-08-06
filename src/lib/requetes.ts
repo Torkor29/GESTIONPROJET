@@ -2,7 +2,16 @@ import "server-only";
 import { cache } from "react";
 import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { checklistItems, documents, etudes, faq, pages, taches, temps } from "@/db/schema";
+import {
+  checklistItems,
+  documents,
+  etudes,
+  faq,
+  pages,
+  taches,
+  temps,
+  visites,
+} from "@/db/schema";
 import { etudeAccessible, idsEtudesAccessibles, objetAccessible } from "./acces";
 import { utilisateurActuel } from "./auth";
 import { debutDeMois, debutDeSemaine } from "./format";
@@ -590,4 +599,34 @@ export async function respectDesEcheances(): Promise<{
     enRetard,
     pourcentage: lignes.length > 0 ? Math.round((aLHeure / lignes.length) * 100) : null,
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Visites de monitorage                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Les visites, avec l'étude à laquelle elles se rattachent. */
+export async function toutesLesVisites(filtres: { etudeId?: number | null; statut?: string } = {}) {
+  const id = await moi();
+  const conditions = [objetAccessible(visites.proprietaireId, visites.etudeId, id)];
+  if (filtres.etudeId) conditions.push(eq(visites.etudeId, filtres.etudeId));
+  if (filtres.statut) conditions.push(eq(visites.statut, filtres.statut));
+
+  return db
+    .select({
+      visite: visites,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+    })
+    .from(visites)
+    .leftJoin(etudes, eq(visites.etudeId, etudes.id))
+    // Les visites à venir d'abord, du plus proche au plus lointain ; celles
+    // sans date prévue ferment la marche plutôt que d'ouvrir la liste.
+    .where(and(...conditions))
+    .orderBy(sql`${visites.datePrevue} is null`, asc(visites.datePrevue), desc(visites.creeLe));
+}
+
+export async function visitesDEtude(etudeId: number) {
+  return toutesLesVisites({ etudeId });
 }

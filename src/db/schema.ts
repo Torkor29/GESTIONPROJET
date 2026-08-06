@@ -240,6 +240,46 @@ export const faq = sqliteTable(
 );
 
 /**
+ * Une visite de monitorage. Le cœur du travail d'ARC : on planifie, on
+ * réalise, on rédige un rapport, on envoie une lettre de suivi, on clôt.
+ *
+ * Aucune donnée de participant n'y figure — on suit le déroulé de la visite,
+ * pas ce qu'on y a vu du dossier d'un patient.
+ */
+export const visites = sqliteTable(
+  "visites",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
+    etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
+    // "mise_en_place" | "routine" | "cloture" | "declenchee" | "a_distance"
+    type: text("type").notNull().default("routine"),
+    /** Centre investigateur visité : nom ou numéro, tel qu'il est désigné. */
+    centre: text("centre"),
+    /** Qui conduit la visite. Souvent soi, parfois un collègue ou un prestataire. */
+    monitorNom: text("monitor_nom"),
+    datePrevue: integer("date_prevue"),
+    dateRealisee: integer("date_realisee"),
+    // "planifiee" | "realisee" | "rapport_redige" | "lettre_envoyee" | "cloturee" | "annulee"
+    statut: text("statut").notNull().default("planifiee"),
+    /** Date d'envoi de la lettre de suivi : le délai contractuel court dessus. */
+    lettreEnvoyeeLe: integer("lettre_envoyee_le"),
+    notes: text("notes"),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+    modifieLe: integer("modifie_le").notNull().default(maintenant),
+  },
+  (t) => [
+    index("idx_visites_etude").on(t.etudeId),
+    index("idx_visites_statut").on(t.statut),
+  ],
+);
+
+export type Visite = typeof visites.$inferSelect;
+
+/**
  * Un partage : une personne conviée sur une ressource dont elle n'est pas
  * propriétaire. Partager une étude donne accès à tout ce qui s'y rattache —
  * missions, documents, pages, FAQ, temps.

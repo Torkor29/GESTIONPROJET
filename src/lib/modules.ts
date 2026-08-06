@@ -89,10 +89,12 @@ export const MODULES: Module[] = [
   {
     cle: "monitorage",
     nom: "Visites de monitorage",
-    description: "Visites planifiées et réalisées, rapports et lettres de suivi.",
+    description:
+      "Visites planifiées et réalisées, par centre : rapport, lettre de suivi, clôture.",
     icone: "bouclier",
     domaine: "Monitorage et qualité",
-    roles: ["arc"],
+    href: "/visites",
+    roles: ["arc", "cp"],
   },
   {
     cle: "ecarts",

@@ -69,7 +69,12 @@ export default function FormulaireTache({
         onFermer={() => setOuverte(false)}
         titre={edition ? "Modifier la mission" : "Nouvelle mission"}
       >
-        <form action={action} className="space-y-4">
+        {/* La clé suit la date de modification de l'enregistrement.
+            Sans elle, les champs gardent la valeur qu'ils avaient au montage :
+            changer le statut depuis le tableau puis modifier la mission
+            réécrirait l'ancien statut, annulant silencieusement le changement.
+            `defaultValue` ne se relit qu'au montage — la clé force ce montage. */}
+        <form key={tache?.modifieLe ?? "nouvelle"} action={action} className="space-y-4">
           {edition && <input type="hidden" name="id" value={tache!.id} />}
 
           <div>

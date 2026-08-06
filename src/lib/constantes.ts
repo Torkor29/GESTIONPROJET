@@ -65,3 +65,30 @@ export function octetsLisibles(octets: number): string {
   if (octets < 1024 * 1024) return `${(octets / 1024).toFixed(0)} Ko`;
   return `${(octets / 1024 / 1024).toFixed(1)} Mo`;
 }
+
+/** Types de visite de monitorage, dans l'ordre chronologique d'une étude. */
+export const TYPES_VISITE: Record<string, string> = {
+  mise_en_place: "Mise en place",
+  routine: "Visite de routine",
+  a_distance: "Visite à distance",
+  declenchee: "Visite déclenchée",
+  cloture: "Visite de clôture",
+};
+
+/** Étapes d'une visite, de la planification à la clôture. */
+export const STATUTS_VISITE: Record<string, string> = {
+  planifiee: "Planifiée",
+  realisee: "Réalisée",
+  rapport_redige: "Rapport rédigé",
+  lettre_envoyee: "Lettre envoyée",
+  cloturee: "Clôturée",
+  annulee: "Annulée",
+};
+
+/** Une visite est considérée en cours tant qu'elle n'est ni close ni annulée. */
+export const STATUTS_VISITE_OUVERTS = [
+  "planifiee",
+  "realisee",
+  "rapport_redige",
+  "lettre_envoyee",
+];
