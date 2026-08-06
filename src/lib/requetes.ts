@@ -5,6 +5,8 @@ import { db } from "@/db";
 import {
   actionsCorrectives,
   checklistItems,
+  partages,
+  utilisateurs,
   documents,
   ecarts,
   etudes,
@@ -737,4 +739,166 @@ export async function visitesPourChoix() {
     .from(visites)
     .where(objetAccessible(visites.proprietaireId, visites.etudeId, id))
     .orderBy(desc(visites.datePrevue));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Portefeuille et charge d'équipe                                           */
+/* -------------------------------------------------------------------------- */
+
+/** Ce qui est en cours sur une étude, côté monitorage. */
+export type SuiviMonitorage = {
+  visitesOuvertes: number;
+  visitesEnRetard: number;
+  ecartsOuverts: number;
+  ecartsCritiques: number;
+  actionsOuvertes: number;
+  actionsEnRetard: number;
+};
+
+/** Le monitorage en cours, étude par étude. */
+export async function monitorageParEtude(): Promise<Map<number, SuiviMonitorage>> {
+  const id = await moi();
+  const maintenant = Math.floor(Date.now() / 1000);
+
+  const [v, e, a] = await Promise.all([
+    db
+      .select({ etudeId: visites.etudeId, statut: visites.statut, datePrevue: visites.datePrevue, dateRealisee: visites.dateRealisee })
+      .from(visites)
+      .where(objetAccessible(visites.proprietaireId, visites.etudeId, id)),
+    db
+      .select({ etudeId: ecarts.etudeId, statut: ecarts.statut, gravite: ecarts.gravite })
+      .from(ecarts)
+      .where(objetAccessible(ecarts.proprietaireId, ecarts.etudeId, id)),
+    db
+      .select({ etudeId: actionsCorrectives.etudeId, statut: actionsCorrectives.statut, echeance: actionsCorrectives.echeance })
+      .from(actionsCorrectives)
+      .where(objetAccessible(actionsCorrectives.proprietaireId, actionsCorrectives.etudeId, id)),
+  ]);
+
+  const parEtude = new Map<number, SuiviMonitorage>();
+  const pour = (etudeId: number | null) => {
+    if (!etudeId) return null;
+    if (!parEtude.has(etudeId)) {
+      parEtude.set(etudeId, {
+        visitesOuvertes: 0,
+        visitesEnRetard: 0,
+        ecartsOuverts: 0,
+        ecartsCritiques: 0,
+        actionsOuvertes: 0,
+        actionsEnRetard: 0,
+      });
+    }
+    return parEtude.get(etudeId)!;
+  };
+
+  const VISITES_OUVERTES = ["planifiee", "realisee", "rapport_redige", "lettre_envoyee"];
+  for (const l of v) {
+    const c = pour(l.etudeId);
+    if (!c || !VISITES_OUVERTES.includes(l.statut)) continue;
+    c.visitesOuvertes += 1;
+    if (l.datePrevue && l.datePrevue < maintenant && !l.dateRealisee) c.visitesEnRetard += 1;
+  }
+  for (const l of e) {
+    const c = pour(l.etudeId);
+    if (!c || l.statut === "clos") continue;
+    c.ecartsOuverts += 1;
+    if (l.gravite === "critique") c.ecartsCritiques += 1;
+  }
+  const ACTIONS_OUVERTES = ["a_faire", "en_cours", "faite"];
+  for (const l of a) {
+    const c = pour(l.etudeId);
+    if (!c || !ACTIONS_OUVERTES.includes(l.statut)) continue;
+    c.actionsOuvertes += 1;
+    if (l.echeance && l.echeance < maintenant) c.actionsEnRetard += 1;
+  }
+
+  return parEtude;
+}
+
+export type ChargePersonne = {
+  utilisateurId: number;
+  nom: string;
+  minutes: number;
+  /** Répartition de son temps entre les études, la plus chargée d'abord. */
+  parEtude: { etudeId: number; nom: string; couleur: string; minutes: number }[];
+};
+
+/**
+ * Charge de chacun, sur les seules études **dont on est propriétaire**.
+ *
+ * Être convié sur une étude ne donne pas à voir le temps des autres : c'est
+ * une information de pilotage, elle revient à qui porte l'étude. Et seuls des
+ * totaux sont rendus, jamais le détail des saisies.
+ */
+export async function chargeEquipe(): Promise<ChargePersonne[]> {
+  const id = await moi();
+
+  const lignes = await db
+    .select({
+      utilisateurId: temps.proprietaireId,
+      nom: utilisateurs.nom,
+      etudeId: etudes.id,
+      etudeNom: etudes.nom,
+      etudeCouleur: etudes.couleur,
+      debut: temps.debut,
+      fin: temps.fin,
+    })
+    .from(temps)
+    .innerJoin(etudes, eq(temps.etudeId, etudes.id))
+    .leftJoin(utilisateurs, eq(temps.proprietaireId, utilisateurs.id))
+    .where(and(eq(etudes.proprietaireId, id), sql`${temps.fin} is not null`));
+
+  const parPersonne = new Map<number, ChargePersonne>();
+  for (const l of lignes) {
+    if (!l.utilisateurId) continue;
+    const minutes = dureeMinutes(l);
+
+    if (!parPersonne.has(l.utilisateurId)) {
+      parPersonne.set(l.utilisateurId, {
+        utilisateurId: l.utilisateurId,
+        nom: l.nom ?? "Compte supprimé",
+        minutes: 0,
+        parEtude: [],
+      });
+    }
+    const p = parPersonne.get(l.utilisateurId)!;
+    p.minutes += minutes;
+
+    const dejaLa = p.parEtude.find((x) => x.etudeId === l.etudeId);
+    if (dejaLa) dejaLa.minutes += minutes;
+    else
+      p.parEtude.push({
+        etudeId: l.etudeId,
+        nom: l.etudeNom,
+        couleur: l.etudeCouleur,
+        minutes,
+      });
+  }
+
+  return [...parPersonne.values()]
+    .map((p) => ({ ...p, parEtude: p.parEtude.sort((a, b) => b.minutes - a.minutes) }))
+    .sort((a, b) => b.minutes - a.minutes);
+}
+
+/** Qui a été convié sur quoi, parmi les études dont on est propriétaire. */
+export async function equipeParEtude(): Promise<Map<number, { nom: string; niveau: string }[]>> {
+  const id = await moi();
+
+  const lignes = await db
+    .select({
+      etudeId: partages.ressourceId,
+      niveau: partages.niveau,
+      nom: utilisateurs.nom,
+    })
+    .from(partages)
+    .innerJoin(etudes, eq(partages.ressourceId, etudes.id))
+    .innerJoin(utilisateurs, eq(partages.utilisateurId, utilisateurs.id))
+    .where(and(eq(partages.type, "etude"), eq(etudes.proprietaireId, id)))
+    .orderBy(utilisateurs.nom);
+
+  const parEtude = new Map<number, { nom: string; niveau: string }[]>();
+  for (const l of lignes) {
+    parEtude.set(l.etudeId, [...(parEtude.get(l.etudeId) ?? []), { nom: l.nom, niveau: l.niveau }]);
+  }
+  return parEtude;
 }

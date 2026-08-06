@@ -279,10 +279,12 @@ export const MODULES: Module[] = [
   {
     cle: "portefeuille",
     nom: "Portefeuille et charge d'équipe",
-    description: "Qui travaille sur quoi, et à quelle charge.",
+    description:
+      "L'état de chaque étude en une ligne, et la charge de chacun sur celles que vous portez.",
     icone: "personnes",
     domaine: "Management",
-    roles: ["cp"],
+    href: "/portefeuille",
+    roles: ["cp", "arc"],
   },
   {
     cle: "evaluations",
