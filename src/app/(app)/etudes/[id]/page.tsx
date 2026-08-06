@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { creerPage } from "@/actions/pages";
 import { retirerCouverture, supprimerEtude } from "@/actions/etudes";
+import { comptesDisponibles, invitesDeLEtude } from "@/actions/partages";
 import { demarrerChrono } from "@/actions/temps";
+import { utilisateurActuel } from "@/lib/auth";
 import Checklist from "@/components/checklist";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import FormulaireDocument from "@/components/formulaire-document";
 import FormulaireEtude from "@/components/formulaire-etude";
+import PartageEtude from "@/components/partage-etude";
 import FormulaireFaq from "@/components/formulaire-faq";
 import FormulaireTache from "@/components/formulaire-tache";
 import ListeDocuments from "@/components/liste-documents";
@@ -62,6 +65,14 @@ export default async function PageEtude({
     faqDEtude(etudeId),
     listerEtudes({ avecArchivees: true }),
   ]);
+
+  // Le partage n'est proposé qu'au propriétaire ; les personnes conviées
+  // voient l'étude sans pouvoir en élargir l'accès.
+  const compte = await utilisateurActuel();
+  const estProprietaire = compte !== null && etude.proprietaireId === compte.id;
+  const [invites, comptes] = estProprietaire
+    ? await Promise.all([invitesDeLEtude(etudeId), comptesDisponibles(compte.id)])
+    : [[], []];
 
   const maintenant = Math.floor(Date.now() / 1000);
   const minutesTotal = temps.reduce((t, l) => t + dureeMinutes(l.entree), 0);
@@ -132,6 +143,11 @@ export default async function PageEtude({
               </button>
             </form>
             <FormulaireEtude etude={etude} libelle="Modifier" variante="discret" />
+            {/* Seul le propriétaire gère les accès : une personne conviée en
+                écriture modifie le contenu, pas la liste des invités. */}
+            {estProprietaire && (
+              <PartageEtude etudeId={etude.id} invites={invites} comptes={comptes} />
+            )}
           </div>
         </div>
       </header>

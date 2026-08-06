@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { appliquerMetier } from "@/actions/modules";
 import ChoixModules from "@/components/choix-modules";
@@ -24,6 +25,18 @@ export default async function PageParametres() {
           un module désactivé ne perd aucune donnée.
         </p>
       </header>
+
+      <section className="carte flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <h2 className="font-titre text-lg font-bold">Équipe</h2>
+          <p className="mt-1 text-sm text-attenue">
+            Inviter des collègues sur cette installation, et voir qui a un compte.
+          </p>
+        </div>
+        <Link href="/parametres/equipe" className="bouton-discret">
+          Gérer l&apos;équipe
+        </Link>
+      </section>
 
       <section className="carte p-5">
         <h2 className="font-titre text-lg font-bold">Votre métier</h2>

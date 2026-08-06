@@ -19,6 +19,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 | **Base de connaissance** | FAQ générale ou propre à une étude, classée par thème |
 | **Pages** | Éditeur riche façon Notion (titres, listes, tableaux, images), sauvegarde automatique |
 | **Temps** | Chronomètre en un clic ou saisie manuelle (`1h30`, `1:30`, `90min`, `1,5`), export Excel valorisé |
+| **Comptes et partage** | Chacun sa session et ses modules ; une étude se partage en lecture ou en écriture, et n'est visible que de son propriétaire et des personnes conviées |
 
 L'application est en français, s'adapte au thème clair ou sombre du système, et
 fonctionne sur téléphone.
@@ -249,6 +250,15 @@ src/
   scrypt et un sel propre) et son métier. Le jeton de session porte
   l'identifiant du compte et il est resigné à chaque connexion ; un compte
   désactivé perd l'accès immédiatement, sans attendre l'expiration du cookie.
+- **Cloisonnement en un seul endroit** (`src/lib/acces.ts`) : une étude est
+  accessible à son propriétaire et aux personnes conviées, et tout ce qui pend
+  d'une étude suit son accès. Les vingt lectures s'y adossent, et
+  l'identifiant du compte est lu dans `requetes.ts` plutôt que passé en
+  paramètre — un appel qui l'oublierait ferait fuiter des données sans que
+  rien ne le signale.
+- **Invitations remises de la main à la main** : pas de serveur de courrier à
+  configurer, et aucune adresse confiée à un tiers. Le lien se copie et
+  s'envoie par ses propres moyens ; il vaut sept jours et ne sert qu'une fois.
 
 **Deux pièges contournés, à connaître si vous reprenez le code :**
 
