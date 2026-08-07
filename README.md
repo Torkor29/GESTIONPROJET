@@ -116,6 +116,12 @@ Sans domaine, laissez la ligne absente : le site répondra en HTTP sur l'IP du
 serveur, et l'application s'adapte automatiquement (le cookie de session n'est
 marqué `secure` que lorsqu'un domaine est configuré).
 
+> `DOMAINE` sert aussi à écrire les adresses absolues des pages publiques —
+> liens canoniques et plan du site. Ces pages étant pré-rendues, le domaine est
+> lu **à la construction de l'image** et pas seulement à l'exécution. Si vous
+> changez de domaine, reconstruisez :
+> `docker compose up -d --build`.
+
 > **Prenez un domaine dès que possible.** Sans HTTPS, votre mot de passe et le
 > contenu de vos pages circulent en clair sur le réseau. Un domaine coûte une
 > dizaine d'euros par an et suffit à ce que Caddy active le chiffrement tout
@@ -227,9 +233,13 @@ La migration s'applique ensuite toute seule au démarrage suivant.
 ```
 src/
 ├── app/
-│   ├── (app)/           pages protégées : tableau de bord, études, missions,
-│   │                    documents, FAQ, temps
+│   ├── (public)/        site public : présentation (/), référentiels
+│   │                    réglementaires, données et sécurité, mentions légales
+│   ├── (app)/           pages protégées : tableau de bord (/bord), études,
+│   │                    missions, documents, FAQ, temps, monitorage, budget
 │   ├── api/             exports Excel, dépôt et service des fichiers
+│   ├── robots.ts        robots.txt — n'ouvre que les pages publiques
+│   ├── sitemap.ts       plan du site, une entrée par référentiel
 │   └── connexion/       page de connexion
 ├── actions/             Server Actions (écritures en base)
 ├── components/          composants d'interface
@@ -261,6 +271,16 @@ src/
   l'identifiant du compte est lu dans `requetes.ts` plutôt que passé en
   paramètre — un appel qui l'oublierait ferait fuiter des données sans que
   rien ne le signale.
+- **Un site public servi à la racine, en `200`** : `/` rend directement la
+  présentation au lieu de rediriger vers `/presentation`. Une redirection
+  temporaire assortie de `no-store` était ce que voyaient les robots de
+  catégorisation — et ce que voit un filtre d'entreprise qui décide, sur cette
+  base, si le domaine a « assez de contenu » pour être classé. Les pages
+  publiques (présentation, référentiels, données et sécurité, mentions) sont
+  pré-rendues, reliées entre elles par un en-tête et un pied de page communs, et
+  annoncées dans `sitemap.xml`. La page des référentiels est rendue depuis
+  `src/lib/referentiels.ts` : le contenu public et celui des checklists ne
+  peuvent pas diverger.
 - **Invitations remises de la main à la main** : pas de serveur de courrier à
   configurer, et aucune adresse confiée à un tiers. Le lien se copie et
   s'envoie par ses propres moyens ; il vaut sept jours et ne sert qu'une fois.

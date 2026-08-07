@@ -1,6 +1,14 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      # Les pages publiques sont pré-rendues : le domaine doit être connu dès
+      # la construction pour que les liens canoniques et le plan du site
+      # portent la bonne adresse.
+      args:
+        DOMAINE: ${DOMAINE:-}
+        EDITEUR: ${EDITEUR:-}
+        EDITEUR_CONTACT: ${EDITEUR_CONTACT:-}
     restart: unless-stopped
     environment:
       MOT_DE_PASSE: ${MOT_DE_PASSE:?renseignez MOT_DE_PASSE dans le fichier .env}

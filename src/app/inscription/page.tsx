@@ -7,7 +7,7 @@ import FormulaireInscription from "./formulaire";
 export const dynamic = "force-dynamic";
 
 export default async function PageInscription() {
-  if (await estConnecte()) redirect("/");
+  if (await estConnecte()) redirect("/bord");
   // Une fois le premier compte créé, cette page n'a plus lieu d'être.
   if (!aucunCompte()) redirect("/connexion");
 
@@ -21,7 +21,7 @@ export default async function PageInscription() {
       <div className="relative w-full max-w-md animate-apparait">
         <div className="text-center">
           <Link
-            href="/presentation"
+            href="/"
             className="inline-flex items-center gap-2.5 font-titre text-lg font-bold tracking-tight"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sur-accent shadow-douce">

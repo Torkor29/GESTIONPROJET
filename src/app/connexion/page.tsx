@@ -7,7 +7,7 @@ import FormulaireConnexion from "./formulaire";
 export const dynamic = "force-dynamic";
 
 export default async function PageConnexion() {
-  if (await estConnecte()) redirect("/");
+  if (await estConnecte()) redirect("/bord");
   // Installation neuve : il n'y a encore personne, on va créer le compte.
   if (aucunCompte()) redirect("/inscription");
 
@@ -21,7 +21,7 @@ export default async function PageConnexion() {
       <div className="relative w-full max-w-sm animate-apparait">
         <div className="text-center">
           <Link
-            href="/presentation"
+            href="/"
             className="inline-flex items-center gap-2.5 font-titre text-lg font-bold tracking-tight"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sur-accent shadow-douce">
@@ -40,7 +40,7 @@ export default async function PageConnexion() {
         </div>
 
         <p className="mt-6 text-center text-sm text-efface">
-          <Link href="/presentation" className="transition-colors hover:text-accent">
+          <Link href="/" className="transition-colors hover:text-accent">
             Découvrir Vigie
           </Link>
         </p>

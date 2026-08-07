@@ -63,7 +63,7 @@ export async function seConnecter(
     .run();
 
   await ouvrirSession(compte.id);
-  redirect("/");
+  redirect("/bord");
 }
 
 export async function sInscrire(

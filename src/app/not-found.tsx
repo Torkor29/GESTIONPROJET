@@ -12,7 +12,7 @@ export default function Introuvable() {
           Cette page n&apos;existe pas ou a été supprimée.
         </p>
         <Link href="/" className="bouton mt-5">
-          Retour au tableau de bord
+          Retour à l’accueil
         </Link>
       </div>
     </main>

@@ -35,7 +35,7 @@ export const MODULES: Module[] = [
     description: "Vue d'ensemble : ce qui presse, l'avancement, le temps de la semaine.",
     icone: "graphique",
     domaine: "Socle",
-    href: "/",
+    href: "/bord",
     socle: true,
     roles: TOUS,
   },

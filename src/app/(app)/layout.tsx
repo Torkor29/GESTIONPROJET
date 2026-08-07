@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { utilisateurActuel } from "@/lib/auth";
 import { LIBELLES_ROLE } from "@/lib/constantes";
@@ -6,9 +7,14 @@ import { chronoEnCours, listerEtudes } from "@/lib/requetes";
 import BarreLaterale from "@/components/barre-laterale";
 import ChronoFlottant from "@/components/chrono-flottant";
 
+// Rien de ce qui est derrière authentification n'a vocation à être indexé.
+// robots.txt le dit déjà ; l'en-tête le redit pour un robot qui suivrait un
+// lien direct sans relire robots.txt.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
+
 export default async function LayoutApplication({ children }: { children: React.ReactNode }) {
   const compte = await utilisateurActuel();
-  if (!compte) redirect("/presentation");
+  if (!compte) redirect("/connexion");
 
   const [etudes, chrono] = await Promise.all([listerEtudes(), chronoEnCours()]);
 

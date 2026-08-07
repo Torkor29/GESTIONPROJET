@@ -20,6 +20,21 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Le domaine sert à écrire les adresses absolues des pages publiques : liens
+# canoniques et plan du site. Ces pages sont pré-rendues à la construction,
+# donc le domaine doit être connu ici et pas seulement à l'exécution — sinon
+# le site publié annoncerait « localhost ». Changer de domaine implique donc
+# de reconstruire l'image, ce que fait déjà `docker compose up -d --build`.
+ARG DOMAINE=""
+ENV DOMAINE=$DOMAINE
+
+# Même raison pour l'identité de l'éditeur : elle est rendue dans une page
+# pré-construite, /mentions-legales.
+ARG EDITEUR=""
+ARG EDITEUR_CONTACT=""
+ENV EDITEUR=$EDITEUR \
+    EDITEUR_CONTACT=$EDITEUR_CONTACT
+
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

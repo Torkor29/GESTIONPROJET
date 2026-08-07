@@ -13,7 +13,7 @@ export default async function PageInvitation({
 }: {
   params: Promise<{ jeton: string }>;
 }) {
-  if (await estConnecte()) redirect("/");
+  if (await estConnecte()) redirect("/bord");
 
   const { jeton } = await params;
   const invitation = await invitationValide(jeton);

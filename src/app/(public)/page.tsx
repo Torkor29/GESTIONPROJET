@@ -88,23 +88,10 @@ const referentiels = [
 
 export default function PagePresentation() {
   return (
-    <div className="min-h-screen bg-surface">
-      {/* ---------------------------------------------------------------- nav */}
-      <header className="sticky top-0 z-20 border-b border-ligne/70 bg-surface/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <span className="flex items-center gap-2.5 font-titre text-[15px] font-bold tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-accent text-sur-accent shadow-douce">
-              <Icone nom="eclair" className="h-4 w-4" />
-            </span>
-            Vigie
-          </span>
-          <Link href="/connexion" className="bouton-discret !py-2 text-[13px]">
-            Se connecter
-          </Link>
-        </div>
-      </header>
-
-      <main>
+    <>
+      {/* L'en-tête et le pied de page vivent dans le gabarit du groupe
+          (public) : ils sont identiques sur toutes les pages publiques. */}
+      <div>
         {/* ------------------------------------------------------------- hero */}
         <section className="relative overflow-hidden px-6 pb-24 pt-20 sm:pt-28">
           {/* Halo d'accent très dilué, pour que le haut de page ne soit pas plat. */}
@@ -330,6 +317,62 @@ export default function PagePresentation() {
           </div>
         </section>
 
+        {/* --------------------------------------------------- pour aller plus loin */}
+        <section className="px-6 pb-24">
+          <div className="mx-auto max-w-5xl">
+            <p className="sur-titre text-center">En savoir plus</p>
+            <h2 className="mt-3 text-center font-titre text-3xl font-bold">
+              Deux sujets qui méritent leur propre page
+            </h2>
+
+            <div className="mt-10 grid gap-5 sm:grid-cols-2">
+              <Link href="/reglementaire" className="carte carte-active group p-7">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
+                  <Icone nom="checklist" />
+                </span>
+                <h3 className="mt-4 font-titre text-lg font-bold">
+                  Les référentiels couverts
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-attenue">
+                  Le détail des cadres pris en charge — RIPH 1, 2 et 3, règlement
+                  UE 536/2014, MDR, IVDR, ICH E6(R3), méthodologies de référence
+                  de la CNIL, archivage — avec, pour chaque obligation, sa phase,
+                  sa référence et sa source officielle.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+                  Consulter les référentiels
+                  <Icone
+                    nom="fleche"
+                    className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                  />
+                </span>
+              </Link>
+
+              <Link href="/donnees" className="carte carte-active group p-7">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
+                  <Icone nom="bouclier" />
+                </span>
+                <h3 className="mt-4 font-titre text-lg font-bold">
+                  Données et sécurité
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-attenue">
+                  Ce que Vigie enregistre, ce qu&apos;il ne doit pas recevoir, où
+                  vivent les fichiers, comment les comptes et les partages sont
+                  cloisonnés, et ce qu&apos;implique la conduite d&apos;un suivi
+                  d&apos;inclusions.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+                  Lire la page
+                  <Icone
+                    nom="fleche"
+                    className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                  />
+                </span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* ------------------------------------------------------- appel final */}
         <section className="px-6 pb-28">
           <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-ligne bg-relief px-8 py-16 text-center shadow-douce">
@@ -352,21 +395,7 @@ export default function PagePresentation() {
             </div>
           </div>
         </section>
-      </main>
-
-      <footer className="border-t border-ligne px-6 py-10">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-          <span className="flex items-center gap-2 font-titre text-sm font-bold">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent text-sur-accent">
-              <Icone nom="eclair" className="h-3.5 w-3.5" />
-            </span>
-            Vigie
-          </span>
-          <p className="text-sm text-efface">
-            Outil de gestion de projet pour la recherche clinique.
-          </p>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </>
   );
 }
