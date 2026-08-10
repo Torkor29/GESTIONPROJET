@@ -1,0 +1,12 @@
+comptap.fr, www.comptap.fr {
+	encode zstd gzip
+
+	# « hote » désigne la machine elle-même, vue depuis le conteneur Caddy
+	# (voir extra_hosts dans docker-compose.yml). Comptap publie encore son
+	# port 8080 sur la machine : cette écriture évite d'inscrire en dur
+	# l'adresse du pont Docker, qui peut changer.
+	#
+	# Le jour où la pile comptap rejoindra le réseau « web » et cessera de
+	# publier son port, remplacer cette ligne par : reverse_proxy comptap:8080
+	reverse_proxy hote:8080
+}

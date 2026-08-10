@@ -1,0 +1,25 @@
+vigie-clinique.fr {
+	encode zstd gzip
+
+	# Corps de requête plafonné : correspond à la limite de téléversement
+	# appliquée côté application (25 Mo) avec une marge pour l'enveloppe.
+	request_body {
+		max_size 30MB
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# « vigie » est l'alias donné au conteneur applicatif sur le réseau web
+	# par docker-compose.derriere-proxy.yml.
+	reverse_proxy vigie:3000
+}
+
+# « www » renvoie vers le domaine nu, pour que les deux écritures fonctionnent.
+www.vigie-clinique.fr {
+	redir https://vigie-clinique.fr{uri} permanent
+}

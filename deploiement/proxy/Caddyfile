@@ -1,0 +1,8 @@
+# Ce fichier ne décrit aucun site : il ne fait que charger le contenu du
+# dossier « sites/ ». Un site par fichier, et rien à modifier ici quand on en
+# ajoute un.
+#
+# Caddy obtient et renouvelle les certificats HTTPS tout seul, gratuitement,
+# dès qu'un nom de domaine pointe vers cette machine.
+
+import /etc/caddy/sites/*.caddy

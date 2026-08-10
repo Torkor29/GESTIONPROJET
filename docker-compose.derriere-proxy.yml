@@ -1,0 +1,35 @@
+# Variante à utiliser quand le serveur héberge plusieurs sites derrière un
+# proxy commun (voir deploiement/proxy/).
+#
+#   docker compose \
+#     -f /home/ubuntu/GESTIONPROJET/docker-compose.yml \
+#     -f /home/ubuntu/GESTIONPROJET/docker-compose.derriere-proxy.yml \
+#     up -d --build
+#
+# Elle fait deux choses : elle rattache l'application au réseau partagé sous
+# le nom « vigie », et elle écarte le Caddy de cette pile — les ports 80 et 443
+# appartiennent alors au proxy commun, et un seul programme peut les tenir.
+#
+# Sans ce fichier, docker-compose.yml reste ce qu'il était : une installation
+# autonome, avec son propre Caddy. Rien n'est perdu pour qui n'héberge qu'un
+# seul site.
+
+services:
+  app:
+    networks:
+      default: {}
+      web:
+        aliases:
+          - vigie
+
+  caddy:
+    # Un service porteur d'un profil n'est démarré que si ce profil est
+    # explicitement demandé. Celui-ci ne l'est jamais : c'est la façon la plus
+    # simple de neutraliser un service depuis une variante, sans toucher au
+    # fichier d'origine.
+    profiles:
+      - jamais-demarre
+
+networks:
+  web:
+    external: true

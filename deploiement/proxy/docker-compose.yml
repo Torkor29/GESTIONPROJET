@@ -1,0 +1,47 @@
+# Portier unique du serveur.
+#
+# C'est la seule pile qui détient les ports 80 et 443. Tous les sites hébergés
+# sur la machine sont derrière lui, sans publier de port : ils se joignent par
+# le réseau « web », et sont donc invisibles depuis l'extérieur autrement que
+# par ce proxy.
+#
+# À poser dans /opt/proxy sur le serveur.
+
+name: proxy
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Un fichier par site : ajouter un site n'oblige jamais à modifier
+      # la configuration d'un autre.
+      - ./sites:/etc/caddy/sites:ro
+      # Les certificats vivent ici. Ne supprimez pas ces volumes : Let's Encrypt
+      # limite le nombre de certificats délivrés par semaine pour un domaine.
+      - caddy_data:/data
+      - caddy_config:/config
+
+    extra_hosts:
+      # Permet d'écrire « hote:8080 » pour joindre un service qui publie encore
+      # un port sur la machine, au lieu de deviner l'adresse du pont Docker
+      # (172.17.0.1), qui n'est pas garantie stable.
+      - "hote:host-gateway"
+
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+
+volumes:
+  caddy_data:
+  caddy_config:

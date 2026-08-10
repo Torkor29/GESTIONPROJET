@@ -141,6 +141,10 @@ les comptes suivants passeront par une invitation.
 La base de données est créée automatiquement au premier démarrage ; il n'y a
 aucune commande de migration à lancer.
 
+> **Plusieurs sites sur la même machine ?** Ce montage donne les ports 80 et
+> 443 au Caddy de Vigie, et deux programmes ne peuvent pas les tenir ensemble.
+> Passez alors par un portier commun : [deploiement/README.md](deploiement/README.md).
+
 ### 5. Ouvrir le pare-feu
 
 ```bash
