@@ -102,40 +102,13 @@ cookie de session et aux adresses absolues des pages publiques.
 
 ---
 
-## Ajouter un site plus tard
+## Ajouter un site ou un service plus tard
 
-```bash
-sudo nano /opt/proxy/sites/mon-site.fr.caddy
-```
-
-```
-mon-site.fr {
-	encode zstd gzip
-	reverse_proxy mon-site:3000
-}
-```
-
-Puis, sans redémarrer le proxy ni interrompre les autres sites :
-
-```bash
-docker compose -f /opt/proxy/docker-compose.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
-```
-
-La pile du nouveau site doit rejoindre le réseau `web` et **ne publier aucun
-port** :
-
-```yaml
-services:
-  app:
-    networks:
-      default: {}
-      web:
-        aliases: [mon-site]
-
-networks:
-  web:
-    external: true
-```
+La marche à suivre — et surtout la check-list qui garantit qu'un ajout ne
+restreint ni ne perturbe rien d'existant — est dans
+[ajouter-un-site-ou-service.md](ajouter-un-site-ou-service.md). Ce document-ci
+reste la référence de ce qu'**est** le portier ; l'autre est le guide pratique
+pour poser un site web ou un service de fond (bot, worker…) à côté.
 
 ---
 
