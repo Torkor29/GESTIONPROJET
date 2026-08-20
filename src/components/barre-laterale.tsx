@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import type { Etude } from "@/db/schema";
 import { seDeconnecter } from "@/actions/session";
 import { Icone, type NomIcone } from "@/components/icones";
+import Cloche from "@/components/cloche";
+import type { Notification } from "@/db/schema";
+import type { GroupeNav } from "@/lib/navigation";
 
 export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
 
@@ -34,13 +37,14 @@ export default function BarreLaterale({
   etudes,
   nom,
   role,
-  liens,
+  groupes,
+  notifications = [],
 }: {
   etudes: Etude[];
   nom: string;
   role: string;
-  /** Construits côté serveur à partir des modules activés par la personne. */
-  liens: LienNavigation[];
+  groupes: GroupeNav[];
+  notifications?: Notification[];
 }) {
   const chemin = usePathname();
   const [ouvert, setOuvert] = useState(false);
@@ -77,6 +81,9 @@ export default function BarreLaterale({
           </svg>
         </button>
         <Marque />
+        <div className="ml-auto flex items-center gap-2 lg:hidden">
+          <Cloche items={notifications} />
+        </div>
       </div>
 
       {ouvert && (
@@ -98,22 +105,29 @@ export default function BarreLaterale({
           <Marque />
         </div>
 
-        <nav className="space-y-0.5 px-3">
-          {liens.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              aria-current={actif(l.href) ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-200
-                          ${
-                            actif(l.href)
-                              ? "bg-accent-voile font-semibold text-accent-appuye"
-                              : "font-medium text-attenue hover:bg-creux hover:text-encre"
-                          }`}
-            >
-              <Icone nom={l.icone} className="h-[18px] w-[18px] shrink-0" />
-              {l.libelle}
-            </Link>
+        <nav className="space-y-3 overflow-y-auto px-3">
+          {groupes.map((g, i) => (
+            <div key={g.titre ?? `g-${i}`}>
+              {g.titre && <p className="sur-titre px-3 pb-1 pt-1">{g.titre}</p>}
+              <div className="space-y-0.5">
+                {g.liens.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    aria-current={actif(l.href) ? "page" : undefined}
+                    className={`flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-[13px] transition-all duration-200
+                                ${
+                                  actif(l.href)
+                                    ? "bg-accent-voile font-semibold text-accent-appuye"
+                                    : "font-medium text-attenue hover:bg-creux hover:text-encre"
+                                }`}
+                  >
+                    <Icone nom={l.icone} className="h-4 w-4 shrink-0" />
+                    {l.libelle}
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -150,7 +164,7 @@ export default function BarreLaterale({
             aria-current={chemin === "/parametres" ? "page" : undefined}
             className={`mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-200
                         ${
-                          chemin === "/parametres"
+                          chemin === "/parametres" || chemin.startsWith("/administration")
                             ? "bg-accent-voile font-semibold text-accent-appuye"
                             : "font-medium text-attenue hover:bg-creux hover:text-encre"
                         }`}
@@ -169,6 +183,14 @@ export default function BarreLaterale({
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
             </svg>
             Modules
+          </Link>
+          <Link
+            href="/administration"
+            className={`mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-attenue hover:bg-creux hover:text-encre ${
+              chemin.startsWith("/administration") ? "bg-accent-voile font-semibold text-accent-appuye" : ""
+            }`}
+          >
+            Administration
           </Link>
 
           <div className="flex items-center gap-2.5 rounded-xl px-3 py-2">

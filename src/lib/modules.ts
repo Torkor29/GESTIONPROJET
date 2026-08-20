@@ -66,6 +66,7 @@ export const MODULES: Module[] = [
     description: "Vue mois et semaine de toutes les échéances, tous modules confondus.",
     icone: "chrono",
     domaine: "Suivi de projet",
+    href: "/calendrier-global",
     roles: TOUS,
   },
   {
@@ -74,6 +75,7 @@ export const MODULES: Module[] = [
     description: "Soumissions, autorisations et dates clés, par étude.",
     icone: "checklist",
     domaine: "Suivi de projet",
+    href: "/etudes",
     roles: ["cp", "arc"],
   },
   {
@@ -140,6 +142,7 @@ export const MODULES: Module[] = [
     description: "Avancement du recrutement : screenés, inclus, échecs, objectif contre réel.",
     icone: "graphique",
     domaine: "Terrain",
+    href: "/sujets",
     roles: ["tec", "cp"],
   },
   {
@@ -148,6 +151,7 @@ export const MODULES: Module[] = [
     description: "Charge de visites à venir, par étude et par semaine.",
     icone: "chrono",
     domaine: "Terrain",
+    href: "/calendrier",
     roles: ["tec"],
   },
   {
@@ -182,7 +186,8 @@ export const MODULES: Module[] = [
     description: "Demandes de clarification en attente et délais de réponse.",
     icone: "question",
     domaine: "Données",
-    roles: ["arc", "tec"],
+    href: "/data-management/queries",
+    roles: ["arc", "tec", "data_manager", "cp"],
   },
   {
     cle: "jalons_data",
@@ -200,6 +205,7 @@ export const MODULES: Module[] = [
     description: "Déclarations, délais réglementaires et suivi jusqu'à résolution.",
     icone: "eclair",
     domaine: "Vigilance",
+    href: "/safety",
     roles: ["arc", "tec"],
   },
   {
@@ -274,6 +280,7 @@ export const MODULES: Module[] = [
     description: "Recrutement réel contre prévu, délais d'ouverture.",
     icone: "graphique",
     domaine: "Administratif et financier",
+    href: "/centres",
     roles: ["cp"],
   },
 
@@ -346,7 +353,10 @@ export const CLES_SOCLE = MODULES.filter((m) => m.socle).map((m) => m.cle);
 
 /** Sélection pré-cochée pour un métier donné, au moment de l'inscription. */
 export function modulesSuggeres(role: string): string[] {
-  return MODULES.filter((m) => m.socle || m.roles.includes(role)).map((m) => m.cle);
+  const alias = role === "chef_projet" ? "cp" : role === "data_manager" ? "cp" : role;
+  return MODULES.filter((m) => m.socle || m.roles.includes(role) || m.roles.includes(alias)).map(
+    (m) => m.cle,
+  );
 }
 
 /**

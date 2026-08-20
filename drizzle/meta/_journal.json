@@ -57,6 +57,13 @@
       "when": 1786026181162,
       "tag": "0007_smiling_madame_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787218405821,
+      "tag": "0008_grey_husk",
+      "breakpoints": true
     }
   ]
 }

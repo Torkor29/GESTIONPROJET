@@ -13,8 +13,14 @@ import { SITE_URL } from "@/lib/site";
 
 const LIENS = [
   { href: "/", libelle: "Présentation" },
+  { href: "/a-propos", libelle: "À propos" },
+  { href: "/fonctionnement", libelle: "Fonctionnement" },
+  { href: "/glossaire", libelle: "Glossaire" },
   { href: "/reglementaire", libelle: "Référentiels" },
   { href: "/donnees", libelle: "Données et sécurité" },
+  { href: "/aide", libelle: "Aide" },
+  { href: "/changelog", libelle: "Versions" },
+  { href: "/confidentialite", libelle: "Confidentialité" },
   { href: "/mentions-legales", libelle: "Mentions légales" },
 ];
 
@@ -86,8 +92,15 @@ export default function LayoutPublic({ children }: { children: React.ReactNode }
             <Marque />
           </Link>
 
-          <nav aria-label="Pages publiques" className="hidden items-center gap-1 md:flex">
-            {LIENS.slice(1).map((l) => (
+          <nav aria-label="Pages publiques" className="hidden items-center gap-1 lg:flex">
+            {[
+              { href: "/a-propos", libelle: "À propos" },
+              { href: "/fonctionnement", libelle: "Fonctionnement" },
+              { href: "/glossaire", libelle: "Glossaire" },
+              { href: "/reglementaire", libelle: "Référentiels" },
+              { href: "/donnees", libelle: "Données" },
+              { href: "/aide", libelle: "Aide" },
+            ].map((l) => (
               <Link
                 key={l.href}
                 href={l.href}

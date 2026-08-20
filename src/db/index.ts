@@ -24,4 +24,12 @@ if (fs.existsSync(dossierMigrations)) {
   migrate(db, { migrationsFolder: dossierMigrations });
 }
 
+if (process.env.CHARGER_DEMO === "1") {
+  // Différé : le seed importe `db`, qui n'est exporté qu'une fois ce module fini.
+  setImmediate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("./seed").chargerDonneesDemoSiBesoin();
+  });
+}
+
 export { schema };

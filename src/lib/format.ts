@@ -112,13 +112,15 @@ export const LIBELLES_STATUT_ETUDE: Record<string, string> = {
 export const LIBELLES_STATUT_TACHE: Record<string, string> = {
   a_faire: "À faire",
   en_cours: "En cours",
+  bloque: "Bloqué",
   terminee: "Terminée",
 };
 
 export const LIBELLES_PRIORITE: Record<string, string> = {
-  basse: "Basse",
+  basse: "Faible",
   normale: "Normale",
   haute: "Haute",
+  critique: "Critique",
 };
 
 /**

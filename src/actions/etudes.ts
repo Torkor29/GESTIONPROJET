@@ -7,8 +7,10 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { etudes } from "@/db/schema";
+import { etudes, itemsChecklistMonitoring } from "@/db/schema";
 import { exigerAcces } from "@/lib/acces";
+import { enregistrerAudit } from "@/lib/audit";
+import { CHECKLIST_MONITORING_DEFAUT } from "@/lib/constantes";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { TAILLE_MAX_OCTETS, dossierUploads, nomSur } from "@/lib/fichiers";
 import { depuisChampDate } from "@/lib/format";
@@ -77,6 +79,16 @@ function champsCommuns(donnees: FormData) {
     dateDebut: depuisChampDate(String(donnees.get("dateDebut") ?? "")),
     dateFin: depuisChampDate(String(donnees.get("dateFin") ?? "")),
     reglementations: JSON.stringify(lireReglementationsFormulaire(donnees)),
+    phase: String(donnees.get("phase") ?? "").trim() || null,
+    indication: String(donnees.get("indication") ?? "").trim() || null,
+    populationCible: String(donnees.get("populationCible") ?? "").trim() || null,
+    versionProtocole: String(donnees.get("versionProtocole") ?? "").trim() || null,
+    nbCentresPrevu: String(donnees.get("nbCentresPrevu") ?? "").trim()
+      ? Number(donnees.get("nbCentresPrevu"))
+      : null,
+    nbSujetsPrevu: String(donnees.get("nbSujetsPrevu") ?? "").trim()
+      ? Number(donnees.get("nbSujetsPrevu"))
+      : null,
   };
 }
 
@@ -113,6 +125,25 @@ export async function creerEtude(
 
     // Les checklists réglementaires suivent immédiatement les cases cochées.
     await synchroniserChecklists(nouvelId);
+    for (const [i, item] of CHECKLIST_MONITORING_DEFAUT.entries()) {
+      db.insert(itemsChecklistMonitoring)
+        .values({
+          etudeId: nouvelId,
+          cle: item.cle,
+          libelle: item.libelle,
+          categorie: item.categorie,
+          ordre: i + 1,
+        })
+        .run();
+    }
+    enregistrerAudit({
+      utilisateurId: compte.id,
+      action: "creation",
+      objetType: "etude",
+      objetId: nouvelId,
+      etudeId: nouvelId,
+      nouvelleValeur: { nom: champs.nom },
+    });
     revalidatePath("/", "layout");
   } catch (e) {
     return { erreur: messageErreur(e) };

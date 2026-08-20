@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "CHARGER_DEMO=1 tsx -e \"require('./src/db/seed.ts').chargerDonneesDemo({forcer:true})\"",
+    "test": "tsx --test src/lib/permissions.test.ts"
   },
   "dependencies": {
     "@blocknote/core": "0.52.1",

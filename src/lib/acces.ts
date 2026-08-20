@@ -29,6 +29,9 @@ export function idsEtudesAccessibles(utilisateurId: number): SQL {
     union
     select ressource_id from partages
       where type = 'etude' and utilisateur_id = ${utilisateurId}
+    union
+    select etude_id from membres_etude
+      where utilisateur_id = ${utilisateurId}
   )`;
 }
 

@@ -11,8 +11,14 @@ import { SITE_URL } from "@/lib/site";
 export default function sitemap(): MetadataRoute.Sitemap {
   const fixes: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, changeFrequency: "monthly", priority: 1 },
+    { url: `${SITE_URL}/a-propos`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/fonctionnement`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/glossaire`, changeFrequency: "yearly", priority: 0.7 },
+    { url: `${SITE_URL}/aide`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/changelog`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE_URL}/reglementaire`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${SITE_URL}/donnees`, changeFrequency: "yearly", priority: 0.7 },
+    { url: `${SITE_URL}/confidentialite`, changeFrequency: "yearly", priority: 0.5 },
     { url: `${SITE_URL}/mentions-legales`, changeFrequency: "yearly", priority: 0.3 },
   ];
 
