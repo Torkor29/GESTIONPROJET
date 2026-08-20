@@ -29,11 +29,12 @@ export default async function PageCentres({
         actions={<FormulaireCentre etudes={etudes} />}
       />
       {lignes.length === 0 ? (
-        <EtatVide
-          titre="Aucun centre n'est associé à cette étude."
-          texte="Ajoutez un centre pour suivre les inclusions, le monitoring et le risque."
-          action={{ href: "#", libelle: "Ajouter un centre" }}
-        />
+        <div className="space-y-4">
+          <EtatVide
+            titre="Aucun centre n'est associé à cette étude."
+            texte="Ajoutez un centre pour suivre les inclusions, le monitoring et le risque. Le bouton ci-dessus ouvre le formulaire."
+          />
+        </div>
       ) : (
         <Tableau
           colonnes={["N°", "Centre", "Étude", "Statut", "Risque", "Inclusions", "Objectif"]}

@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { centreParId, listerSujets } from "@/lib/clinique";
+import { listerEtudes } from "@/lib/requetes";
+import FormulaireCentre from "@/components/formulaire-centre";
 import { EntetePage, EtatVide, Tableau } from "@/components/ui";
 import { NIVEAUX_RISQUE, STATUTS_CENTRE } from "@/lib/constantes";
 import Link from "next/link";
@@ -10,7 +12,10 @@ export default async function PageCentre({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const centre = await centreParId(Number(id));
   if (!centre) notFound();
-  const sujets = await listerSujets({ centreId: centre.id });
+  const [sujets, etudes] = await Promise.all([
+    listerSujets({ centreId: centre.id }),
+    listerEtudes(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -18,6 +23,7 @@ export default async function PageCentre({ params }: { params: Promise<{ id: str
         surtitre={`Centre ${centre.numero}`}
         titre={centre.nom}
         description={centre.etablissement ?? undefined}
+        actions={<FormulaireCentre etudes={etudes} centre={centre} libelle="Modifier" />}
       />
       <dl className="carte grid gap-4 p-5 sm:grid-cols-3">
         <div>

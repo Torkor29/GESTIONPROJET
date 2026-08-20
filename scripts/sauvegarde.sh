@@ -40,7 +40,11 @@ tar -czf "$ARCHIVE" \
   copie-sauvegarde.db \
   $([ -d "$RACINE/donnees/uploads" ] && echo uploads)
 
-rm -f "$RACINE/donnees/copie-sauvegarde.db"
+# Le fichier a été créé dans le conteneur : l'utilisateur hôte n'a souvent
+# pas le droit de le supprimer. On le retire côté conteneur.
+docker compose exec -T app rm -f /donnees/copie-sauvegarde.db \
+  || sudo rm -f "$RACINE/donnees/copie-sauvegarde.db" \
+  || true
 
 echo "→ Suppression des sauvegardes de plus de $CONSERVER_JOURS jours…"
 find "$DESTINATION" -name 'gestionprojet_*.tar.gz' -type f -mtime "+$CONSERVER_JOURS" -delete

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { listerQueries, visitesDuSujet, sujetParId } from "@/lib/clinique";
 import { EntetePage, EtatVide } from "@/components/ui";
-import { STATUTS_SUJET, STATUTS_VISITE_SUJET } from "@/lib/constantes";
 import { formaterDate } from "@/lib/format";
-import Link from "next/link";
+import { SelecteurStatutSujet, SelecteurStatutVisiteSujet } from "@/components/selecteur-statut-clinique";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,8 @@ export default async function PageSujet({ params }: { params: Promise<{ id: stri
       <EntetePage
         surtitre={etude.code ?? etude.nom}
         titre={sujet.subjectId}
-        description={`${STATUTS_SUJET[sujet.statut] ?? sujet.statut}${centre ? ` · Centre ${centre.numero}` : ""}`}
+        description={centre ? `Centre ${centre.numero}` : undefined}
+        actions={<SelecteurStatutSujet id={sujet.id} statut={sujet.statut} />}
       />
       {etude.estDemo && (
         <p className="text-xs font-semibold uppercase tracking-wide text-attention">
@@ -36,7 +37,8 @@ export default async function PageSujet({ params }: { params: Promise<{ id: stri
         {visites.length === 0 ? (
           <EtatVide
             titre="Aucune visite planifiée pour ce sujet."
-            texte="Les visites se génèrent à partir du calendrier protocolaire de l'étude."
+            texte="Les visites se génèrent à l'inclusion, d'après le calendrier protocolaire de l'étude (onglet Visites)."
+            action={{ href: `/etudes/${sujet.etudeId}?section=visites`, libelle: "Ouvrir le calendrier protocolaire" }}
           />
         ) : (
           <ol className="relative space-y-0 border-l border-ligne pl-6">
@@ -45,9 +47,12 @@ export default async function PageSujet({ params }: { params: Promise<{ id: stri
                 <span className="absolute -left-[25px] top-1 h-3 w-3 rounded-full bg-accent" />
                 <p className="font-medium">{v.nom}</p>
                 <p className="text-xs text-attenue">
-                  {STATUTS_VISITE_SUJET[v.statut]} · prévue {formaterDate(v.datePrevue)}
+                  prévue {formaterDate(v.datePrevue)}
                   {v.dateReelle ? ` · réalisée ${formaterDate(v.dateReelle)}` : ""}
                 </p>
+                <div className="mt-1">
+                  <SelecteurStatutVisiteSujet id={v.id} statut={v.statut} />
+                </div>
               </li>
             ))}
           </ol>

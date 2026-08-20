@@ -4,6 +4,7 @@ import { listerEtudes } from "@/lib/requetes";
 import { STATUTS_VISITE_SUJET } from "@/lib/constantes";
 import { formaterDate } from "@/lib/format";
 import Link from "next/link";
+import { SelecteurStatutVisiteSujet } from "@/components/selecteur-statut-clinique";
 
 export const dynamic = "force-dynamic";
 
@@ -61,8 +62,8 @@ export default async function PageCalendrierVisites({
       {avecRetard.length === 0 ? (
         <EtatVide
           titre="Aucune visite n'est encore planifiée."
-          texte="Les visites se créent automatiquement à l'inclusion d'un sujet, d'après le calendrier de l'étude."
-          action={{ href: "/sujets", libelle: "Ajouter un sujet" }}
+          texte="D'abord le calendrier protocolaire de l'étude (onglet Visites), ensuite l'inclusion d'un Subject ID."
+          action={{ href: "/etudes", libelle: "Ouvrir les études" }}
         />
       ) : (
         <Tableau colonnes={["Date prévue", "Sujet", "Visite", "Étude", "Centre", "Statut"]}>
@@ -78,7 +79,10 @@ export default async function PageCalendrierVisites({
               <td>{l.etudeCode}</td>
               <td>{l.centreNumero ?? "—"}</td>
               <td>
-                {l.enRetard ? "En retard" : STATUTS_VISITE_SUJET[l.visite.statut] ?? l.visite.statut}
+                {l.enRetard ? (
+                  <span className="mr-2 text-xs font-semibold text-alerte">En retard</span>
+                ) : null}
+                <SelecteurStatutVisiteSujet id={l.visite.id} statut={l.visite.statut} />
               </td>
             </tr>
           ))}

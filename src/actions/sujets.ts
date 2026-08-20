@@ -149,3 +149,20 @@ export async function creerModeleVisite(
     return { erreur: messageErreur(e) };
   }
 }
+
+export async function supprimerModeleVisite(id: number): Promise<void> {
+  const compte = await exigerPermission("etudes", "modifier");
+  const m = db.select().from(modelesVisite).where(eq(modelesVisite.id, id)).get();
+  if (!m) throw new Error("Modèle introuvable.");
+  await exigerAcces("etudes", m.etudeId, compte.id);
+  db.delete(modelesVisite).where(eq(modelesVisite.id, id)).run();
+  enregistrerAudit({
+    utilisateurId: compte.id,
+    action: "suppression",
+    objetType: "modele_visite",
+    objetId: id,
+    etudeId: m.etudeId,
+    ancienneValeur: { code: m.code, nom: m.nom },
+  });
+  revalidatePath("/", "layout");
+}
