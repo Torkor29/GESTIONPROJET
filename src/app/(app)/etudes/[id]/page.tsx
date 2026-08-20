@@ -29,11 +29,15 @@ import {
   progression,
   tachesDEtude,
 } from "@/lib/requetes";
+import { modelesDEtude } from "@/lib/clinique";
+import FormulaireModeleVisite, { BoutonRetirerModeleVisite } from "@/components/formulaire-modele-visite";
+import { TYPES_MODELE_VISITE } from "@/lib/constantes";
 
 export const dynamic = "force-dynamic";
 
 const SECTIONS = [
   { cle: "apercu", libelle: "Aperçu" },
+  { cle: "visites", libelle: "Visites" },
   { cle: "missions", libelle: "Missions" },
   { cle: "checklist", libelle: "Réglementaire" },
   { cle: "documents", libelle: "Documents" },
@@ -56,7 +60,7 @@ export default async function PageEtude({
   const etude = await etudeParId(etudeId);
   if (!etude) notFound();
 
-  const [pages, missions, temps, documents, checklist, faq, toutesEtudes] = await Promise.all([
+  const [pages, missions, temps, documents, checklist, faq, toutesEtudes, modeles] = await Promise.all([
     pagesDEtude(etudeId),
     tachesDEtude(etudeId),
     entreesTemps({ etudeId }),
@@ -64,6 +68,7 @@ export default async function PageEtude({
     checklistDEtude(etudeId),
     faqDEtude(etudeId),
     listerEtudes({ avecArchivees: true }),
+    modelesDEtude(etudeId),
   ]);
 
   // Le partage n'est proposé qu'au propriétaire ; les personnes conviées
@@ -88,6 +93,7 @@ export default async function PageEtude({
   const lien = (cle: string) => `/etudes/${etudeId}?section=${cle}`;
   const compteurs: Record<string, number> = {
     missions: ouvertes.length,
+    visites: modeles.length,
     checklist: prog.total - prog.faits,
     documents: documents.length,
     pages: pages.length,
@@ -286,6 +292,52 @@ export default async function PageEtude({
               </div>
             </details>
           </section>
+        </div>
+      )}
+
+      {section === "visites" && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-titre text-lg font-bold">Calendrier protocolaire</h2>
+              <p className="mt-1 max-w-xl text-sm text-attenue">
+                Définissez les visites (V0, V1, V2…) avant d&apos;inclure des sujets.
+                À l&apos;inclusion, chaque Subject ID reçoit ces visites, décalées
+                selon la fenêtre en jours.
+              </p>
+            </div>
+            <FormulaireModeleVisite
+              etudeId={etude.id}
+              prochainOrdre={modeles.length + 1}
+            />
+          </div>
+          {modeles.length === 0 ? (
+            <p className="carte p-8 text-center text-sm text-attenue">
+              Aucune visite protocolaire. Sans ce calendrier, un sujet inclus
+              n&apos;aura pas de visites dans le module Visites.
+            </p>
+          ) : (
+            <ul className="carte divide-y divide-ligne">
+              {modeles.map((m) => (
+                <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div>
+                    <p className="font-medium">
+                      <span className="chiffres text-attenue">{m.code}</span>
+                      {" · "}
+                      {m.nom}
+                    </p>
+                    <p className="text-xs text-attenue">
+                      {TYPES_MODELE_VISITE[m.type] ?? m.type}
+                      {m.fenetreMinJours != null || m.fenetreMaxJours != null
+                        ? ` · J${m.fenetreMinJours ?? "?"}–J${m.fenetreMaxJours ?? "?"}`
+                        : ""}
+                    </p>
+                  </div>
+                  <BoutonRetirerModeleVisite id={m.id} />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

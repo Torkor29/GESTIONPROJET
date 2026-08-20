@@ -6,9 +6,11 @@ import { sInscrire } from "@/actions/session";
 import { LONGUEUR_MOT_DE_PASSE } from "@/lib/constantes";
 
 const ROLES = [
+  { cle: "chef_projet", titre: "CP", detail: "Chef de projet recherche clinique" },
+  { cle: "data_manager", titre: "DM", detail: "Data Manager" },
   { cle: "arc", titre: "ARC", detail: "Attaché de recherche clinique" },
   { cle: "tec", titre: "TEC", detail: "Technicien d'étude clinique" },
-  { cle: "cp", titre: "CP", detail: "Chef de projet" },
+  { cle: "investigateur", titre: "INV", detail: "Investigateur" },
   { cle: "autre", titre: "Autre", detail: "Je préciserai plus tard" },
 ];
 
@@ -29,7 +31,7 @@ export default function FormulaireInscription() {
   // Les mots de passe, eux, restent non pilotés — les vider est souhaitable.
   const [nom, setNom] = useState(etat.valeurs?.nom ?? "");
   const [email, setEmail] = useState(etat.valeurs?.email ?? "");
-  const [role, setRole] = useState(etat.valeurs?.role ?? "arc");
+  const [role, setRole] = useState(etat.valeurs?.role ?? "chef_projet");
 
   return (
     <form action={action} className="carte space-y-4 p-6 !shadow-douce">

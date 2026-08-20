@@ -9,11 +9,19 @@ export const LONGUEUR_MOT_DE_PASSE = 10;
 
 /** Métiers proposés à l'inscription. Détermine les modules suggérés. */
 export const LIBELLES_ROLE: Record<string, string> = {
+  super_admin: "Super administrateur",
+  chef_projet: "Chef de projet",
+  cp: "Chef de projet",
+  data_manager: "Data Manager",
   arc: "Attaché de recherche clinique",
   tec: "Technicien d'étude clinique",
-  cp: "Chef de projet",
+  investigateur: "Investigateur",
+  sponsor: "Promoteur / Sponsor",
+  lecture_seule: "Lecture seule",
   autre: "Autre",
 };
+
+export const ROLES_INSCRIPTION = ["chef_projet", "data_manager", "arc", "tec", "investigateur", "autre"];
 
 /** Catégories de documents, calquées sur le contenu réel d'un TMF. */
 export const CATEGORIES_DOCUMENT: Record<string, string> = {
@@ -55,10 +63,127 @@ export const CATEGORIES_FAQ: Record<string, string> = {
 };
 
 export const LIBELLES_STATUT_MISSION: Record<string, string> = {
-  a_faire: "Non démarrée",
+  a_faire: "À faire",
   en_cours: "En cours",
+  bloque: "Bloqué",
   terminee: "Terminée",
 };
+
+export const LIBELLES_PRIORITE_TACHE: Record<string, string> = {
+  basse: "Faible",
+  normale: "Normale",
+  haute: "Haute",
+  critique: "Critique",
+};
+
+export const PHASES_ETUDE: Record<string, string> = {
+  I: "Phase I",
+  II: "Phase II",
+  III: "Phase III",
+  IV: "Phase IV",
+  autre: "Autre / non interventionnelle",
+};
+
+export const STATUTS_CENTRE: Record<string, string> = {
+  en_selection: "En sélection",
+  en_mise_en_place: "En mise en place",
+  actif: "Actif",
+  suspendu: "Suspendu",
+  ferme: "Fermé",
+};
+
+export const NIVEAUX_RISQUE: Record<string, string> = {
+  faible: "Faible",
+  modere: "Modéré",
+  eleve: "Élevé",
+};
+
+export const STATUTS_SUJET: Record<string, string> = {
+  pre_screening: "Pré-screening",
+  screening: "Screening",
+  inclus: "Inclus",
+  screen_failure: "Screen failure",
+  en_cours: "En cours de traitement",
+  fin_traitement: "Fin de traitement",
+  suivi: "Follow-up",
+  termine: "Terminé",
+  sortie_etude: "Sortie d'étude",
+};
+
+export const STATUTS_VISITE_SUJET: Record<string, string> = {
+  prevue: "Prévue",
+  confirmee: "Confirmée",
+  realisee: "Réalisée",
+  annulee: "Annulée",
+  en_retard: "En retard",
+};
+
+export const TYPES_MODELE_VISITE: Record<string, string> = {
+  screening: "Screening",
+  inclusion: "Inclusion",
+  traitement: "Visite de traitement",
+  fin_traitement: "Fin de traitement",
+  suivi: "Follow-up",
+  autre: "Autre",
+};
+
+export const TYPES_QUERY: Record<string, string> = {
+  manquant: "Donnée manquante",
+  incoherent: "Incohérence",
+  aberrant: "Valeur aberrante",
+  clarification: "Clarification",
+  autre: "Autre",
+};
+
+export const TYPES_JALON: Record<string, string> = {
+  inclusion: "Période d'inclusion",
+  suivi: "Follow-up",
+  gel_base: "Database lock",
+  fin_etude: "Fin d'étude",
+  soumission: "Soumission réglementaire",
+  autre: "Autre",
+};
+
+export const STATUTS_JALON: Record<string, string> = {
+  a_venir: "À venir",
+  atteint: "Atteint",
+  en_retard: "En retard",
+  annule: "Annulé",
+};
+
+export const STATUTS_DOCUMENT: Record<string, string> = {
+  brouillon: "Brouillon",
+  en_vigueur: "En vigueur",
+  obsolete: "Obsolète",
+  manquant: "Manquant",
+};
+
+export const ZONES_DOCUMENT: Record<string, string> = {
+  tmf_central: "TMF central",
+  tmf_site: "TMF centre",
+  isf: "ISF / classeur investigateur",
+  autre: "Autre",
+};
+
+export const TYPES_EI: Record<string, string> = {
+  ae: "EI (AE)",
+  sae: "EIG (SAE)",
+  susar: "SUSAR",
+};
+
+export const CHECKLIST_MONITORING_DEFAUT: { cle: string; libelle: string; categorie: string }[] = [
+  { cle: "consentements", libelle: "Consentements éclairés", categorie: "reglementaire" },
+  { cle: "inclusion", libelle: "Critères d'inclusion / non-inclusion", categorie: "protocole" },
+  { cle: "source", libelle: "Données source", categorie: "donnees" },
+  { cle: "crf", libelle: "CRF / eCRF", categorie: "donnees" },
+  { cle: "queries", libelle: "Queries ouvertes", categorie: "donnees" },
+  { cle: "investigateur", libelle: "Investigateur et délégation", categorie: "equipe" },
+  { cle: "pharmacie", libelle: "Pharmacie / produit investigational", categorie: "produit" },
+  { cle: "essentials", libelle: "Documents essentiels", categorie: "tmf" },
+  { cle: "deviations", libelle: "Déviations", categorie: "qualite" },
+  { cle: "securite", libelle: "Sécurité des participants", categorie: "securite" },
+  { cle: "ip", libelle: "IP accountability", categorie: "produit" },
+];
 
 export function octetsLisibles(octets: number): string {
   if (octets < 1024) return `${octets} o`;

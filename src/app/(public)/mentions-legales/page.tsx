@@ -70,8 +70,9 @@ export default function PageMentionsLegales() {
 
         <Section titre="Accès à l'application">
           <p>
-            Les pages publiques — présentation, référentiels réglementaires,
-            page données et sécurité, présentes mentions — sont librement
+            Les pages publiques — présentation, métiers, guides, cas d&apos;usage,
+            articles, glossaire, référentiels réglementaires, questions
+            fréquentes, données et sécurité, présentes mentions — sont librement
             consultables. Tout le reste demande un compte : les études, les
             missions, les documents et les indicateurs ne sont accessibles
             qu&apos;aux personnes autorisées, et uniquement pour les études qui

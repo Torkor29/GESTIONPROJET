@@ -280,7 +280,8 @@ src/
   temporaire assortie de `no-store` était ce que voyaient les robots de
   catégorisation — et ce que voit un filtre d'entreprise qui décide, sur cette
   base, si le domaine a « assez de contenu » pour être classé. Les pages
-  publiques (présentation, référentiels, données et sécurité, mentions) sont
+  publiques (présentation, métiers, guides, cas d'usage, articles, glossaire,
+  questions fréquentes, référentiels, données et sécurité, mentions) sont
   pré-rendues, reliées entre elles par un en-tête et un pied de page communs, et
   annoncées dans `sitemap.xml`. La page des référentiels est rendue depuis
   `src/lib/referentiels.ts` : le contenu public et celui des checklists ne

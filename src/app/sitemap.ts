@@ -1,27 +1,51 @@
 import type { MetadataRoute } from "next";
+import { cheminArticle, tousLesArticles } from "@/lib/contenu-public";
 import { REFERENTIELS } from "@/lib/referentiels";
 import { SITE_URL } from "@/lib/site";
 
-/**
- * Plan du site, limité aux pages publiques.
- *
- * Il n'existait pas : `/sitemap.xml` répondait 404, ce qui prive un robot du
- * seul moyen simple de découvrir les pages autres que l'accueil.
- */
+const PAGES_FIXES: { chemin: string; priorite: number; freq: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
+  { chemin: "/", priorite: 1, freq: "weekly" },
+  { chemin: "/a-propos", priorite: 0.9, freq: "monthly" },
+  { chemin: "/fonctionnement", priorite: 0.8, freq: "monthly" },
+  { chemin: "/methodologie", priorite: 0.8, freq: "monthly" },
+  { chemin: "/comparatif", priorite: 0.7, freq: "monthly" },
+  { chemin: "/equipe", priorite: 0.6, freq: "monthly" },
+  { chemin: "/metiers", priorite: 0.8, freq: "monthly" },
+  { chemin: "/guides", priorite: 0.8, freq: "monthly" },
+  { chemin: "/cas-usage", priorite: 0.7, freq: "monthly" },
+  { chemin: "/actualites", priorite: 0.8, freq: "weekly" },
+  { chemin: "/ressources", priorite: 0.7, freq: "monthly" },
+  { chemin: "/glossaire", priorite: 0.8, freq: "monthly" },
+  { chemin: "/reglementaire", priorite: 0.9, freq: "monthly" },
+  { chemin: "/questions-frequentes", priorite: 0.8, freq: "monthly" },
+  { chemin: "/aide", priorite: 0.7, freq: "monthly" },
+  { chemin: "/changelog", priorite: 0.5, freq: "monthly" },
+  { chemin: "/donnees", priorite: 0.7, freq: "yearly" },
+  { chemin: "/securite", priorite: 0.6, freq: "yearly" },
+  { chemin: "/hebergement", priorite: 0.6, freq: "yearly" },
+  { chemin: "/confidentialite", priorite: 0.5, freq: "yearly" },
+  { chemin: "/cgu", priorite: 0.4, freq: "yearly" },
+  { chemin: "/accessibilite", priorite: 0.4, freq: "yearly" },
+  { chemin: "/contact", priorite: 0.5, freq: "yearly" },
+  { chemin: "/mentions-legales", priorite: 0.3, freq: "yearly" },
+  { chemin: "/plan-du-site", priorite: 0.4, freq: "monthly" },
+  { chemin: "/connexion", priorite: 0.5, freq: "monthly" },
+];
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const fixes: MetadataRoute.Sitemap = [
-    { url: `${SITE_URL}/`, changeFrequency: "monthly", priority: 1 },
-    { url: `${SITE_URL}/reglementaire`, changeFrequency: "monthly", priority: 0.9 },
-    { url: `${SITE_URL}/donnees`, changeFrequency: "yearly", priority: 0.7 },
-    { url: `${SITE_URL}/mentions-legales`, changeFrequency: "yearly", priority: 0.3 },
-  ];
+  const fixes: MetadataRoute.Sitemap = PAGES_FIXES.map((p) => ({
+    url: `${SITE_URL}${p.chemin}`,
+    changeFrequency: p.freq,
+    priority: p.priorite,
+  }));
 
-  // La page de connexion n'est volontairement pas listée : c'est un
-  // formulaire de quelques mots, et l'annoncer tirerait vers le bas
-  // l'appréciation d'un moteur qui échantillonne le plan du site.
+  const articles: MetadataRoute.Sitemap = tousLesArticles().map((a) => ({
+    url: `${SITE_URL}${cheminArticle(a)}`,
+    lastModified: a.date ? new Date(a.date) : undefined,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
 
-  // Chaque référentiel porte la date à laquelle son contenu a été vérifié :
-  // c'est exactement la date de dernière modification utile ici.
   const pagesReferentiels: MetadataRoute.Sitemap = REFERENTIELS.map((r) => ({
     url: `${SITE_URL}/reglementaire/${r.cle}`,
     lastModified: new Date(r.verifieLe),
@@ -29,5 +53,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...fixes, ...pagesReferentiels];
+  return [...fixes, ...articles, ...pagesReferentiels];
 }

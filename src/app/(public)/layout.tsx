@@ -11,11 +11,60 @@ import { SITE_URL } from "@/lib/site";
  * du site.
  */
 
-const LIENS = [
-  { href: "/", libelle: "Présentation" },
+const NAV_PRINCIPALE = [
+  { href: "/a-propos", libelle: "À propos" },
+  { href: "/metiers", libelle: "Métiers" },
+  { href: "/guides", libelle: "Guides" },
   { href: "/reglementaire", libelle: "Référentiels" },
-  { href: "/donnees", libelle: "Données et sécurité" },
-  { href: "/mentions-legales", libelle: "Mentions légales" },
+  { href: "/actualites", libelle: "Articles" },
+  { href: "/questions-frequentes", libelle: "FAQ" },
+];
+
+const PIED: { titre: string; liens: { href: string; libelle: string }[] }[] = [
+  {
+    titre: "Produit",
+    liens: [
+      { href: "/", libelle: "Présentation" },
+      { href: "/a-propos", libelle: "À propos" },
+      { href: "/fonctionnement", libelle: "Fonctionnement" },
+      { href: "/methodologie", libelle: "Méthodologie" },
+      { href: "/comparatif", libelle: "Ce que c'est / n'est pas" },
+      { href: "/changelog", libelle: "Versions" },
+    ],
+  },
+  {
+    titre: "Documentation",
+    liens: [
+      { href: "/metiers", libelle: "Métiers" },
+      { href: "/guides", libelle: "Guides" },
+      { href: "/cas-usage", libelle: "Cas d'usage" },
+      { href: "/ressources", libelle: "Ressources" },
+      { href: "/glossaire", libelle: "Glossaire" },
+      { href: "/aide", libelle: "Aide" },
+      { href: "/questions-frequentes", libelle: "Questions fréquentes" },
+    ],
+  },
+  {
+    titre: "Cadre",
+    liens: [
+      { href: "/reglementaire", libelle: "Référentiels" },
+      { href: "/donnees", libelle: "Données" },
+      { href: "/securite", libelle: "Sécurité" },
+      { href: "/hebergement", libelle: "Hébergement" },
+      { href: "/equipe", libelle: "Équipe et rôles" },
+    ],
+  },
+  {
+    titre: "Légal",
+    liens: [
+      { href: "/mentions-legales", libelle: "Mentions légales" },
+      { href: "/confidentialite", libelle: "Confidentialité" },
+      { href: "/cgu", libelle: "Conditions d'utilisation" },
+      { href: "/accessibilite", libelle: "Accessibilité" },
+      { href: "/contact", libelle: "Contact" },
+      { href: "/plan-du-site", libelle: "Plan du site" },
+    ],
+  },
 ];
 
 function Marque({ petite = false }: { petite?: boolean }) {
@@ -37,37 +86,43 @@ function Marque({ petite = false }: { petite?: boolean }) {
   );
 }
 
-/**
- * Description lisible par une machine de ce qu'est ce site.
- *
- * Un moteur de catégorisation qui ne saurait pas quoi faire du texte trouve
- * ici, en clair, la nature du site et sa catégorie : logiciel de gestion de
- * projet à destination professionnelle.
- */
 const DONNEES_STRUCTUREES = {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "Vigie",
-  applicationCategory: "BusinessApplication",
-  applicationSubCategory: "Gestion de projet en recherche clinique",
-  operatingSystem: "Navigateur web",
-  inLanguage: "fr",
-  url: SITE_URL,
-  description:
-    "Outil de gestion de projet destiné aux équipes de recherche clinique hospitalière : suivi des études et des missions, checklists réglementaires, archivage documentaire TMF, monitorage, budget et suivi du temps.",
-  audience: {
-    "@type": "Audience",
-    audienceType:
-      "Attachés de recherche clinique, techniciens d'étude clinique, chefs de projet en recherche clinique",
-  },
-  featureList: [
-    "Suivi des études cliniques",
-    "Checklists réglementaires RIPH, règlement UE 536/2014, MDR, IVDR, ICH E6(R3), CNIL",
-    "Gestion des missions et des échéances",
-    "Archivage documentaire Trial Master File",
-    "Visites de monitorage, écarts et actions correctives",
-    "Budget et conventions",
-    "Suivi du temps et indicateurs",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      name: "Vigie",
+      inLanguage: "fr",
+      url: SITE_URL,
+      description:
+        "Site d'information et application de gestion de projet pour les équipes de recherche clinique hospitalière.",
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "Vigie",
+      applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Gestion de projet en recherche clinique",
+      operatingSystem: "Navigateur web",
+      inLanguage: "fr",
+      url: SITE_URL,
+      description:
+        "Outil de gestion de projet destiné aux équipes de recherche clinique hospitalière : suivi des études et des missions, checklists réglementaires, archivage documentaire TMF, monitorage, queries, budget et suivi du temps.",
+      audience: {
+        "@type": "Audience",
+        audienceType:
+          "Attachés de recherche clinique, techniciens d'étude clinique, data managers, chefs de projet en recherche clinique, investigateurs",
+      },
+      featureList: [
+        "Suivi des études cliniques",
+        "Centres investigateurs et visites de monitoring",
+        "Sujets identifiés par Subject ID",
+        "Queries et revue de données",
+        "Checklists réglementaires RIPH, règlement UE 536/2014, MDR, IVDR, ICH E6(R3), CNIL",
+        "Archivage documentaire Trial Master File",
+        "Écarts, actions correctives et préventives",
+        "Budget, conventions et suivi du temps",
+      ],
+    },
   ],
 };
 
@@ -76,8 +131,6 @@ export default function LayoutPublic({ children }: { children: React.ReactNode }
     <div className="min-h-screen bg-surface">
       <script
         type="application/ld+json"
-        // Contenu constant écrit dans ce fichier : aucune donnée extérieure
-        // n'entre dans cette sérialisation.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(DONNEES_STRUCTUREES) }}
       />
       <header className="sticky top-0 z-20 border-b border-ligne/70 bg-surface/85 backdrop-blur-md">
@@ -86,8 +139,11 @@ export default function LayoutPublic({ children }: { children: React.ReactNode }
             <Marque />
           </Link>
 
-          <nav aria-label="Pages publiques" className="hidden items-center gap-1 md:flex">
-            {LIENS.slice(1).map((l) => (
+          <nav
+            aria-label="Pages publiques"
+            className="hidden items-center gap-1 lg:flex"
+          >
+            {NAV_PRINCIPALE.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
@@ -102,38 +158,71 @@ export default function LayoutPublic({ children }: { children: React.ReactNode }
             Se connecter
           </Link>
         </div>
+        <nav
+          aria-label="Pages publiques (compact)"
+          className="flex gap-1 overflow-x-auto border-t border-ligne/50 px-4 py-2 lg:hidden"
+        >
+          {NAV_PRINCIPALE.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="shrink-0 rounded-lg px-3 py-1.5 text-[13px] text-attenue hover:bg-relief hover:text-encre"
+            >
+              {l.libelle}
+            </Link>
+          ))}
+        </nav>
       </header>
 
       <main>{children}</main>
 
-      <footer className="border-t border-ligne px-6 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <Marque petite />
-            <p className="mt-2 max-w-sm text-sm text-efface">
-              Outil de gestion de projet pour les équipes de recherche clinique
-              hospitalière. Suivi des études, des missions, des obligations
-              réglementaires et du temps passé.
-            </p>
-          </div>
-
-          <nav aria-label="Plan du site" className="flex flex-col gap-1.5">
-            {LIENS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="text-sm text-attenue transition-colors hover:text-accent"
-              >
-                {l.libelle}
-              </Link>
+      <footer className="border-t border-ligne px-6 py-12">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+            <div>
+              <Marque petite />
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-efface">
+                Logiciel de gestion de projet pour les équipes de recherche
+                clinique hospitalière. Études, centres, queries, monitoring,
+                documents TMF, checklists réglementaires. Auto-hébergé, en
+                français.
+              </p>
+              <p className="mt-3 text-sm">
+                <Link href="/connexion" className="text-accent hover:underline">
+                  Connexion à l&apos;espace de travail
+                </Link>
+              </p>
+            </div>
+            {PIED.map((col) => (
+              <nav key={col.titre} aria-label={col.titre}>
+                <p className="font-titre text-sm font-bold">{col.titre}</p>
+                <ul className="mt-3 space-y-1.5">
+                  {col.liens.map((l) => (
+                    <li key={l.href}>
+                      <Link
+                        href={l.href}
+                        className="text-sm text-attenue transition-colors hover:text-accent"
+                      >
+                        {l.libelle}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
             ))}
-            <Link
-              href="/connexion"
-              className="text-sm text-attenue transition-colors hover:text-accent"
-            >
-              Connexion
+          </div>
+          <p className="mt-10 text-xs leading-relaxed text-efface">
+            Vigie est une aide au travail, pas un avis réglementaire ni une
+            attestation de conformité. Les textes officiels (ANSM, CPP, CNIL,
+            EMA, EUR-Lex, Légifrance, ICH) prévalent.{" "}
+            <Link href="/plan-du-site" className="hover:text-accent">
+              Plan du site
             </Link>
-          </nav>
+            {" · "}
+            <Link href="/mentions-legales" className="hover:text-accent">
+              Mentions légales
+            </Link>
+          </p>
         </div>
       </footer>
     </div>

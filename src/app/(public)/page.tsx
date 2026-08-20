@@ -5,24 +5,34 @@ import { Icone, type NomIcone } from "@/components/icones";
 export const metadata: Metadata = {
   title: "Vigie — Gestion de projet en recherche clinique",
   description:
-    "Vigie est un outil de gestion de projet destiné aux équipes de recherche clinique hospitalière : suivi des études et des missions, checklists réglementaires (RIPH, règlement UE 536/2014, MDR, IVDR, ICH E6(R3), CNIL), archivage documentaire TMF, base de connaissance et suivi du temps.",
+    "Vigie est un logiciel de gestion de projet pour les équipes de recherche clinique hospitalière : études, centres, queries, monitoring, TMF, checklists RIPH / 536/2014 / MDR / IVDR. Site d'information public, application auto-hébergée, sans données nominatives de participants.",
+  alternates: { canonical: "/" },
 };
 
 const metiers = [
   {
+    role: "CP",
+    nom: "Chef de projet",
+    href: "/metiers/chef-de-projet",
+    suit: ["Portefeuille d'études", "Jalons réglementaires", "Charge de l'équipe"],
+  },
+  {
+    role: "DM",
+    nom: "Data manager",
+    href: "/metiers/data-manager",
+    suit: ["Queries et revue", "Structure CRF", "Jalons de gel de base"],
+  },
+  {
     role: "ARC",
     nom: "Attaché de recherche clinique",
-    suit: ["Visites de monitorage", "Écarts et actions correctives", "Vérification des données sources"],
+    href: "/metiers/arc",
+    suit: ["Visites de monitoring", "Écarts et actions correctives", "Centres et documents de site"],
   },
   {
     role: "TEC",
     nom: "Technicien d'étude clinique",
-    suit: ["Screening et inclusions", "Saisie et requêtes", "Facturation des actes"],
-  },
-  {
-    role: "CP",
-    nom: "Chef de projet",
-    suit: ["Portefeuille d'études", "Jalons réglementaires", "Charge de l'équipe"],
+    href: "/metiers/tec",
+    suit: ["Subject ID du centre", "Visites protocolaires", "Queries à répondre"],
   },
 ];
 
@@ -110,20 +120,26 @@ export default function PagePresentation() {
               <span className="text-accent">au même endroit</span>
             </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-attenue">
-              Vigie remplace le tableur, la boîte mail et le dossier partagé par
-              un outil qui parle le vocabulaire de la recherche clinique.
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-attenue">
+              Vigie est un logiciel de gestion de projet pour les équipes de
+              recherche clinique hospitalière. Il remplace le tableur, la boîte
+              mail et le dossier partagé par un suivi d&apos;études, de centres,
+              de queries, de visites de monitoring et de documents TMF — en
+              français, auto-hébergé, sans données nominatives de participants.
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/connexion" className="bouton">
-                Accéder à l&apos;application
-                <Icone nom="fleche" className="h-4 w-4" />
-              </Link>
-              <a href="#fonctions" className="bouton-discret">
-                Voir les fonctions
-              </a>
-            </div>
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+                <Link href="/connexion" className="bouton">
+                  Accéder à l&apos;application
+                  <Icone nom="fleche" className="h-4 w-4" />
+                </Link>
+                <Link href="/a-propos" className="bouton-discret">
+                  Lire la présentation
+                </Link>
+                <Link href="/plan-du-site" className="bouton-discret">
+                  Plan du site
+                </Link>
+              </div>
           </div>
 
           {/* Aperçu : donne à voir l'outil plutôt que de le décrire. */}
@@ -200,9 +216,9 @@ export default function PagePresentation() {
               </p>
             </div>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {metiers.map((m) => (
-                <article key={m.role} className="carte-active p-6">
+                <Link key={m.role} href={m.href} className="carte-active p-6">
                   <div className="flex items-baseline gap-2.5">
                     <span className="font-titre text-2xl font-bold text-accent">{m.role}</span>
                     <span className="text-xs text-efface">{m.nom}</span>
@@ -215,9 +231,24 @@ export default function PagePresentation() {
                       </li>
                     ))}
                   </ul>
-                </article>
+                </Link>
               ))}
             </div>
+            <p className="mt-6 text-sm text-attenue">
+              Pages dédiées :{" "}
+              <Link href="/metiers/investigateur" className="text-accent hover:underline">
+                investigateur
+              </Link>
+              {" · "}
+              <Link href="/metiers/promoteur" className="text-accent hover:underline">
+                promoteur
+              </Link>
+              {" · "}
+              <Link href="/equipe" className="text-accent hover:underline">
+                organisation de l&apos;équipe
+              </Link>
+              .
+            </p>
           </div>
         </section>
 
@@ -317,58 +348,147 @@ export default function PagePresentation() {
           </div>
         </section>
 
-        {/* --------------------------------------------------- pour aller plus loin */}
-        <section className="px-6 pb-24">
-          <div className="mx-auto max-w-5xl">
-            <p className="sur-titre text-center">En savoir plus</p>
-            <h2 className="mt-3 text-center font-titre text-3xl font-bold">
-              Deux sujets qui méritent leur propre page
+        {/* --------------------------------------------------- éditorial */}
+        <section className="border-y border-ligne bg-creux/40 px-6 py-24">
+          <div className="mx-auto max-w-3xl">
+            <p className="sur-titre">Contexte</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Un site d&apos;information, et une application derrière compte
             </h2>
+            <div className="mt-6 space-y-4 leading-relaxed text-attenue">
+              <p>
+                Les pages que vous lisez sont publiques : présentation, métiers,
+                guides, cas d&apos;usage, articles, glossaire, référentiels
+                réglementaires commentés, mentions légales. Elles s&apos;adressent
+                aux professionnels de la recherche clinique et aux informaticiens
+                d&apos;établissement. Elles ne contiennent ni publicité, ni
+                formulaire d&apos;inscription ouvert, ni données d&apos;étude.
+              </p>
+              <p>
+                L&apos;application elle-même — le suivi des études, des centres,
+                des Subject ID, des queries, du monitoring, du TMF — s&apos;ouvre
+                après authentification. Les comptes sont nominatifs, invités par
+                l&apos;établissement. Vigie tourne sur le serveur de
+                l&apos;installation, sans nuage éditeur obligatoire.
+              </p>
+              <p>
+                Ce volume de texte n&apos;est pas cosmétique. Un outil de travail
+                interne, réduit à une page d&apos;accueil vide et à un
+                formulaire, est souvent classé à tort par un filtre web
+                d&apos;entreprise (« trop peu de contenu », site non catégorisé).
+                Le{" "}
+                <Link href="/plan-du-site" className="text-accent hover:underline">
+                  plan du site
+                </Link>{" "}
+                et le fichier sitemap.xml existent pour montrer l&apos;étendue du
+                contenu. Voir aussi{" "}
+                <Link href="/hebergement" className="text-accent hover:underline">
+                  Hébergement
+                </Link>{" "}
+                et{" "}
+                <Link href="/aide" className="text-accent hover:underline">
+                  Aide
+                </Link>
+                .
+              </p>
+            </div>
+          </div>
+        </section>
 
-            <div className="mt-10 grid gap-5 sm:grid-cols-2">
-              <Link href="/reglementaire" className="carte carte-active group p-7">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
-                  <Icone nom="checklist" />
-                </span>
-                <h3 className="mt-4 font-titre text-lg font-bold">
-                  Les référentiels couverts
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-attenue">
-                  Le détail des cadres pris en charge — RIPH 1, 2 et 3, règlement
-                  UE 536/2014, MDR, IVDR, ICH E6(R3), méthodologies de référence
-                  de la CNIL, archivage — avec, pour chaque obligation, sa phase,
-                  sa référence et sa source officielle.
-                </p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-                  Consulter les référentiels
-                  <Icone
-                    nom="fleche"
-                    className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                  />
-                </span>
-              </Link>
+        {/* --------------------------------------------------- pour aller plus loin */}
+        <section className="px-6 py-24">
+          <div className="mx-auto max-w-5xl">
+            <p className="sur-titre text-center">Documentation publique</p>
+            <h2 className="mt-3 text-center font-titre text-3xl font-bold">
+              Lire avant de demander un compte
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-attenue">
+              Guides pratiques, pages métiers, cas d&apos;unité, listes de
+              contrôle, cadre réglementaire commenté. Aucune de ces pages ne
+              remplace un avis juridique ni une SOP.
+            </p>
 
-              <Link href="/donnees" className="carte carte-active group p-7">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
-                  <Icone nom="bouclier" />
-                </span>
-                <h3 className="mt-4 font-titre text-lg font-bold">
-                  Données et sécurité
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-attenue">
-                  Ce que Vigie enregistre, ce qu&apos;il ne doit pas recevoir, où
-                  vivent les fichiers, comment les comptes et les partages sont
-                  cloisonnés, et ce qu&apos;implique la conduite d&apos;un suivi
-                  d&apos;inclusions.
-                </p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-                  Lire la page
-                  <Icone
-                    nom="fleche"
-                    className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                  />
-                </span>
-              </Link>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  href: "/guides",
+                  icone: "page" as NomIcone,
+                  titre: "Guides",
+                  texte:
+                    "Démarrer une étude, ouvrir un centre, suivre un Subject ID, faire vivre une query, documenter une visite ARC, classer un TMF, suivre une CAPA, gérer les droits.",
+                },
+                {
+                  href: "/metiers",
+                  icone: "personnes" as NomIcone,
+                  titre: "Métiers",
+                  texte:
+                    "Chef de projet, data manager, ARC, TEC, investigateur, promoteur : ce que chacun voit, et ce qu'il ne fait pas dans l'outil.",
+                },
+                {
+                  href: "/cas-usage",
+                  icone: "dossier" as NomIcone,
+                  titre: "Cas d'usage",
+                  texte:
+                    "Oncologie, promotion interne académique, investigation MDR, étude de performances IVDR, unité de recherche clinique.",
+                },
+                {
+                  href: "/reglementaire",
+                  icone: "checklist" as NomIcone,
+                  titre: "Référentiels",
+                  texte:
+                    "RIPH 1, 2 et 3, règlement UE 536/2014, MDR, IVDR, ICH E6(R3), méthodologies CNIL, archivage — obligations sourcées et datées.",
+                },
+                {
+                  href: "/donnees",
+                  icone: "bouclier" as NomIcone,
+                  titre: "Données et sécurité",
+                  texte:
+                    "Ce que Vigie enregistre, ce qu'il ne doit pas recevoir, cloisonnement des comptes, HTTPS, sauvegardes, journal d'audit.",
+                },
+                {
+                  href: "/actualites",
+                  icone: "document" as NomIcone,
+                  titre: "Articles",
+                  texte:
+                    "Tableur contre outil dédié, cycle des queries, Subject ID et RGPD, checklists sans illusion, monitoring basé sur le risque, auto-hébergement.",
+                },
+                {
+                  href: "/ressources",
+                  icone: "drapeau" as NomIcone,
+                  titre: "Ressources",
+                  texte:
+                    "Listes de contrôle : ouverture de centre, clôture, trame de compte rendu de visite, questions avant un database lock.",
+                },
+                {
+                  href: "/glossaire",
+                  icone: "question" as NomIcone,
+                  titre: "Glossaire",
+                  texte:
+                    "Query, CRF, Subject ID, TMF, CAPA, RIPH, CTIS, MDR, IVDR, lock, SAE, ARC, TEC, data manager — définitions opérationnelles.",
+                },
+                {
+                  href: "/comparatif",
+                  icone: "graphique" as NomIcone,
+                  titre: "Ce que c'est / n'est pas",
+                  texte:
+                    "Clinical operations, pas eCRF, pas CTIS, pas base de PV, pas LIMS, pas attestation RGPD. La frontière, écrite clairement.",
+                },
+              ].map((c) => (
+                <Link key={c.href} href={c.href} className="carte carte-active group p-6">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
+                    <Icone nom={c.icone} />
+                  </span>
+                  <h3 className="mt-4 font-titre text-lg font-bold">{c.titre}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-attenue">{c.texte}</p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+                    Ouvrir
+                    <Icone
+                      nom="fleche"
+                      className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </span>
+                </Link>
+              ))}
             </div>
           </div>
         </section>

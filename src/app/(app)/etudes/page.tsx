@@ -28,16 +28,26 @@ export default async function PageEtudes() {
         </div>
         <div className="flex flex-wrap gap-2">
           <MenuExport base="/api/export-etudes" />
+          <Link href="/etudes/nouvelle" className="bouton-discret">
+            Assistant
+          </Link>
           <FormulaireEtude libelle="Nouvelle étude" />
         </div>
       </header>
 
       {etudes.length === 0 ? (
         <div className="carte p-10 text-center">
-          <p className="text-sm text-attenue">
-            Créez une étude pour y ranger ses pages, ses missions, ses documents et ses checklists
-            réglementaires.
+          <p className="font-titre text-lg font-bold">Aucune étude n&apos;est encore configurée.</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-attenue">
+            Créez une étude pour y rattacher centres, sujets, visites, queries et documents.
+            Une étude vide n&apos;est pas une erreur : elle se configure ensuite.
           </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Link href="/etudes/nouvelle" className="bouton">
+              Créer mon premier projet
+            </Link>
+            <FormulaireEtude libelle="Création rapide" variante="discret" />
+          </div>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

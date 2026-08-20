@@ -31,7 +31,17 @@ function freiner() {
   return new Promise((r) => setTimeout(r, 600));
 }
 
-const ROLES = new Set(["arc", "tec", "cp", "autre"]);
+const ROLES = new Set([
+  "arc",
+  "tec",
+  "cp",
+  "autre",
+  "chef_projet",
+  "data_manager",
+  "investigateur",
+  "sponsor",
+  "lecture_seule",
+]);
 
 function normaliserEmail(valeur: string): string {
   return valeur.trim().toLowerCase();
@@ -108,6 +118,8 @@ export async function sInscrire(
       nom,
       motDePasse: hacherMotDePasse(motDePasse),
       role: metier,
+      // Premier compte de l'instance : il administre, quel que soit le métier.
+      superAdmin: true,
       // La sélection suggérée par le métier est figée dès la création : la
       // personne arrive sur une navigation déjà pertinente, et peut l'ajuster.
       modules: JSON.stringify(modulesSuggeres(metier)),
