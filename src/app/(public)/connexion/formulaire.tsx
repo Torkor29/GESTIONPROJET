@@ -15,15 +15,13 @@ function BoutonEnvoyer() {
 
 export default function FormulaireConnexion() {
   const [etat, action] = useActionState(seConnecter, {});
-  // Piloté par l'état : React 19 vide le formulaire après chaque tentative,
-  // et retaper son adresse à chaque essai serait pénible.
   const [email, setEmail] = useState(etat.valeurs?.email ?? "");
 
   return (
     <form action={action} className="carte space-y-4 p-6 !shadow-douce">
       <div>
         <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-          Adresse électronique
+          Adresse électronique professionnelle
         </label>
         <input
           id="email"

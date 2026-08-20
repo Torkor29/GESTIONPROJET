@@ -39,6 +39,8 @@ export const metadata: Metadata = {
     "attaché de recherche clinique",
     "technicien d'étude clinique",
     "chef de projet recherche clinique",
+    "data manager clinique",
+    "query recherche clinique",
     "CHU recherche clinique",
   ],
   applicationName: "Vigie",
