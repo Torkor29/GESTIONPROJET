@@ -196,9 +196,14 @@ export async function changerMotDePasse(
   _precedent: EtatConnexion,
   donnees: FormData,
 ): Promise<EtatConnexion> {
-  const compte = await exigerSession();
+  let compte;
+  try {
+    compte = await exigerSession();
+  } catch {
+    return { erreur: "Session expirée. Reconnectez-vous." };
+  }
   const actuel = String(donnees.get("actuel") ?? "");
-  const motDePasse = String(donnees.get("motDePasse") ?? "");
+  const motDePasse = String(donnees.get("nouveau") ?? donnees.get("motDePasse") ?? "");
   const confirmation = String(donnees.get("confirmation") ?? "");
 
   if (!actuel || !motDePasse) {

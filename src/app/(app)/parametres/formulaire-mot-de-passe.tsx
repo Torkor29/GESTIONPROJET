@@ -33,12 +33,12 @@ export default function FormulaireChangerMotDePasse() {
         />
       </div>
       <div>
-        <label htmlFor="motDePasse" className="mb-1.5 block text-sm font-medium">
+        <label htmlFor="nouveauMotDePasse" className="mb-1.5 block text-sm font-medium">
           Nouveau mot de passe
         </label>
         <input
-          id="motDePasse"
-          name="motDePasse"
+          id="nouveauMotDePasse"
+          name="nouveau"
           type="password"
           autoComplete="new-password"
           required

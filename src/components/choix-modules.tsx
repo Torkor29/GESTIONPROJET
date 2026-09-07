@@ -2,9 +2,18 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { enregistrerModules } from "@/actions/modules";
-import { Icone } from "@/components/icones";
-import { DOMAINES, MODULES, construit } from "@/lib/modules";
+import { Icone, type NomIcone } from "@/components/icones";
+import type { EtatModules } from "@/actions/modules";
+
+export type ModuleChoix = {
+  cle: string;
+  nom: string;
+  description: string;
+  icone: NomIcone;
+  domaine: string;
+  pret: boolean;
+  socle: boolean;
+};
 
 function BoutonEnregistrer() {
   const { pending } = useFormStatus();
@@ -15,29 +24,34 @@ function BoutonEnregistrer() {
   );
 }
 
-export default function ChoixModules({ actifs }: { actifs: string[] }) {
-  const [etat, action] = useActionState(enregistrerModules, {});
-  // Piloté par l'état : React 19 réinitialise le formulaire après l'action,
-  // ce qui ferait clignoter les cases vers leur valeur d'origine.
-  const [coches, setCoches] = useState<Set<string>>(new Set(actifs));
+export default function ChoixModules({
+  actifs,
+  modules,
+  domaines,
+  enregistrer,
+}: {
+  actifs: string[];
+  modules: ModuleChoix[];
+  domaines: string[];
+  enregistrer: (precedent: EtatModules, donnees: FormData) => Promise<EtatModules>;
+}) {
+  const [etat, action] = useActionState(enregistrer, {});
+  const [coches, setCoches] = useState<string[]>(actifs);
+
+  const has = (cle: string) => coches.includes(cle);
 
   const basculer = (cle: string) =>
-    setCoches((precedent) => {
-      const suivant = new Set(precedent);
-      if (suivant.has(cle)) suivant.delete(cle);
-      else suivant.add(cle);
-      return suivant;
-    });
+    setCoches((precedent) =>
+      precedent.includes(cle) ? precedent.filter((c) => c !== cle) : [...precedent, cle],
+    );
 
-  const disponibles = MODULES.filter((m) => construit(m) && !m.socle).length;
-  const actifsDisponibles = MODULES.filter(
-    (m) => construit(m) && !m.socle && coches.has(m.cle),
-  ).length;
+  const disponibles = modules.filter((m) => m.pret && !m.socle).length;
+  const actifsDisponibles = modules.filter((m) => m.pret && !m.socle && has(m.cle)).length;
 
   return (
     <form action={action} className="space-y-8">
-      {DOMAINES.map((domaine) => {
-        const duDomaine = MODULES.filter((m) => m.domaine === domaine);
+      {domaines.map((domaine) => {
+        const duDomaine = modules.filter((m) => m.domaine === domaine);
         if (duDomaine.length === 0) return null;
 
         return (
@@ -45,9 +59,8 @@ export default function ChoixModules({ actifs }: { actifs: string[] }) {
             <h2 className="sur-titre mb-3">{domaine}</h2>
             <div className="grid gap-2.5 sm:grid-cols-2">
               {duDomaine.map((m) => {
-                const pret = construit(m);
-                const actif = m.socle || coches.has(m.cle);
-                const verrouille = Boolean(m.socle) || !pret;
+                const actif = m.socle || has(m.cle);
+                const verrouille = m.socle || !m.pret;
 
                 return (
                   <label
@@ -55,11 +68,11 @@ export default function ChoixModules({ actifs }: { actifs: string[] }) {
                     className={`flex items-start gap-3 rounded-2xl border p-4 transition-all duration-200
                       ${verrouille ? "cursor-default" : "cursor-pointer hover:border-ligne-forte"}
                       ${
-                        actif && pret
+                        actif && m.pret
                           ? "border-accent/40 bg-accent-voile/30"
                           : "border-ligne bg-relief"
                       }
-                      ${!pret ? "opacity-60" : ""}`}
+                      ${!m.pret ? "opacity-60" : ""}`}
                   >
                     <input
                       type="checkbox"
@@ -78,7 +91,7 @@ export default function ChoixModules({ actifs }: { actifs: string[] }) {
                         {m.socle && (
                           <span className="etiquette bg-creux text-attenue">Toujours actif</span>
                         )}
-                        {!pret && (
+                        {!m.pret && (
                           <span className="etiquette bg-attention-voile text-attention">
                             À venir
                           </span>
@@ -96,22 +109,15 @@ export default function ChoixModules({ actifs }: { actifs: string[] }) {
         );
       })}
 
-      {/* Les modules cochés mais pas encore construits doivent quand même
-          partir au serveur : sans cela, la sélection les perdrait à chaque
-          enregistrement, et il faudrait les recocher à leur sortie. */}
-      {[...coches]
+      {coches
         .filter((cle) => {
-          const m = MODULES.find((x) => x.cle === cle);
-          return m && !construit(m) && !m.socle;
+          const m = modules.find((x) => x.cle === cle);
+          return m && !m.pret && !m.socle;
         })
         .map((cle) => (
           <input key={cle} type="hidden" name="module" value={cle} />
         ))}
 
-      {/* z-30 : le chronomètre flottant occupe le bas de l'écran en z-20, et
-          passerait sinon par-dessus le bouton d'enregistrement. Sur cet écran,
-          c'est l'enregistrement qui prime — le chronomètre continue de tourner
-          et reste lisible dans le titre de l'onglet. */}
       <div className="sticky bottom-0 z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 border-t border-ligne bg-surface/95 px-1 py-4 backdrop-blur-md">
         <p className="text-sm text-attenue">
           <span className="chiffres font-semibold text-encre">
@@ -119,7 +125,7 @@ export default function ChoixModules({ actifs }: { actifs: string[] }) {
           </span>{" "}
           module{disponibles > 1 ? "s" : ""} disponible
           {disponibles > 1 ? "s" : ""} activé{actifsDisponibles > 1 ? "s" : ""}
-          {etat.message && <span className="ml-3 text-reussite">{etat.message}</span>}
+          {etat?.message && <span className="ml-3 text-reussite">{etat.message}</span>}
         </p>
         <BoutonEnregistrer />
       </div>
