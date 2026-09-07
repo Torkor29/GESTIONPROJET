@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { invitationValide } from "@/actions/invitations";
 import { estConnecte } from "@/lib/auth";
 import { LIBELLES_ROLE } from "@/lib/constantes";
-import { Icone } from "@/components/icones";
+import { Marque } from "@/components/marque";
 import FormulaireInvitation from "./formulaire";
 
 export const dynamic = "force-dynamic";
@@ -27,12 +27,9 @@ export default async function PageInvitation({
 
       <div className="relative w-full max-w-sm animate-apparait">
         <div className="text-center">
-          <span className="inline-flex items-center gap-2.5 font-titre text-lg font-bold tracking-tight">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sur-accent shadow-douce">
-              <Icone nom="eclair" className="h-4 w-4" />
-            </span>
-            Vigie
-          </span>
+          <Link href="/" className="inline-flex" aria-label="Vigie Clinique — accueil">
+            <Marque />
+          </Link>
         </div>
 
         {invitation ? (

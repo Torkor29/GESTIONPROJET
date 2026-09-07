@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Icone } from "@/components/icones";
+import { NOM_PRODUIT } from "@/lib/site";
 import {
   AVERTISSEMENT,
   LIBELLES_PHASE,
@@ -10,9 +11,9 @@ import {
 } from "@/lib/referentiels";
 
 export const metadata: Metadata = {
-  title: "Référentiels réglementaires couverts — Vigie",
+  title: `Référentiels réglementaires — ${NOM_PRODUIT}`,
   description:
-    "Les cadres réglementaires pris en charge par Vigie pour la recherche clinique : RIPH catégories 1, 2 et 3, règlement UE 536/2014 sur les essais cliniques de médicaments, règlements MDR 2017/745 et IVDR 2017/746, ICH E6(R3), méthodologies de référence de la CNIL et archivage des données de recherche.",
+    "Les cadres réglementaires déjà rédigés dans Vigie Clinique : RIPH catégories 1, 2 et 3, règlement UE 536/2014, MDR, IVDR, ICH E6(R3), méthodologies de référence de la CNIL et archivage. Une aide au suivi des obligations, dans l'espace de travail.",
   alternates: { canonical: "/reglementaire" },
 };
 
@@ -48,14 +49,15 @@ export default function PageReglementaire() {
       <div className="mx-auto max-w-4xl">
         <p className="sur-titre">Référentiels</p>
         <h1 className="mt-3 font-titre text-4xl font-bold leading-tight">
-          Les obligations, déjà écrites
+          Les obligations, déjà rédigées dans l&apos;outil
         </h1>
         <p className="mt-5 text-lg leading-relaxed text-attenue">
-          Vigie livre {REFERENTIELS.length} référentiels et {total} obligations
-          rédigées. Dans une étude, vous cochez le cadre applicable et les lignes
-          correspondantes apparaissent, regroupées par phase du projet. Chacune
-          porte sa référence réglementaire, se coche, s&apos;annote, ou se marque
-          « sans objet » — auquel cas elle sort du calcul de progression.
+          Vigie Clinique livre {REFERENTIELS.length} référentiels et {total}{" "}
+          obligations rédigées. Dans une étude, vous cochez le cadre applicable
+          et les lignes correspondantes apparaissent, regroupées par phase du
+          projet. Chacune porte sa référence réglementaire, se coche,
+          s&apos;annote, ou se marque « sans objet » — auquel cas elle sort du
+          calcul de progression.
         </p>
 
         <div className="carte mt-8 border-attention/30 bg-attention-voile/40 p-5">
@@ -101,7 +103,7 @@ export default function PageReglementaire() {
                   </div>
 
                   <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-                    Voir le détail
+                    Lire le référentiel
                     <Icone
                       nom="fleche"
                       className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
@@ -158,7 +160,7 @@ export default function PageReglementaire() {
           les changements sur une étude déjà en cours sans effacer le travail
           fait.{" "}
           <Link href="/donnees" className="text-accent hover:underline">
-            Voir aussi la page Données et sécurité
+            Voir aussi la page Confidentialité et hébergement
           </Link>
           .
         </p>

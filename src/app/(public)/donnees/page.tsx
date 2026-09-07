@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Icone, type NomIcone } from "@/components/icones";
+import { NOM_PRODUIT } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Données et sécurité — Vigie",
+  title: `Confidentialité et hébergement — ${NOM_PRODUIT}`,
   description:
-    "Ce que Vigie enregistre et ce qu'il n'a pas vocation à recevoir : Vigie est un outil de gestion de projet en recherche clinique, pas un cahier d'observation. Hébergement, cloisonnement des comptes, partage explicite, chiffrement, sauvegardes et durée de conservation.",
+    "Ce que Vigie Clinique enregistre dans l'espace de travail, et ce qu'il n'a pas vocation à recevoir. Hébergement sur votre serveur, cloisonnement des comptes, partage explicite, chiffrement, sauvegardes et durée de conservation.",
   alternates: { canonical: "/donnees" },
 };
 
@@ -46,21 +47,23 @@ export default function PageDonnees() {
   return (
     <div className="px-6 py-16 sm:py-20">
       <div className="mx-auto max-w-3xl">
-        <p className="sur-titre">Données et sécurité</p>
+        <p className="sur-titre">Confidentialité et hébergement</p>
         <h1 className="mt-3 font-titre text-4xl font-bold leading-tight">
-          Un outil de gestion de projet, pas un cahier d&apos;observation
+          Un espace de travail, pas un dossier patient
         </h1>
         <p className="mt-5 text-lg leading-relaxed text-attenue">
-          Vigie suit le travail que représente une étude clinique : les
-          démarches, les échéances, les documents, le temps passé. Les données
-          des personnes qui participent à la recherche vivent ailleurs — dans
-          l&apos;eCRF du promoteur et dans le dossier patient. Cette séparation
-          n&apos;est pas un détail d&apos;architecture, c&apos;est le principe de
-          conception de l&apos;outil.
+          Vigie Clinique suit le travail que représente une étude clinique :
+          les démarches, les échéances, les documents, le temps passé. Les
+          informations des personnes qui participent à la recherche vivent
+          ailleurs — dans l&apos;eCRF du promoteur et dans le dossier patient.
+          Cette séparation n&apos;est pas un détail d&apos;architecture, c&apos;est
+          le principe de conception de l&apos;outil.
         </p>
 
         <section className="mt-14">
-          <h2 className="font-titre text-2xl font-bold">Ce que Vigie enregistre</h2>
+          <h2 className="font-titre text-2xl font-bold">
+            Ce qui figure dans l&apos;espace de travail
+          </h2>
           <div className="mt-6 space-y-3">
             {enregistre.map((e) => (
               <article key={e.titre} className="carte flex items-start gap-4 p-5">
@@ -78,15 +81,15 @@ export default function PageDonnees() {
 
         <section className="mt-14">
           <h2 className="font-titre text-2xl font-bold">
-            Ce que Vigie n&apos;a pas vocation à recevoir
+            Ce que l&apos;outil n&apos;a pas vocation à recevoir
           </h2>
           <p className="mt-3 leading-relaxed text-attenue">
             Aucun champ de l&apos;application n&apos;est prévu pour recueillir des
-            données de santé : ni identité de participant, ni date de naissance,
-            ni antécédent, ni résultat d&apos;examen, ni donnée de tolérance.
-            L&apos;outil n&apos;est ni un eCRF, ni un registre de patients, ni un
-            support de pharmacovigilance, et il ne remplace aucun de ces
-            systèmes.
+            informations de santé : ni identité de participant, ni date de
+            naissance, ni antécédent, ni résultat d&apos;examen, ni donnée de
+            tolérance. L&apos;outil n&apos;est ni un eCRF, ni un registre de
+            patients, ni un support de pharmacovigilance, et il ne remplace
+            aucun de ces systèmes.
           </p>
 
           <div className="carte mt-6 border-attention/30 bg-attention-voile/40 p-5">
@@ -97,21 +100,19 @@ export default function PageDonnees() {
               Le cas du numéro d&apos;inclusion
             </h3>
             <p className="mt-2.5 text-sm leading-relaxed">
-              Un suivi d&apos;inclusions peut se tenir de deux façons. Par des
-              compteurs — nombre de personnes présélectionnées, incluses,
-              sorties d&apos;étude — qui ne désignent personne : c&apos;est le
-              mode par défaut, et il suffit à piloter le recrutement. Ou ligne à
-              ligne, avec le numéro d&apos;inclusion attribué par le protocole.
+              L&apos;outil n&apos;est pas conçu pour un suivi nominatif des
+              participants. Un simple compteur — nombre de personnes
+              présélectionnées, incluses, sorties d&apos;étude — ne désigne
+              personne. En revanche, un numéro d&apos;inclusion associé à des
+              dates est une donnée pseudonymisée, pas une donnée anonyme,
+              puisque la table de correspondance existe dans le centre.
             </p>
             <p className="mt-2.5 text-sm leading-relaxed">
-              Ce second mode est un choix explicite, à faire étude par étude, et
-              il change la nature de ce que contient l&apos;outil : un numéro
-              d&apos;inclusion associé à des dates est une donnée pseudonymisée,
-              pas une donnée anonyme, puisque la table de correspondance existe
-              dans le centre. Il relève alors du cadre applicable à la recherche
-              — méthodologie de référence de la CNIL retenue, registre des
-              traitements, information des personnes — et cette décision revient
-              au responsable de traitement de l&apos;étude, pas à
+              Si un tel suivi devait un jour entrer dans l&apos;espace de
+              travail, il relèverait du cadre applicable à la recherche —
+              méthodologie de référence de la CNIL retenue, registre des
+              traitements, information des personnes — et cette décision
+              reviendrait au responsable de traitement de l&apos;étude, pas à
               l&apos;application.
             </p>
           </div>
@@ -147,14 +148,13 @@ export default function PageDonnees() {
         <section className="mt-14">
           <h2 className="font-titre text-2xl font-bold">Hébergement et sauvegardes</h2>
           <p className="mt-3 leading-relaxed text-attenue">
-            Vigie s&apos;installe sur le serveur de son utilisateur : il n&apos;y
-            a pas de service central, pas de compte chez un éditeur, pas de
-            transfert de données vers un tiers. Les échanges avec le navigateur
-            passent par HTTPS, le certificat étant obtenu et renouvelé
-            automatiquement. La base de données et les fichiers déposés tiennent
-            dans un seul répertoire, qui se sauvegarde par un script fourni ; la
-            copie est prise de façon cohérente même pendant que
-            l&apos;application tourne.
+            Vigie Clinique s&apos;installe sur le serveur de son utilisateur : il
+            n&apos;y a pas de service central, pas de compte chez un éditeur, pas
+            de transfert vers un tiers. Les échanges avec le navigateur passent
+            par HTTPS, le certificat étant obtenu et renouvelé automatiquement.
+            La base et les fichiers déposés tiennent dans un seul répertoire,
+            qui se sauvegarde par un script fourni ; la copie est prise de
+            façon cohérente même pendant que l&apos;application tourne.
           </p>
           <p className="mt-3 leading-relaxed text-attenue">
             La durée de conservation est celle que fixe l&apos;établissement

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icone } from "@/components/icones";
+import { NOM_PRODUIT } from "@/lib/site";
 import {
   AVERTISSEMENT,
   LIBELLES_PHASE,
@@ -22,11 +23,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { cle } = await params;
   const r = referentiel(cle);
-  if (!r) return { title: "Référentiel introuvable — Vigie" };
+  if (!r) return { title: `Référentiel introuvable — ${NOM_PRODUIT}` };
 
   return {
-    title: `${r.nom} — Vigie`,
-    description: `${r.resume} ${r.items.length} obligations réparties sur les phases du projet, avec leur référence réglementaire.`,
+    title: `${r.nom} — ${NOM_PRODUIT}`,
+    description: `${r.resume} ${r.items.length} obligations réparties sur les phases du projet, avec leur référence réglementaire. Aide au suivi dans l'espace de travail Vigie Clinique.`,
     alternates: { canonical: `/reglementaire/${r.cle}` },
   };
 }

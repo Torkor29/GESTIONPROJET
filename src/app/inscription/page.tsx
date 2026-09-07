@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { aucunCompte, estConnecte } from "@/lib/auth";
-import { Icone } from "@/components/icones";
+import { Marque } from "@/components/marque";
 import FormulaireInscription from "./formulaire";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +20,8 @@ export default async function PageInscription() {
 
       <div className="relative w-full max-w-md animate-apparait">
         <div className="text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2.5 font-titre text-lg font-bold tracking-tight"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sur-accent shadow-douce">
-              <Icone nom="eclair" className="h-4 w-4" />
-            </span>
-            Vigie
+          <Link href="/" className="inline-flex" aria-label="Vigie Clinique — accueil">
+            <Marque />
           </Link>
           <h1 className="mt-6 font-titre text-2xl font-bold">Créer le compte propriétaire</h1>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-attenue">

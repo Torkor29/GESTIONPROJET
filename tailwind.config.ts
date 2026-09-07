@@ -60,13 +60,13 @@ export default {
 
       keyframes: {
         apparait: {
-          from: { opacity: "0", transform: "translateY(6px)" },
+          from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "none" },
         },
       },
 
       animation: {
-        apparait: "apparait 0.35s cubic-bezier(0.32, 1.25, 0.5, 1) both",
+        apparait: "apparait 0.45s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },
