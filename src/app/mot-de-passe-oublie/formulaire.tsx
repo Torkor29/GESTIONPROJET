@@ -38,17 +38,6 @@ export default function FormulaireMotDePasseOublie() {
       </div>
 
       <div>
-        <label htmlFor="cle" className="mb-1.5 block text-sm font-medium">
-          Clé d&apos;installation
-        </label>
-        <input id="cle" name="cle" type="password" required className="champ" />
-        <p className="mt-1.5 text-xs text-efface">
-          C&apos;est la valeur <code className="font-mono">MOT_DE_PASSE</code> de
-          votre fichier <code className="font-mono">.env</code>, sur le serveur.
-        </p>
-      </div>
-
-      <div>
         <label htmlFor="motDePasse" className="mb-1.5 block text-sm font-medium">
           Nouveau mot de passe
         </label>

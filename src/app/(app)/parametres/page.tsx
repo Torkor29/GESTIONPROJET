@@ -68,7 +68,7 @@ export default async function PageParametres() {
         <p className="mt-1 text-sm text-attenue">
           Pour le changer ici, il faut encore connaître l&apos;actuel. Si vous
           l&apos;avez perdu, utilisez « Mot de passe oublié » sur l&apos;écran
-          de connexion, avec la clé d&apos;installation.
+          de connexion.
         </p>
         <FormulaireChangerMotDePasse />
       </section>

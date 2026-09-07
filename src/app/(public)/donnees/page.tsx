@@ -131,7 +131,7 @@ export default function PageDonnees() {
             {[
               "Le partage est explicite : rien n'est visible par défaut à l'échelle de l'établissement.",
               "Les invitations se remettent de la main à la main : aucune adresse n'est confiée à un service tiers, et aucun serveur de courrier n'est nécessaire. Un lien vaut sept jours et ne sert qu'une fois.",
-              "Un mot de passe oublié se réinitialise sur la machine, avec la clé d'installation : aucun courrier n'est envoyé.",
+              "Un mot de passe oublié se réinitialise sur le site, à partir de l'adresse du compte : aucun courrier n'est envoyé.",
               "Un compte désactivé perd l'accès immédiatement, sans attendre l'expiration de son cookie de session.",
               "Le téléchargement d'un document vérifie l'accès à l'étude dont il dépend, et pas seulement le fait d'être connecté.",
               "Les indicateurs d'équipe ne portent que sur les études dont on est propriétaire, et se limitent à des totaux.",

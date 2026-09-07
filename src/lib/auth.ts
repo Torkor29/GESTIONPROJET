@@ -45,26 +45,6 @@ export function motDePasseCorrespond(clair: string, stocke: string): boolean {
   return attendue.length === calculee.length && timingSafeEqual(attendue, calculee);
 }
 
-/**
- * Clé d'installation : le `MOT_DE_PASSE` du fichier .env. Elle n'ouvre pas
- * l'application. Elle autorise la création d'un compte, et la réinitialisation
- * d'un mot de passe oublié — pour qu'un inconnu tombant sur l'adresse ne
- * puisse pas s'en emparer, ni usurper un compte existant.
- */
-export function cleInstallationValide(saisie: string): boolean {
-  const attendue = process.env.MOT_DE_PASSE ?? "";
-  if (!attendue) {
-    throw new Error(
-      "MOT_DE_PASSE n'est pas défini dans le fichier .env. Il sert de clé " +
-        "d'installation pour créer un compte et réinitialiser un mot de passe.",
-    );
-  }
-  const sel = "vigie-installation";
-  const a = scryptSync(saisie, sel, 32);
-  const b = scryptSync(attendue, sel, 32);
-  return timingSafeEqual(a, b);
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Jetons de session                                                         */
 /* -------------------------------------------------------------------------- */

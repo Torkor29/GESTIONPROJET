@@ -11,7 +11,7 @@ services:
         EDITEUR_CONTACT: ${EDITEUR_CONTACT:-}
     restart: unless-stopped
     environment:
-      MOT_DE_PASSE: ${MOT_DE_PASSE:?renseignez MOT_DE_PASSE dans le fichier .env}
+      MOT_DE_PASSE: ${MOT_DE_PASSE:-}
       SECRET_SESSION: ${SECRET_SESSION:?renseignez SECRET_SESSION dans le fichier .env}
       CHEMIN_BASE: /donnees/gestionprojet.db
       DOSSIER_UPLOADS: /donnees/uploads

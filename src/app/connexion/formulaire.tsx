@@ -59,9 +59,6 @@ export default function FormulaireConnexion() {
           required
           className="champ"
         />
-        <p className="mt-1.5 text-xs text-efface">
-          Celui choisi à la création du compte — pas la clé d&apos;installation.
-        </p>
       </div>
 
       {etat.erreur && (

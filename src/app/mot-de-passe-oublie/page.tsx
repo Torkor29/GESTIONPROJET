@@ -15,14 +15,7 @@ export default async function PageMotDePasseOublie() {
     <CadreCompte>
       <EnTeteCompte
         titre="Mot de passe oublié"
-        intro={
-          <>
-            Pas de courrier envoyé : il faut la clé d&apos;installation
-            (valeur <code className="font-mono">MOT_DE_PASSE</code> du fichier{" "}
-            <code className="font-mono">.env</code> sur le serveur) et
-            l&apos;adresse du compte.
-          </>
-        }
+        intro="Indiquez l'adresse du compte et choisissez un nouveau mot de passe. Aucun courrier n'est envoyé."
       />
       <div className="mt-8">
         <FormulaireMotDePasseOublie />

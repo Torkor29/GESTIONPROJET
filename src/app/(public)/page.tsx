@@ -491,9 +491,7 @@ export default function PagePresentation() {
               </h2>
               <p className="mx-auto mt-6 max-w-lg text-[18px] leading-[1.35] text-attenue">
                 Vigie Clinique s&apos;installe chez vous. L&apos;accès à
-                l&apos;espace de travail se fait avec un compte : le vôtre,
-                créé avec la clé d&apos;installation, ou par invitation d&apos;un
-                collègue.
+                l&apos;espace de travail se fait avec un compte.
               </p>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Link href="/connexion" className="bouton">

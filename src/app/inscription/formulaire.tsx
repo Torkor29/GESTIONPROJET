@@ -113,17 +113,6 @@ export default function FormulaireInscription() {
         </div>
       </fieldset>
 
-      <div>
-        <label htmlFor="cle" className="mb-1.5 block text-sm font-medium">
-          Clé d&apos;installation
-        </label>
-        <input id="cle" name="cle" type="password" required className="champ" />
-        <p className="mt-1.5 text-xs text-efface">
-          C&apos;est la valeur <code className="font-mono">MOT_DE_PASSE</code> de votre
-          fichier <code className="font-mono">.env</code>, sur le serveur.
-        </p>
-      </div>
-
       {etat.erreur && (
         <p role="alert" className="text-sm text-alerte">
           {etat.erreur}

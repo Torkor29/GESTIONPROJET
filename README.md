@@ -87,19 +87,13 @@ cp .env.example .env
 nano .env
 ```
 
-Deux valeurs à renseigner :
+Une valeur à renseigner :
 
 ```bash
-MOT_DE_PASSE=votre-cle-d-installation-longue-et-unique
 SECRET_SESSION=<coller ici le résultat de : openssl rand -hex 32>
 ```
 
-`MOT_DE_PASSE` est la **clé d'installation** : elle n'ouvre pas l'application.
-Elle autorise la création d'un compte et la réinitialisation d'un mot de
-passe oublié. Vous la saisissez sur ces écrans, puis vous vous connectez avec
-votre adresse et le mot de passe que vous avez choisi.
-
-Générez la clé de session avec :
+`SECRET_SESSION` signe les sessions. Générez-la avec :
 
 ```bash
 openssl rand -hex 32
@@ -134,10 +128,10 @@ docker compose up -d --build
 ```
 
 C'est tout. Ouvrez `https://votre-domaine` : l'écran de création de compte
-s'affiche. Renseignez votre nom, votre adresse, un mot de passe et la clé
-d'installation. Les comptes suivants se créent de la même façon (avec cette
-clé) ou par invitation depuis Paramètres → Équipe. Un mot de passe oublié se
-réinitialise aussi avec la clé d'installation, sans envoi de courrier.
+s'affiche. Renseignez votre nom, votre adresse et un mot de passe. Les comptes
+suivants se créent de la même façon, ou par invitation depuis Paramètres →
+Équipe. Un mot de passe oublié se réinitialise avec l'adresse du compte, sans
+envoi de courrier.
 
 La base de données est créée automatiquement au premier démarrage ; il n'y a
 aucune commande de migration à lancer.
@@ -216,7 +210,7 @@ Pour restaurer :
 
 ```bash
 npm install
-cp .env.example .env    # renseignez MOT_DE_PASSE et SECRET_SESSION
+cp .env.example .env    # renseignez SECRET_SESSION
 npm run dev
 ```
 

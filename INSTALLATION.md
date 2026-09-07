@@ -320,14 +320,10 @@ nano .env
 `nano` est un éditeur de texte dans le terminal. Renseignez :
 
 ```bash
-MOT_DE_PASSE=choisissez-ici-un-mot-de-passe-long-et-unique
 SECRET_SESSION=collez-ici-la-suite-generee-juste-avant
 DOMAINE=projets.mondomaine.fr
 ```
 
-- `MOT_DE_PASSE` : la **clé d'installation**. Elle n'ouvre pas l'application.
-  Vous la saisissez pour **créer un compte** ou **réinitialiser un mot de
-  passe oublié**. Prenez-en une longue et propre à cet outil.
 - `SECRET_SESSION` : la valeur générée par `openssl`. Ne la réutilisez nulle
   part ailleurs.
 - `DOMAINE` : votre domaine. **Si vous n'en avez pas encore, supprimez cette
@@ -368,9 +364,7 @@ Ouvrez dans votre navigateur :
 - sans domaine : **`http://VOTRE_IP`**
 
 Vous devez voir l'écran de création de compte (ou de connexion s'il existe
-déjà). Créez votre compte avec votre nom, votre adresse, un mot de passe **à
-vous**, et la clé `MOT_DE_PASSE` du fichier `.env`. Ensuite, connectez-vous
-avec cette adresse et ce mot de passe — pas avec la clé d'installation.
+déjà). Créez votre compte avec votre nom, votre adresse et un mot de passe.
 
 Faites ensuite un test complet, il prend deux minutes :
 
@@ -617,8 +611,8 @@ HTTPS (Caddy pose `X-Forwarded-Proto`). Si la boucle continue :
 
 1. Accédez au site par son domaine en `https://`, pas par `http://IP`, dès
    qu'un domaine est configuré.
-2. Vérifiez que vous utilisez le mot de passe **du compte**, pas la clé
-   `MOT_DE_PASSE` du `.env`. En cas de doute : page « Mot de passe oublié ».
+2. Vérifiez que vous utilisez le mot de passe **du compte**. En cas de doute :
+   page « Mot de passe oublié ».
 
 ```bash
 docker compose logs app | tail -50

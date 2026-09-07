@@ -7,7 +7,6 @@ import { utilisateurs } from "@/db/schema";
 import {
   LONGUEUR_MOT_DE_PASSE,
   aucunCompte,
-  cleInstallationValide,
   exigerSession,
   fermerSession,
   hacherMotDePasse,
@@ -37,15 +36,6 @@ const ROLES = new Set(["arc", "tec", "cp", "autre"]);
 
 function normaliserEmail(valeur: string): string {
   return valeur.trim().toLowerCase();
-}
-
-/** La clé d'installation manque parfois au `.env` : on le dit plutôt que de planter. */
-function verifierCleInstallation(saisie: string): string | null {
-  try {
-    return cleInstallationValide(saisie) ? null : "Clé d'installation incorrecte.";
-  } catch {
-    return "La clé d'installation n'est pas configurée sur ce serveur.";
-  }
 }
 
 export async function seConnecter(
@@ -85,7 +75,6 @@ export async function sInscrire(
   const email = normaliserEmail(String(donnees.get("email") ?? ""));
   const motDePasse = String(donnees.get("motDePasse") ?? "");
   const role = String(donnees.get("role") ?? "autre");
-  const cle = String(donnees.get("cle") ?? "");
 
   const saisi = { valeurs: { nom, email, role } };
 
@@ -98,12 +87,6 @@ export async function sInscrire(
       erreur: `Le mot de passe doit faire au moins ${LONGUEUR_MOT_DE_PASSE} caractères.`,
       ...saisi,
     };
-  }
-
-  const refusCle = verifierCleInstallation(cle);
-  if (refusCle) {
-    await freiner();
-    return { erreur: refusCle, ...saisi };
   }
 
   const deja = db.select({ id: utilisateurs.id }).from(utilisateurs).where(eq(utilisateurs.email, email)).get();
@@ -137,17 +120,12 @@ export async function sInscrire(
   redirect("/parametres");
 }
 
-/**
- * Réinitialisation sans serveur de courrier : il faut la clé d'installation
- * (celle du `.env`) et l'adresse du compte. Ce n'est pas un secret faible —
- * c'est le même levier que pour créer un compte sur cette machine.
- */
+/** Réinitialisation sans courrier : adresse du compte et nouveau mot de passe. */
 export async function reinitialiserMotDePasse(
   _precedent: EtatConnexion,
   donnees: FormData,
 ): Promise<EtatConnexion> {
   const email = normaliserEmail(String(donnees.get("email") ?? ""));
-  const cle = String(donnees.get("cle") ?? "");
   const motDePasse = String(donnees.get("motDePasse") ?? "");
   const confirmation = String(donnees.get("confirmation") ?? "");
   const saisi = { valeurs: { email } };
@@ -166,12 +144,6 @@ export async function reinitialiserMotDePasse(
   }
   if (motDePasse !== confirmation) {
     return { erreur: "Les deux saisies du nouveau mot de passe ne correspondent pas.", ...saisi };
-  }
-
-  const refusCle = verifierCleInstallation(cle);
-  if (refusCle) {
-    await freiner();
-    return { erreur: refusCle, ...saisi };
   }
 
   const compte = db.select().from(utilisateurs).where(eq(utilisateurs.email, email)).get();

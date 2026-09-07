@@ -18,20 +18,9 @@ export default async function PageInscription() {
       <EnTeteCompte
         titre={premier ? "Créer le premier compte" : "Créer un compte"}
         intro={
-          premier ? (
-            <>
-              C&apos;est le premier compte de cette installation. Il faut la clé
-              d&apos;installation, celle du fichier <code className="font-mono">.env</code>{" "}
-              sur le serveur.
-            </>
-          ) : (
-            <>
-              La clé d&apos;installation — valeur{" "}
-              <code className="font-mono">MOT_DE_PASSE</code> du fichier{" "}
-              <code className="font-mono">.env</code> — ouvre un compte. Un
-              collègue sans cette clé se fait inviter depuis Paramètres → Équipe.
-            </>
-          )
+          premier
+            ? "Nom, adresse, mot de passe : ensuite vous êtes dans l'espace de travail."
+            : "Nom, adresse, mot de passe. Un collègue peut aussi être invité depuis Paramètres → Équipe."
         }
       />
       <div className="mt-8">
