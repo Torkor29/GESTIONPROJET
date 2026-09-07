@@ -28,10 +28,10 @@ function Section({ titre, children }: { titre: string; children: React.ReactNode
 
 export default function PageMentionsLegales() {
   return (
-    <div className="px-6 py-16 sm:py-20">
+    <div className="px-5 py-16 sm:px-10 sm:py-24">
       <div className="mx-auto max-w-3xl">
         <p className="sur-titre">Informations légales</p>
-        <h1 className="mt-3 font-titre text-4xl font-bold leading-tight">Mentions légales</h1>
+        <h1 className="mt-4 font-titre text-[32px] leading-[1.2] tracking-[-0.02em] sm:text-[48px]">Mentions légales</h1>
 
         <Section titre="Éditeur du site">
           {EDITEUR ? (

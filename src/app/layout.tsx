@@ -1,19 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { IBM_Plex_Mono, Newsreader } from "next/font/google";
 import { DESCRIPTION_SEO, NOM_PRODUIT, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// Les deux polices sont téléchargées à la construction et servies depuis le
-// serveur de l'application : aucune requête vers un tiers à l'exécution.
-const texte = Inter({
+// Substituts libres du couple Untitled Serif / ABC Diatype Mono :
+// Newsreader (éditorial, graisse 400) et IBM Plex Mono (manuel technique).
+const texte = IBM_Plex_Mono({
   subsets: ["latin"],
+  weight: ["400", "500"],
   variable: "--police-texte",
   display: "swap",
 });
 
-const titre = Plus_Jakarta_Sans({
+const titre = Newsreader({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400"],
+  style: ["normal", "italic"],
   variable: "--police-titre",
   display: "swap",
 });

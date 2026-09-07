@@ -3,83 +3,86 @@
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   Charte graphique — « clinique chaleureux »
-   Fond sable, formes arrondies, ombres douces, un seul accent bleu-vert.
-   Toutes les couleurs sont exprimées en canaux RGB pour que Tailwind puisse
-   leur appliquer une opacité (bg-accent/10, border-line/50…).
+   Charte — journal technique sur parchemin
+   Canvas chaud, titres serif à graisse 400, UI et corps en mono.
+   Un seul bleu saturé : le CTA principal.
 --------------------------------------------------------------------------- */
 
 :root {
-  /* Surfaces, de la plus enfoncée à la plus élevée */
-  --creux: 244 242 237;
-  --surface: 251 250 248;
-  --relief: 255 255 255;
+  --creux: 239 235 232;
+  --surface: 246 243 241;
+  --relief: 246 243 241;
 
-  /* Traits */
-  --ligne: 232 228 221;
-  --ligne-forte: 214 208 198;
+  --ligne: 206 202 200;
+  --ligne-forte: 206 202 200;
 
-  /* Texte */
-  --encre: 32 31 29;
-  --attenue: 107 102 94;
-  --efface: 154 148 138;
+  --encre: 36 36 36;
+  --attenue: 78 77 77;
+  --efface: 121 119 118;
 
-  /* Accent */
-  --accent: 13 148 136;
-  --accent-appuye: 15 118 110;
-  --accent-voile: 204 251 241;
-  --sur-accent: 255 255 255;
+  --accent: 43 89 209;
+  --accent-appuye: 35 72 176;
+  --accent-voile: 207 218 245;
+  --sur-accent: 246 243 241;
 
-  /* Couleurs de statut : réussite, attention, alerte, information */
-  --reussite: 5 150 105;
-  --reussite-voile: 209 250 229;
-  --attention: 217 119 6;
-  --attention-voile: 254 243 199;
-  --alerte: 220 38 38;
-  --alerte-voile: 254 226 226;
-  --info: 2 132 199;
-  --info-voile: 224 242 254;
+  --pervenche: 207 218 245;
+  --ciel: 160 181 235;
+  --menthe: 167 252 205;
+  --corail: 255 148 115;
+  --or: 236 218 152;
 
-  /* Ombres — douces et diffuses, jamais dures */
-  --ombre-posee: 0 1px 2px rgb(32 31 29 / 0.04), 0 1px 3px rgb(32 31 29 / 0.06);
-  --ombre-douce: 0 2px 4px rgb(32 31 29 / 0.03), 0 4px 12px rgb(32 31 29 / 0.07);
-  --ombre-elevee: 0 4px 8px rgb(32 31 29 / 0.04), 0 12px 32px rgb(32 31 29 / 0.10);
+  --reussite: 36 36 36;
+  --reussite-voile: 167 252 205;
+  --attention: 243 122 10;
+  --attention-voile: 236 218 152;
+  --alerte: 243 122 10;
+  --alerte-voile: 255 148 115;
+  --info: 43 89 209;
+  --info-voile: 207 218 245;
+
+  --ombre-posee: none;
+  --ombre-douce: none;
+  --ombre-elevee: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
 
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --creux: 21 21 20;
-    --surface: 26 26 25;
-    --relief: 35 35 34;
+    --creux: 20 20 20;
+    --surface: 24 24 24;
+    --relief: 36 36 36;
 
-    --ligne: 51 50 47;
-    --ligne-forte: 69 67 64;
+    --ligne: 69 67 64;
+    --ligne-forte: 90 88 86;
 
-    --encre: 237 235 231;
+    --encre: 246 243 241;
     --attenue: 163 158 149;
-    --efface: 110 106 99;
+    --efface: 121 119 118;
 
-    --accent: 45 212 191;
-    --accent-appuye: 94 234 212;
-    --accent-voile: 19 78 74;
-    --sur-accent: 12 42 40;
+    --accent: 160 181 235;
+    --accent-appuye: 207 218 245;
+    --accent-voile: 28 40 72;
+    --sur-accent: 24 24 24;
 
-    --reussite: 52 211 153;
-    --reussite-voile: 6 60 47;
-    --attention: 251 191 36;
+    --pervenche: 28 40 72;
+    --ciel: 43 89 209;
+    --menthe: 36 80 60;
+    --corail: 120 60 45;
+    --or: 90 75 40;
+
+    --reussite: 167 252 205;
+    --reussite-voile: 20 50 40;
+    --attention: 236 218 152;
     --attention-voile: 69 45 6;
-    --alerte: 248 113 113;
-    --alerte-voile: 73 20 20;
-    --info: 56 189 248;
-    --info-voile: 12 53 74;
+    --alerte: 255 148 115;
+    --alerte-voile: 73 30 20;
+    --info: 160 181 235;
+    --info-voile: 20 32 60;
 
-    /* Dans le sombre, l'ombre ne se voit plus : c'est le trait qui porte le
-       relief. On garde des ombres très faibles pour la profondeur des modales. */
-    --ombre-posee: 0 1px 2px rgb(0 0 0 / 0.3);
-    --ombre-douce: 0 2px 8px rgb(0 0 0 / 0.35);
-    --ombre-elevee: 0 8px 32px rgb(0 0 0 / 0.5);
+    --ombre-posee: none;
+    --ombre-douce: none;
+    --ombre-elevee: 0 8px 32px rgb(0 0 0 / 0.45);
 
     color-scheme: dark;
   }
@@ -99,95 +102,128 @@ body {
 body {
   background: rgb(var(--surface));
   color: rgb(var(--encre));
-  font-family: var(--police-texte), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--police-texte), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 16px;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Les titres portent la police d'affichage, plus géométrique et plus ronde. */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--police-titre), var(--police-texte), ui-sans-serif, sans-serif;
+  font-family: var(--police-titre), ui-serif, Georgia, "Times New Roman", serif;
+  font-weight: 400;
   letter-spacing: -0.02em;
+  line-height: 1.2;
   text-wrap: balance;
 }
 
-/* Les paragraphes évitent les lignes orphelines. */
 p {
   text-wrap: pretty;
 }
 
-@layer components {
-  /* --- Saisie ------------------------------------------------------------ */
+/* Le site public reste sur parchemin, même si le système est en sombre. */
+.page-publique {
+  background: #f6f3f1;
+  color: #242424;
+  color-scheme: light;
+}
 
+.page-publique,
+.page-publique * {
+  --creux: 239 235 232;
+  --surface: 246 243 241;
+  --relief: 246 243 241;
+  --ligne: 206 202 200;
+  --ligne-forte: 206 202 200;
+  --encre: 36 36 36;
+  --attenue: 78 77 77;
+  --efface: 121 119 118;
+  --accent: 43 89 209;
+  --accent-appuye: 35 72 176;
+  --accent-voile: 207 218 245;
+  --sur-accent: 246 243 241;
+  --pervenche: 207 218 245;
+  --ciel: 160 181 235;
+  --menthe: 167 252 205;
+  --corail: 255 148 115;
+}
+
+.page-publique h1,
+.page-publique h2,
+.page-publique h3,
+.page-publique h4 {
+  font-weight: 400 !important;
+}
+
+@layer components {
   .champ {
-    @apply w-full rounded-xl border border-ligne bg-relief px-3.5 py-2.5 text-sm text-encre
-           shadow-posee outline-none transition-all duration-200 placeholder:text-efface
-           hover:border-ligne-forte
-           focus:border-accent focus:ring-4 focus:ring-accent/15;
+    @apply w-full rounded-2xl border border-ligne bg-surface px-3.5 py-2.5 text-sm text-encre
+           shadow-none outline-none transition-colors duration-200 placeholder:text-efface
+           hover:border-encre/40
+           focus:border-encre focus:ring-0;
   }
 
-  /* --- Boutons ----------------------------------------------------------- */
-
   .bouton {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5
-           text-sm font-semibold text-sur-accent shadow-douce
-           transition-all duration-200 ease-souple
-           hover:bg-accent-appuye hover:shadow-elevee hover:-translate-y-px
-           active:translate-y-0 active:scale-[0.97]
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full
+           bg-accent px-8 py-4 text-[14px] font-medium uppercase tracking-[-0.02em]
+           text-sur-accent shadow-none
+           transition-opacity duration-200
+           hover:opacity-90
+           active:scale-[0.98]
            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
            focus-visible:outline-accent
            disabled:pointer-events-none disabled:opacity-50;
   }
 
   .bouton-discret {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ligne
-           bg-relief px-4 py-2.5 text-sm font-semibold text-encre shadow-posee
-           transition-all duration-200 ease-souple
-           hover:border-ligne-forte hover:bg-creux
-           active:scale-[0.97]
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full
+           border border-encre bg-transparent px-8 py-4 text-[14px] font-medium
+           uppercase tracking-[-0.02em] text-encre shadow-none
+           transition-colors duration-200
+           hover:bg-encre hover:text-surface
+           active:scale-[0.98]
            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-           focus-visible:outline-accent
+           focus-visible:outline-encre
            disabled:pointer-events-none disabled:opacity-50;
   }
 
   .bouton-fantome {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2
-           text-sm font-medium text-attenue transition-all duration-200
-           hover:bg-creux hover:text-encre
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-3 py-2
+           text-[14px] font-medium uppercase tracking-[-0.02em] text-encre
+           transition-opacity duration-200 hover:opacity-60
            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-           focus-visible:outline-accent
+           focus-visible:outline-encre
            disabled:pointer-events-none disabled:opacity-50;
   }
 
-  /* --- Conteneurs -------------------------------------------------------- */
-
   .carte {
-    @apply rounded-2xl border border-ligne bg-relief shadow-posee;
+    @apply rounded-[40px] border border-ligne bg-surface shadow-none;
   }
 
-  /* Carte qui réagit au survol : listes d'études, de documents… */
   .carte-active {
-    @apply rounded-2xl border border-ligne bg-relief shadow-posee
-           transition-all duration-200 ease-souple
-           hover:-translate-y-1 hover:border-accent/20 hover:shadow-douce
+    @apply rounded-[40px] border border-ligne bg-surface shadow-none
+           transition-colors duration-200
+           hover:border-encre/40
            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-           focus-visible:outline-accent;
+           focus-visible:outline-encre;
   }
-
-  /* --- Étiquettes -------------------------------------------------------- */
 
   .etiquette {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1
-           text-xs font-semibold tracking-tight;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ligne
+           px-5 py-3 text-[12px] font-medium uppercase tracking-[-0.033em];
   }
 
-  /* --- Titres de section ------------------------------------------------- */
-
   .sur-titre {
-    @apply text-xs font-semibold uppercase tracking-[0.12em] text-efface;
+    @apply text-[12px] font-medium uppercase tracking-[-0.033em] text-efface;
+  }
+
+  .lien-fleche {
+    @apply inline-flex items-center gap-2 text-[14px] font-medium uppercase
+           tracking-[-0.02em] text-encre transition-opacity hover:opacity-60;
   }
 }
 
@@ -330,6 +366,37 @@ p {
   transform: none;
   outline: 2px solid rgb(var(--accent));
   outline-offset: 2px;
+}
+
+.lavure {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  opacity: 0.8;
+}
+
+.lavure-hero {
+  left: 50%;
+  top: -4rem;
+  height: 28rem;
+  width: 54rem;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(circle at 28% 45%, rgb(var(--corail) / 0.55), transparent 52%),
+    radial-gradient(circle at 72% 40%, rgb(var(--ciel) / 0.6), transparent 55%),
+    radial-gradient(circle at 50% 80%, rgb(var(--menthe) / 0.4), transparent 50%);
+}
+
+.lavure-cta {
+  left: 50%;
+  top: 100%;
+  height: 18rem;
+  width: 36rem;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(circle at 40% 40%, rgb(var(--ciel) / 0.55), transparent 55%),
+    radial-gradient(circle at 70% 60%, rgb(var(--menthe) / 0.45), transparent 50%);
 }
 .groupe-icone .icone-carte {
   transition: transform 0.2s cubic-bezier(0.32, 1.25, 0.5, 1);

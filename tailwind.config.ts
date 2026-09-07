@@ -32,6 +32,11 @@ export default {
         "alerte-voile": teinte("alerte-voile"),
         info: teinte("info"),
         "info-voile": teinte("info-voile"),
+        pervenche: teinte("pervenche"),
+        ciel: teinte("ciel"),
+        menthe: teinte("menthe"),
+        corail: teinte("corail"),
+        or: teinte("or"),
 
         // Anciens noms, conservés le temps que tous les écrans passent à la
         // nouvelle charte. À retirer une fois la refonte des écrans terminée.
@@ -42,8 +47,9 @@ export default {
       },
 
       fontFamily: {
-        sans: ["var(--police-texte)", "ui-sans-serif", "system-ui", "sans-serif"],
-        titre: ["var(--police-titre)", "var(--police-texte)", "ui-sans-serif", "sans-serif"],
+        sans: ["var(--police-texte)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        titre: ["var(--police-titre)", "ui-serif", "Georgia", "Times New Roman", "serif"],
+        mono: ["var(--police-texte)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
 
       boxShadow: {

@@ -45,13 +45,13 @@ export default function PageReglementaire() {
   ];
 
   return (
-    <div className="px-6 py-16 sm:py-20">
+    <div className="px-5 py-16 sm:px-10 sm:py-24">
       <div className="mx-auto max-w-4xl">
         <p className="sur-titre">Référentiels</p>
-        <h1 className="mt-3 font-titre text-4xl font-bold leading-tight">
+        <h1 className="mt-4 font-titre text-[32px] leading-[1.2] tracking-[-0.02em] sm:text-[48px]">
           Les obligations, déjà rédigées dans l&apos;outil
         </h1>
-        <p className="mt-5 text-lg leading-relaxed text-attenue">
+        <p className="mt-6 text-[18px] leading-[1.35] text-attenue sm:text-[20px]">
           Vigie Clinique livre {REFERENTIELS.length} référentiels et {total}{" "}
           obligations rédigées. Dans une étude, vous cochez le cadre applicable
           et les lignes correspondantes apparaissent, regroupées par phase du

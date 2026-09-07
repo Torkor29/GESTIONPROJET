@@ -19,7 +19,7 @@ export default async function PageInvitation({
   const invitation = await invitationValide(jeton);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
+    <main className="page-publique relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[100px]"
@@ -35,8 +35,8 @@ export default async function PageInvitation({
         {invitation ? (
           <>
             <div className="mt-6 text-center">
-              <h1 className="font-titre text-2xl font-bold">Bienvenue</h1>
-              <p className="mt-1.5 text-sm text-attenue">
+              <h1 className="font-titre text-[32px] tracking-[-0.02em]">Bienvenue</h1>
+              <p className="mt-3 text-[14px] leading-[1.35] text-attenue">
                 Vous avez été invité en tant que{" "}
                 <strong className="text-encre">{LIBELLES_ROLE[invitation.role]}</strong>.
                 Choisissez un mot de passe pour créer votre compte.
@@ -48,8 +48,8 @@ export default async function PageInvitation({
           </>
         ) : (
           <div className="carte mt-6 p-6 text-center !shadow-douce">
-            <h1 className="font-titre text-xl font-bold">Invitation expirée</h1>
-            <p className="mt-2 text-sm text-attenue">
+            <h1 className="font-titre text-[28px] tracking-[-0.02em]">Invitation expirée</h1>
+            <p className="mt-3 text-[14px] leading-[1.35] text-attenue">
               Ce lien n&apos;est plus valable — il a déjà servi, ou il a plus de
               sept jours. Demandez-en un nouveau à la personne qui vous a invité.
             </p>

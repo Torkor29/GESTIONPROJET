@@ -6,12 +6,6 @@ import { useEffect, useId, useState } from "react";
 import { Marque } from "@/components/marque";
 import { LIENS_PUBLICS } from "@/lib/site";
 
-/**
- * En-tête des pages publiques.
- *
- * Après un léger défilement, le fond se densifie. Sur petit écran, un menu
- * s'ouvre sous la barre — pas une superposition opaque qui masquerait la page.
- */
 export function EnTetePublic() {
   const chemin = usePathname();
   const [defile, setDefile] = useState(false);
@@ -45,27 +39,23 @@ export function EnTetePublic() {
 
   return (
     <header
-      className={`sticky top-0 z-30 border-b transition-[background-color,border-color,box-shadow] duration-300 ${
-        defile
-          ? "border-ligne bg-surface/95 shadow-posee backdrop-blur-md"
-          : "border-ligne/70 bg-surface/85 backdrop-blur-md"
+      className={`sticky top-0 z-30 transition-[background-color,border-color] duration-300 ${
+        defile ? "border-b border-ligne bg-surface/90 backdrop-blur-md" : "border-b border-transparent bg-transparent"
       }`}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
+      <div className="mx-auto flex h-20 max-w-[1432px] items-center justify-between gap-3 px-5 sm:px-10">
         <Link href="/" aria-label="Vigie Clinique — accueil" className="shrink-0">
           <Marque />
         </Link>
 
-        <nav aria-label="Pages publiques" className="hidden items-center gap-0.5 md:flex">
+        <nav aria-label="Pages publiques" className="hidden items-center gap-1 md:flex">
           {liens.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               aria-current={actif(l.href) ? "page" : undefined}
-              className={`rounded-lg px-3 py-2 text-[13px] transition-colors duration-200 ${
-                actif(l.href)
-                  ? "bg-relief font-medium text-encre"
-                  : "text-attenue hover:bg-relief hover:text-encre"
+              className={`rounded-full px-4 py-2 text-[18px] uppercase tracking-[-0.022em] transition-opacity ${
+                actif(l.href) ? "text-encre" : "text-encre/70 hover:text-encre"
               }`}
             >
               {l.libelle}
@@ -74,13 +64,13 @@ export function EnTetePublic() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Link href="/connexion" className="bouton-discret !min-h-11 !px-3 !py-2 text-[13px] sm:!px-4">
+          <Link href="/connexion" className="bouton-discret !min-h-11 !px-5 !py-2.5 text-[12px] sm:!px-8">
             Se connecter
           </Link>
 
           <button
             type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-ligne bg-relief text-attenue shadow-posee transition-all duration-200 hover:text-encre focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-encre text-encre md:hidden"
             aria-label={menuOuvert ? "Fermer le menu" : "Ouvrir le menu"}
             aria-expanded={menuOuvert}
             aria-controls={idMenu}
@@ -90,7 +80,7 @@ export function EnTetePublic() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth={1.75}
+              strokeWidth={1.5}
               strokeLinecap="round"
               className="h-4 w-4"
               aria-hidden
@@ -105,21 +95,15 @@ export function EnTetePublic() {
         </div>
       </div>
 
-      <div
-        id={idMenu}
-        hidden={!menuOuvert}
-        className="border-t border-ligne bg-surface md:hidden"
-      >
-        <nav aria-label="Pages publiques, menu mobile" className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+      <div id={idMenu} hidden={!menuOuvert} className="border-t border-ligne bg-surface md:hidden">
+        <nav aria-label="Pages publiques, menu mobile" className="mx-auto flex max-w-[1432px] flex-col px-5 py-4">
           {LIENS_PUBLICS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               aria-current={actif(l.href) ? "page" : undefined}
-              className={`min-h-11 rounded-xl px-3 py-2.5 text-sm transition-colors ${
-                actif(l.href)
-                  ? "bg-relief font-medium text-encre"
-                  : "text-attenue hover:bg-relief hover:text-encre"
+              className={`min-h-12 py-3 text-[16px] uppercase tracking-[-0.025em] ${
+                actif(l.href) ? "text-encre" : "text-encre/70"
               }`}
             >
               {l.libelleLong ?? l.libelle}

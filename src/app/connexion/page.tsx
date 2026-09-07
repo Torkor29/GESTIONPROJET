@@ -12,7 +12,7 @@ export default async function PageConnexion() {
   if (aucunCompte()) redirect("/inscription");
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
+    <main className="page-publique relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[100px]"
@@ -23,8 +23,8 @@ export default async function PageConnexion() {
           <Link href="/" className="inline-flex" aria-label="Vigie Clinique — accueil">
             <Marque />
           </Link>
-          <h1 className="mt-6 font-titre text-2xl font-bold">Connexion</h1>
-          <p className="mt-1.5 text-sm text-attenue">
+          <h1 className="mt-8 font-titre text-[32px] tracking-[-0.02em]">Connexion</h1>
+          <p className="mt-3 text-[14px] leading-[1.35] text-attenue">
             Retrouvez votre espace de travail.
           </p>
         </div>
@@ -33,11 +33,9 @@ export default async function PageConnexion() {
           <FormulaireConnexion />
         </div>
 
-        <p className="mt-6 text-center text-sm text-efface">
-          <Link href="/" className="transition-colors hover:text-accent">
+          <Link href="/" className="lien-fleche mt-8 justify-center text-efface">
             Découvrir Vigie Clinique
           </Link>
-        </p>
       </div>
     </main>
   );

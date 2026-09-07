@@ -54,7 +54,7 @@ const DONNEES_STRUCTUREES = {
 
 export default function LayoutPublic({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="page-publique min-h-screen bg-surface">
       <script
         type="application/ld+json"
         // Contenu constant écrit dans ce fichier : aucune donnée extérieure
@@ -70,26 +70,28 @@ export default function LayoutPublic({ children }: { children: React.ReactNode }
 
       <main id="contenu">{children}</main>
 
-      <footer className="border-t border-ligne px-6 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+      <footer className="border-t border-ligne px-5 py-16 sm:px-10">
+        <div className="mx-auto flex max-w-[1432px] flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <Marque petite />
-            <p className="mt-2 max-w-sm text-sm text-efface">{ACCROCHE}.</p>
+            <p className="mt-4 max-w-sm text-[14px] leading-[1.35] tracking-[-0.02em] text-efface">
+              {ACCROCHE}.
+            </p>
           </div>
 
-          <nav aria-label="Plan du site" className="flex flex-col gap-1.5">
+          <nav aria-label="Plan du site" className="flex flex-col gap-3">
             {LIENS_PUBLICS.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className="text-sm text-attenue transition-colors duration-200 hover:text-accent"
+                className="text-[14px] uppercase tracking-[-0.02em] text-encre transition-opacity hover:opacity-60"
               >
                 {l.libelleLong ?? l.libelle}
               </Link>
             ))}
             <Link
               href="/connexion"
-              className="text-sm text-attenue transition-colors duration-200 hover:text-accent"
+              className="text-[14px] uppercase tracking-[-0.02em] text-encre transition-opacity hover:opacity-60"
             >
               Connexion
             </Link>
