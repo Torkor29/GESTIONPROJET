@@ -68,6 +68,7 @@ export default function FormulaireTache({
         ouverte={ouverte}
         onFermer={() => setOuverte(false)}
         titre={edition ? "Modifier la mission" : "Nouvelle mission"}
+        large={!edition}
       >
         {/* La clé suit la date de modification de l'enregistrement.
             Sans elle, les champs gardent la valeur qu'ils avaient au montage :
@@ -91,6 +92,21 @@ export default function FormulaireTache({
               className="champ"
             />
           </div>
+
+          {!edition && (
+            <div>
+              <label htmlFor={`${uid}-etapes`} className="mb-1.5 block text-sm font-medium">
+                Étapes <span className="font-normal text-attenue">(une par ligne, facultatif)</span>
+              </label>
+              <textarea
+                id={`${uid}-etapes`}
+                name="lignesSousTaches"
+                rows={3}
+                placeholder={"Relancer le promoteur\nAttendre le retour ANSM\nDéposer le document"}
+                className="champ resize-y"
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor={`${uid}-etudeId`} className="mb-1.5 block text-sm font-medium">
@@ -171,21 +187,6 @@ export default function FormulaireTache({
               className="champ resize-y"
             />
           </div>
-
-          {!edition && (
-            <div>
-              <label htmlFor={`${uid}-etapes`} className="mb-1.5 block text-sm font-medium">
-                Étapes <span className="font-normal text-attenue">(une par ligne, facultatif)</span>
-              </label>
-              <textarea
-                id={`${uid}-etapes`}
-                name="lignesSousTaches"
-                rows={4}
-                placeholder={"Relancer le promoteur\nAttendre le retour ANSM\nDéposer le document"}
-                className="champ resize-y"
-              />
-            </div>
-          )}
 
           {etat.erreur && (
             <p role="alert" className="text-sm text-alerte">

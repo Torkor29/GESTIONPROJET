@@ -167,9 +167,12 @@ p {
 
 /* Espace de travail : plus doux, cartes plus compactes, un peu de vie. */
 .page-app {
+  --ombre-posee: 0 1px 3px rgb(36 36 36 / 0.06);
+  --ombre-douce: 0 14px 36px -12px rgb(36 36 36 / 0.16), 0 4px 14px rgb(36 36 36 / 0.05);
+  --ombre-elevee: 0 22px 48px -14px rgb(36 36 36 / 0.2);
   background:
-    radial-gradient(920px 320px at -8% -8%, rgb(var(--pervenche) / 0.55), transparent 58%),
-    radial-gradient(640px 260px at 110% 0%, rgb(var(--menthe) / 0.22), transparent 50%),
+    radial-gradient(920px 320px at -8% -8%, rgb(var(--pervenche) / 0.7), transparent 58%),
+    radial-gradient(640px 260px at 110% 0%, rgb(var(--menthe) / 0.28), transparent 50%),
     rgb(var(--surface));
 }
 

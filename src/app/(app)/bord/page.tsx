@@ -77,9 +77,16 @@ export default async function TableauDeBord() {
 
   const dansUneSemaine = maintenant + 7 * 86400;
   const ouvertes = missions.filter(({ tache }) => tache.statut !== "terminee");
+  const rangPriorite: Record<string, number> = { haute: 0, normale: 1, basse: 2 };
   const urgentes = ouvertes
     .filter(({ tache }) => tache.echeance && tache.echeance <= dansUneSemaine)
     .sort((a, b) => (a.tache.echeance ?? 0) - (b.tache.echeance ?? 0));
+  const aTraiter =
+    urgentes.length > 0
+      ? urgentes
+      : [...ouvertes].sort(
+          (a, b) => (rangPriorite[a.tache.priorite] ?? 1) - (rangPriorite[b.tache.priorite] ?? 1),
+        );
 
   // Moyenne de conformité sur les seules études qui ont une checklist.
   const avecChecklist = [...progressions.values()].filter((p) => p.total > 0);
@@ -170,9 +177,9 @@ export default async function TableauDeBord() {
           </Link>
         </div>
         <TableauMissions
-          lignes={urgentes.slice(0, 10)}
+          lignes={aTraiter.slice(0, 10)}
           etudes={etudes}
-          message="Aucune échéance dans les 7 jours. Rien ne brûle."
+          message="Aucune mission ouverte. Vous êtes à jour."
         />
       </section>
 
