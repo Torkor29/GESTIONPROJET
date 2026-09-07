@@ -49,7 +49,7 @@ export function ApercuProduit() {
                   m.c === "attention" ? "apercu-ligne-focus" : ""
                 }`}
               >
-                <span className="text-sm leading-snug">{m.t}</span>
+                <span className="min-w-0 flex-1 text-sm leading-snug">{m.t}</span>
                 <span
                   className={`etiquette shrink-0 ${
                     m.c === "attention"

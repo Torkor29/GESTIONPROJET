@@ -17,7 +17,7 @@ export function Marque({
   return (
     <span
       aria-label={NOM_PRODUIT}
-      className={`flex items-center gap-2.5 font-titre font-bold tracking-tight ${
+      className={`flex items-center gap-2 font-titre font-bold tracking-tight sm:gap-2.5 ${
         petite ? "text-sm" : "text-[15px]"
       }`}
     >
@@ -28,7 +28,7 @@ export function Marque({
       >
         <Icone nom="eclair" className={petite ? "h-3.5 w-3.5" : "h-4 w-4"} />
       </span>
-      {complete ? NOM_PRODUIT : NOM_COURT}
+      <span className="whitespace-nowrap">{complete ? NOM_PRODUIT : NOM_COURT}</span>
     </span>
   );
 }

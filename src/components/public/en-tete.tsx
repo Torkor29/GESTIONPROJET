@@ -51,7 +51,7 @@ export function EnTetePublic() {
           : "border-ligne/70 bg-surface/85 backdrop-blur-md"
       }`}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
         <Link href="/" aria-label="Vigie Clinique — accueil" className="shrink-0">
           <Marque />
         </Link>
@@ -73,14 +73,14 @@ export function EnTetePublic() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <Link href="/connexion" className="bouton-discret !min-h-11 !py-2 text-[13px]">
+        <div className="flex shrink-0 items-center gap-2">
+          <Link href="/connexion" className="bouton-discret !min-h-11 !px-3 !py-2 text-[13px] sm:!px-4">
             Se connecter
           </Link>
 
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-ligne bg-relief text-attenue shadow-posee transition-all duration-200 hover:text-encre focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-ligne bg-relief text-attenue shadow-posee transition-all duration-200 hover:text-encre focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:hidden"
             aria-label={menuOuvert ? "Fermer le menu" : "Ouvrir le menu"}
             aria-expanded={menuOuvert}
             aria-controls={idMenu}
