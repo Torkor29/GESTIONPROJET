@@ -74,7 +74,7 @@ export function EnTetePublic() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link href="/connexion" className="bouton-discret !py-2 text-[13px]">
+          <Link href="/connexion" className="bouton-discret !min-h-11 !py-2 text-[13px]">
             Se connecter
           </Link>
 

@@ -45,11 +45,11 @@ export function ApercuProduit() {
             ].map((m) => (
               <div
                 key={m.t}
-                className={`apercu-ligne apercu-ligne-${m.d} flex items-center justify-between gap-3 rounded-xl border border-ligne bg-surface px-3.5 py-2.5 ${
+                className={`apercu-ligne apercu-ligne-${m.d} flex items-start justify-between gap-3 rounded-xl border border-ligne bg-surface px-3.5 py-2.5 ${
                   m.c === "attention" ? "apercu-ligne-focus" : ""
                 }`}
               >
-                <span className="truncate text-sm">{m.t}</span>
+                <span className="text-sm leading-snug">{m.t}</span>
                 <span
                   className={`etiquette shrink-0 ${
                     m.c === "attention"

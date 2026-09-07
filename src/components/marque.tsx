@@ -28,14 +28,7 @@ export function Marque({
       >
         <Icone nom="eclair" className={petite ? "h-3.5 w-3.5" : "h-4 w-4"} />
       </span>
-      {complete ? (
-        <span>
-          Vigie
-          <span className="hidden min-[420px]:inline"> Clinique</span>
-        </span>
-      ) : (
-        NOM_COURT
-      )}
+      {complete ? NOM_PRODUIT : NOM_COURT}
     </span>
   );
 }
