@@ -16,7 +16,13 @@
 		-Server
 	}
 
-	reverse_proxy app:3000
+	reverse_proxy app:3000 {
+		# Le schéma réel (http/https) doit arriver jusqu'à l'application :
+		# c'est lui qui décide si le cookie de session est marqué « secure ».
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+		header_up Host {host}
+	}
 }
 
 # « www » renvoie vers le domaine nu, pour que les deux écritures fonctionnent

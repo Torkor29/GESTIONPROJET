@@ -1,12 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { invitationValide } from "@/actions/invitations";
 import { estConnecte } from "@/lib/auth";
 import { LIBELLES_ROLE } from "@/lib/constantes";
-import { Marque } from "@/components/marque";
+import { CadreCompte, EnTeteCompte } from "@/components/public/cadre-compte";
 import FormulaireInvitation from "./formulaire";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function PageInvitation({
   params,
@@ -19,37 +21,28 @@ export default async function PageInvitation({
   const invitation = await invitationValide(jeton);
 
   return (
-    <main className="page-publique relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[100px]"
-      />
-
-      <div className="relative w-full max-w-sm animate-apparait">
-        <div className="text-center">
-          <Link href="/" className="inline-flex" aria-label="Vigie Clinique — accueil">
-            <Marque />
-          </Link>
-        </div>
-
-        {invitation ? (
-          <>
-            <div className="mt-6 text-center">
-              <h1 className="font-titre text-[32px] tracking-[-0.02em]">Bienvenue</h1>
-              <p className="mt-3 text-[14px] leading-[1.35] text-attenue">
+    <CadreCompte>
+      {invitation ? (
+        <>
+          <EnTeteCompte
+            titre="Bienvenue"
+            intro={
+              <>
                 Vous avez été invité en tant que{" "}
                 <strong className="text-encre">{LIBELLES_ROLE[invitation.role]}</strong>.
                 Choisissez un mot de passe pour créer votre compte.
-              </p>
-            </div>
-            <div className="mt-8">
-              <FormulaireInvitation jeton={jeton} email={invitation.email} />
-            </div>
-          </>
-        ) : (
+              </>
+            }
+          />
+          <div className="mt-8">
+            <FormulaireInvitation jeton={jeton} email={invitation.email} />
+          </div>
+        </>
+      ) : (
+        <>
+          <EnTeteCompte titre="Invitation expirée" />
           <div className="carte mt-6 p-6 text-center !shadow-douce">
-            <h1 className="font-titre text-[28px] tracking-[-0.02em]">Invitation expirée</h1>
-            <p className="mt-3 text-[14px] leading-[1.35] text-attenue">
+            <p className="text-[14px] leading-[1.35] text-attenue">
               Ce lien n&apos;est plus valable — il a déjà servi, ou il a plus de
               sept jours. Demandez-en un nouveau à la personne qui vous a invité.
             </p>
@@ -57,8 +50,8 @@ export default async function PageInvitation({
               Aller à la connexion
             </Link>
           </div>
-        )}
-      </div>
-    </main>
+        </>
+      )}
+    </CadreCompte>
   );
 }

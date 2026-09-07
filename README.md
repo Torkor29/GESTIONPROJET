@@ -94,10 +94,10 @@ MOT_DE_PASSE=votre-cle-d-installation-longue-et-unique
 SECRET_SESSION=<coller ici le résultat de : openssl rand -hex 32>
 ```
 
-`MOT_DE_PASSE` est la **clé d'installation** : elle n'ouvre pas l'application,
-elle autorise seulement la création du tout premier compte. Vous la saisirez
-une fois, à la création de votre compte, puis vous vous connecterez avec votre
-adresse et votre propre mot de passe.
+`MOT_DE_PASSE` est la **clé d'installation** : elle n'ouvre pas l'application.
+Elle autorise la création d'un compte et la réinitialisation d'un mot de
+passe oublié. Vous la saisissez sur ces écrans, puis vous vous connectez avec
+votre adresse et le mot de passe que vous avez choisi.
 
 Générez la clé de session avec :
 
@@ -135,8 +135,9 @@ docker compose up -d --build
 
 C'est tout. Ouvrez `https://votre-domaine` : l'écran de création de compte
 s'affiche. Renseignez votre nom, votre adresse, un mot de passe et la clé
-d'installation. Une fois ce compte créé, l'écran d'inscription se referme —
-les comptes suivants passeront par une invitation.
+d'installation. Les comptes suivants se créent de la même façon (avec cette
+clé) ou par invitation depuis Paramètres → Équipe. Un mot de passe oublié se
+réinitialise aussi avec la clé d'installation, sans envoi de courrier.
 
 La base de données est créée automatiquement au premier démarrage ; il n'y a
 aucune commande de migration à lancer.
@@ -219,8 +220,9 @@ cp .env.example .env    # renseignez MOT_DE_PASSE et SECRET_SESSION
 npm run dev
 ```
 
-L'application écoute sur http://localhost:3000. En développement, le cookie
-n'est pas marqué `secure` : la connexion fonctionne en HTTP.
+L'application écoute sur http://localhost:3000. Le cookie de session n'est
+marqué `secure` que si la requête arrive réellement en HTTPS : la connexion
+fonctionne donc en HTTP en local.
 
 Après une modification du schéma dans `src/db/schema.ts` :
 
@@ -244,7 +246,8 @@ src/
 │   ├── api/             exports Excel, dépôt et service des fichiers
 │   ├── robots.ts        robots.txt — n'ouvre que les pages publiques
 │   ├── sitemap.ts       plan du site, une entrée par référentiel
-│   └── connexion/       page de connexion
+│   └── connexion/       pages de compte : connexion, inscription,
+│                        mot de passe oublié
 ├── actions/             Server Actions (écritures en base)
 ├── components/          composants d'interface
 ├── db/                  schéma Drizzle et connexion SQLite

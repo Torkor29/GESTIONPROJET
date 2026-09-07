@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { seConnecter } from "@/actions/session";
@@ -39,9 +40,17 @@ export default function FormulaireConnexion() {
       </div>
 
       <div>
-        <label htmlFor="motDePasse" className="mb-1.5 block text-sm font-medium">
-          Mot de passe
-        </label>
+        <div className="mb-1.5 flex items-baseline justify-between gap-3">
+          <label htmlFor="motDePasse" className="text-sm font-medium">
+            Mot de passe
+          </label>
+          <Link
+            href="/mot-de-passe-oublie"
+            className="text-xs text-efface transition-opacity hover:opacity-60"
+          >
+            Oublié ?
+          </Link>
+        </div>
         <input
           id="motDePasse"
           name="motDePasse"
@@ -50,6 +59,9 @@ export default function FormulaireConnexion() {
           required
           className="champ"
         />
+        <p className="mt-1.5 text-xs text-efface">
+          Celui choisi à la création du compte — pas la clé d&apos;installation.
+        </p>
       </div>
 
       {etat.erreur && (

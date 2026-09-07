@@ -325,8 +325,9 @@ SECRET_SESSION=collez-ici-la-suite-generee-juste-avant
 DOMAINE=projets.mondomaine.fr
 ```
 
-- `MOT_DE_PASSE` : celui que **vous** saisirez pour entrer dans l'application.
-  Prenez-en un long et propre à cet outil.
+- `MOT_DE_PASSE` : la **clé d'installation**. Elle n'ouvre pas l'application.
+  Vous la saisissez pour **créer un compte** ou **réinitialiser un mot de
+  passe oublié**. Prenez-en une longue et propre à cet outil.
 - `SECRET_SESSION` : la valeur générée par `openssl`. Ne la réutilisez nulle
   part ailleurs.
 - `DOMAINE` : votre domaine. **Si vous n'en avez pas encore, supprimez cette
@@ -366,8 +367,10 @@ Ouvrez dans votre navigateur :
 - avec un domaine : **`https://projets.mondomaine.fr`**
 - sans domaine : **`http://VOTRE_IP`**
 
-Vous devez voir l'écran de connexion. Saisissez le `MOT_DE_PASSE` du fichier
-`.env`.
+Vous devez voir l'écran de création de compte (ou de connexion s'il existe
+déjà). Créez votre compte avec votre nom, votre adresse, un mot de passe **à
+vous**, et la clé `MOT_DE_PASSE` du fichier `.env`. Ensuite, connectez-vous
+avec cette adresse et ce mot de passe — pas avec la clé d'installation.
 
 Faites ensuite un test complet, il prend deux minutes :
 
@@ -609,13 +612,16 @@ docker compose restart caddy
 
 ### Je me connecte, mais je reviens toujours sur l'écran de connexion
 
-Typiquement : `DOMAINE` est renseigné dans `.env` alors que vous accédez au
-site en `http://IP`. Le cookie de session n'est alors transmis qu'en HTTPS.
-Accédez au site par son domaine en `https://`, ou retirez la ligne `DOMAINE`
-et relancez :
+Le cookie de session n'est marqué « secure » que si la requête arrive en
+HTTPS (Caddy pose `X-Forwarded-Proto`). Si la boucle continue :
+
+1. Accédez au site par son domaine en `https://`, pas par `http://IP`, dès
+   qu'un domaine est configuré.
+2. Vérifiez que vous utilisez le mot de passe **du compte**, pas la clé
+   `MOT_DE_PASSE` du `.env`. En cas de doute : page « Mot de passe oublié ».
 
 ```bash
-docker compose up -d
+docker compose logs app | tail -50
 ```
 
 ### « no space left on device »

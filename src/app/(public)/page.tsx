@@ -162,9 +162,9 @@ export default function PagePresentation() {
               Accéder à l&apos;espace
               <span aria-hidden>▸</span>
             </Link>
-            <a href="#metiers" className="bouton-discret">
-              Découvrir par métier
-            </a>
+            <Link href="/inscription" className="bouton-discret">
+              Créer un compte
+            </Link>
           </div>
         </div>
 
@@ -491,17 +491,18 @@ export default function PagePresentation() {
               </h2>
               <p className="mx-auto mt-6 max-w-lg text-[18px] leading-[1.35] text-attenue">
                 Vigie Clinique s&apos;installe chez vous. L&apos;accès à
-                l&apos;espace de travail se fait avec un compte — par invitation,
-                ou avec le compte déjà créé sur cette installation.
+                l&apos;espace de travail se fait avec un compte : le vôtre,
+                créé avec la clé d&apos;installation, ou par invitation d&apos;un
+                collègue.
               </p>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Link href="/connexion" className="bouton">
                   Se connecter
                   <span aria-hidden>▸</span>
                 </Link>
-                <a href="#usages" className="bouton-discret">
-                  Explorer les usages
-                </a>
+                <Link href="/inscription" className="bouton-discret">
+                  Créer un compte
+                </Link>
               </div>
             </div>
           </div>

@@ -1,39 +1,49 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { aucunCompte, estConnecte } from "@/lib/auth";
-import { Marque } from "@/components/marque";
+import { CadreCompte, EnTeteCompte, LiensCompte } from "@/components/public/cadre-compte";
 import FormulaireInscription from "./formulaire";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function PageInscription() {
   if (await estConnecte()) redirect("/bord");
-  // Une fois le premier compte créé, cette page n'a plus lieu d'être.
-  if (!aucunCompte()) redirect("/connexion");
+
+  const premier = aucunCompte();
 
   return (
-    <main className="page-publique relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[100px]"
+    <CadreCompte largeur="md">
+      <EnTeteCompte
+        titre={premier ? "Créer le premier compte" : "Créer un compte"}
+        intro={
+          premier ? (
+            <>
+              C&apos;est le premier compte de cette installation. Il faut la clé
+              d&apos;installation, celle du fichier <code className="font-mono">.env</code>{" "}
+              sur le serveur.
+            </>
+          ) : (
+            <>
+              La clé d&apos;installation — valeur{" "}
+              <code className="font-mono">MOT_DE_PASSE</code> du fichier{" "}
+              <code className="font-mono">.env</code> — ouvre un compte. Un
+              collègue sans cette clé se fait inviter depuis Paramètres → Équipe.
+            </>
+          )
+        }
       />
-
-      <div className="relative w-full max-w-md animate-apparait">
-        <div className="text-center">
-          <Link href="/" className="inline-flex" aria-label="Vigie Clinique — accueil">
-            <Marque />
-          </Link>
-          <h1 className="mt-8 font-titre text-[32px] tracking-[-0.02em]">Créer le compte propriétaire</h1>
-          <p className="mx-auto mt-3 max-w-sm text-[14px] leading-[1.35] text-attenue">
-            C&apos;est le premier compte de cette installation. Les suivants se
-            créeront sur invitation.
-          </p>
-        </div>
-
-        <div className="mt-8">
-          <FormulaireInscription />
-        </div>
+      <div className="mt-8">
+        <FormulaireInscription />
       </div>
-    </main>
+      {premier ? (
+        <Link href="/" className="lien-fleche mt-8 justify-center text-efface">
+          Découvrir Vigie Clinique
+        </Link>
+      ) : (
+        <LiensCompte actuel="inscription" />
+      )}
+    </CadreCompte>
   );
 }

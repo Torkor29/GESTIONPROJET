@@ -64,6 +64,12 @@ export function EnTetePublic() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/inscription"
+            className="bouton hidden !min-h-11 !px-5 !py-2.5 text-[12px] sm:inline-flex sm:!px-8"
+          >
+            Créer un compte
+          </Link>
           <Link href="/connexion" className="bouton-discret !min-h-11 !px-5 !py-2.5 text-[12px] sm:!px-8">
             Se connecter
           </Link>
@@ -109,6 +115,18 @@ export function EnTetePublic() {
               {l.libelleLong ?? l.libelle}
             </Link>
           ))}
+          <Link
+            href="/inscription"
+            className="min-h-12 py-3 text-[16px] uppercase tracking-[-0.025em] text-encre"
+          >
+            Créer un compte
+          </Link>
+          <Link
+            href="/connexion"
+            className="min-h-12 py-3 text-[16px] uppercase tracking-[-0.025em] text-encre"
+          >
+            Se connecter
+          </Link>
         </nav>
       </div>
     </header>

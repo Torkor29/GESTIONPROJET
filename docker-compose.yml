@@ -15,8 +15,9 @@ services:
       SECRET_SESSION: ${SECRET_SESSION:?renseignez SECRET_SESSION dans le fichier .env}
       CHEMIN_BASE: /donnees/gestionprojet.db
       DOSSIER_UPLOADS: /donnees/uploads
-      # Sert à savoir si le site est en HTTPS : le cookie de session n'est
-      # marqué « secure » que dans ce cas, sinon la connexion serait impossible.
+      # Sert aussi, à la construction, aux liens canoniques. Le cookie de
+      # session, lui, se fie au protocole réel de la requête (en-tête
+      # X-Forwarded-Proto), pas seulement à la présence de cette variable.
       DOMAINE: ${DOMAINE:-}
     volumes:
       # Toutes vos données vivent ici : base SQLite et fichiers téléversés.

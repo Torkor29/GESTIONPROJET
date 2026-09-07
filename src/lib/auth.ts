@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { utilisateurs, type Utilisateur } from "@/db/schema";
@@ -46,16 +46,17 @@ export function motDePasseCorrespond(clair: string, stocke: string): boolean {
 }
 
 /**
- * Clé d'installation : le `MOT_DE_PASSE` du fichier .env. Elle n'ouvre plus
- * l'application — elle n'autorise que la création du tout premier compte, pour
- * qu'un inconnu tombant sur l'adresse avant vous ne puisse pas s'en emparer.
+ * Clé d'installation : le `MOT_DE_PASSE` du fichier .env. Elle n'ouvre pas
+ * l'application. Elle autorise la création d'un compte, et la réinitialisation
+ * d'un mot de passe oublié — pour qu'un inconnu tombant sur l'adresse ne
+ * puisse pas s'en emparer, ni usurper un compte existant.
  */
 export function cleInstallationValide(saisie: string): boolean {
   const attendue = process.env.MOT_DE_PASSE ?? "";
   if (!attendue) {
     throw new Error(
       "MOT_DE_PASSE n'est pas défini dans le fichier .env. Il sert de clé " +
-        "d'installation pour créer le premier compte.",
+        "d'installation pour créer un compte et réinitialiser un mot de passe.",
     );
   }
   const sel = "vigie-installation";
@@ -104,16 +105,25 @@ export function lireJeton(jeton: string | undefined): number | null {
 }
 
 /**
- * Le cookie ne doit être marqué « secure » que si le site est réellement servi
- * en HTTPS — sinon le navigateur le refuse et la connexion échoue en boucle.
+ * Le cookie ne doit être marqué « secure » que si *cette* requête est en
+ * HTTPS. Se fier à `DOMAINE` cassait la connexion : dès que le nom était
+ * renseigné, le témoin n'était plus envoyé en HTTP (accès par IP, certificat
+ * pas encore prêt, développement local avec un `.env` de production).
  *
- * DOMAINE est renseigné quand un vrai nom de domaine est configuré : Caddy sert
- * alors le site en HTTPS. Sans domaine (accès par IP en HTTP), on retombe sur
- * un cookie non sécurisé, seul moyen que la connexion fonctionne.
+ * Caddy pose `X-Forwarded-Proto`. En son absence, on ne force pas `secure` :
+ * un cookie non marqué circule aussi en HTTPS, alors que l'inverse bloque.
  */
-function cookieSecurise(): boolean {
-  const domaine = (process.env.DOMAINE ?? "").trim();
-  return domaine !== "" && !domaine.startsWith(":");
+async function cookieSecurise(): Promise<boolean> {
+  try {
+    const h = await headers();
+    const proto = (h.get("x-forwarded-proto") ?? h.get("x-forwarded-protocol") ?? "")
+      .split(",")[0]
+      .trim()
+      .toLowerCase();
+    return proto === "https";
+  } catch {
+    return false;
+  }
 }
 
 export async function ouvrirSession(utilisateurId: number): Promise<void> {
@@ -121,7 +131,7 @@ export async function ouvrirSession(utilisateurId: number): Promise<void> {
   boite.set(NOM_COOKIE, creerJeton(utilisateurId), {
     httpOnly: true,
     sameSite: "lax",
-    secure: cookieSecurise(),
+    secure: await cookieSecurise(),
     path: "/",
     maxAge: DUREE_SESSION,
   });
@@ -164,7 +174,7 @@ export async function exigerSession(): Promise<Utilisateur> {
   return compte;
 }
 
-/** Vrai tant qu'aucun compte n'existe : seul moment où l'inscription est ouverte. */
+/** Vrai tant qu'aucun compte n'existe : l'installation n'a pas encore de propriétaire. */
 export function aucunCompte(): boolean {
   return db.select({ id: utilisateurs.id }).from(utilisateurs).limit(1).all().length === 0;
 }

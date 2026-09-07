@@ -1,8 +1,8 @@
 /**
  * Identité publique de l'outil, et adresse du site.
  *
- * `DOMAINE` est déjà la variable qui pilote Caddy et le cookie de session ;
- * on la réutilise plutôt que d'en introduire une seconde qui pourrait la
+ * `DOMAINE` pilote Caddy et les liens canoniques du site public ; on le
+ * réutilise plutôt que d'en introduire une seconde variable qui pourrait le
  * contredire. Sans domaine configuré, on retombe sur l'adresse locale : les
  * liens absolus du plan du site restent alors cohérents en développement.
  */

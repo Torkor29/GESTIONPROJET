@@ -95,6 +95,12 @@ export default function LayoutPublic({ children }: { children: React.ReactNode }
             >
               Connexion
             </Link>
+            <Link
+              href="/inscription"
+              className="text-[14px] uppercase tracking-[-0.02em] text-encre transition-opacity hover:opacity-60"
+            >
+              Créer un compte
+            </Link>
           </nav>
         </div>
       </footer>

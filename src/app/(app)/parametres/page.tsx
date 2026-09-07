@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { appliquerMetier } from "@/actions/modules";
 import ChoixModules from "@/components/choix-modules";
+import FormulaireChangerMotDePasse from "./formulaire-mot-de-passe";
 import { utilisateurActuel } from "@/lib/auth";
 import { LIBELLES_ROLE } from "@/lib/constantes";
 import { lireModules } from "@/lib/modules";
@@ -60,6 +61,16 @@ export default async function PageParametres() {
             Appliquer les suggestions
           </button>
         </form>
+      </section>
+
+      <section className="carte p-5">
+        <h2 className="font-titre text-lg font-bold">Mot de passe</h2>
+        <p className="mt-1 text-sm text-attenue">
+          Pour le changer ici, il faut encore connaître l&apos;actuel. Si vous
+          l&apos;avez perdu, utilisez « Mot de passe oublié » sur l&apos;écran
+          de connexion, avec la clé d&apos;installation.
+        </p>
+        <FormulaireChangerMotDePasse />
       </section>
 
       <ChoixModules actifs={actifs} />

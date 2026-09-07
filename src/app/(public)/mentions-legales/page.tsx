@@ -79,9 +79,9 @@ export default function PageMentionsLegales() {
             les études qui leur ont été ouvertes.
           </p>
           <p>
-            La création de compte n&apos;est pas ouverte au public. Les comptes
-            se créent par invitation nominative, remise par une personne déjà
-            autorisée.
+            La création de compte n&apos;est pas ouverte au public. Un compte
+            se crée avec la clé d&apos;installation de cette machine, ou par
+            invitation nominative remise par une personne déjà autorisée.
           </p>
         </Section>
 
