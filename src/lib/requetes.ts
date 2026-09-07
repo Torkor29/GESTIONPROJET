@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
@@ -14,9 +14,11 @@ import {
   etudes,
   faq,
   pages,
+  sousTaches,
   taches,
   temps,
   visites,
+  type SousTache,
 } from "@/db/schema";
 import { etudeAccessible, idsEtudesAccessibles, objetAccessible } from "./acces";
 import { utilisateurActuel } from "./auth";
@@ -106,9 +108,28 @@ export async function pageParId(id: number) {
   return ligne ?? null;
 }
 
+/** Étapes de plusieurs missions, en une lecture, groupées par mission. */
+async function sousTachesParMission(tacheIds: number[]): Promise<Map<number, SousTache[]>> {
+  const parTache = new Map<number, SousTache[]>();
+  if (tacheIds.length === 0) return parTache;
+
+  const lignes = await db
+    .select()
+    .from(sousTaches)
+    .where(inArray(sousTaches.tacheId, tacheIds))
+    .orderBy(asc(sousTaches.ordre), asc(sousTaches.id));
+
+  for (const s of lignes) {
+    const deja = parTache.get(s.tacheId);
+    if (deja) deja.push(s);
+    else parTache.set(s.tacheId, [s]);
+  }
+  return parTache;
+}
+
 export async function tachesDEtude(etudeId: number) {
   const id = await moi();
-  return db
+  const liste = await db
     .select()
     .from(taches)
     .where(
@@ -118,12 +139,15 @@ export async function tachesDEtude(etudeId: number) {
       ),
     )
     .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
+
+  const parMission = await sousTachesParMission(liste.map((t) => t.id));
+  return liste.map((t) => ({ ...t, sousTaches: parMission.get(t.id) ?? [] }));
 }
 
 /** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
 export async function toutesLesTaches(filtreStatut?: string) {
   const id = await moi();
-  return db
+  const lignes = await db
     .select({
       tache: taches,
       etudeNom: etudes.nom,
@@ -139,6 +163,12 @@ export async function toutesLesTaches(filtreStatut?: string) {
       ),
     )
     .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
+
+  const parMission = await sousTachesParMission(lignes.map((l) => l.tache.id));
+  return lignes.map((l) => ({
+    ...l,
+    sousTaches: parMission.get(l.tache.id) ?? [],
+  }));
 }
 
 // ------------------------------------------------------------- Documents

@@ -27,7 +27,7 @@ export default async function LayoutApplication({ children }: { children: React.
   }));
 
   return (
-    <div className="flex min-h-screen">
+    <div className="page-app flex min-h-screen">
       <BarreLaterale
         etudes={etudes}
         nom={compte.nom}

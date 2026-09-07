@@ -57,6 +57,13 @@
       "when": 1786026181162,
       "tag": "0007_smiling_madame_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788789000000,
+      "tag": "0008_sous_taches",
+      "breakpoints": true
     }
   ]
 }

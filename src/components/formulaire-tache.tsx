@@ -49,7 +49,7 @@ export default function FormulaireTache({
   const classes = {
     principal: "bouton",
     discret: "bouton-discret",
-    icone: "rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-accent",
+    icone: "rounded-xl px-2 py-1.5 text-sm text-attenue transition hover:bg-creux hover:text-accent",
   }[variante];
 
   return (
@@ -171,6 +171,21 @@ export default function FormulaireTache({
               className="champ resize-y"
             />
           </div>
+
+          {!edition && (
+            <div>
+              <label htmlFor={`${uid}-etapes`} className="mb-1.5 block text-sm font-medium">
+                Étapes <span className="font-normal text-attenue">(une par ligne, facultatif)</span>
+              </label>
+              <textarea
+                id={`${uid}-etapes`}
+                name="lignesSousTaches"
+                rows={4}
+                placeholder={"Relancer le promoteur\nAttendre le retour ANSM\nDéposer le document"}
+                className="champ resize-y"
+              />
+            </div>
+          )}
 
           {etat.erreur && (
             <p role="alert" className="text-sm text-alerte">

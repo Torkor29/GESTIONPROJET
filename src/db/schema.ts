@@ -128,6 +128,25 @@ export const taches = sqliteTable(
 );
 
 /**
+ * Une étape d'une mission : relancer quelqu'un, attendre un retour, déposer
+ * un document… Cocher au fur et à mesure, sans en faire une mission à part.
+ */
+export const sousTaches = sqliteTable(
+  "sous_taches",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    tacheId: integer("tache_id")
+      .notNull()
+      .references(() => taches.id, { onDelete: "cascade" }),
+    titre: text("titre").notNull(),
+    faite: integer("faite", { mode: "boolean" }).notNull().default(false),
+    ordre: integer("ordre").notNull().default(0),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+  },
+  (t) => [index("idx_sous_taches_tache").on(t.tacheId)],
+);
+
+/**
  * Une entrée de temps. `fin` à null signifie que le chronomètre tourne encore.
  */
 export const temps = sqliteTable(
@@ -468,6 +487,7 @@ export type Invitation = typeof invitations.$inferSelect;
 export type Etude = typeof etudes.$inferSelect;
 export type Page = typeof pages.$inferSelect;
 export type Tache = typeof taches.$inferSelect;
+export type SousTache = typeof sousTaches.$inferSelect;
 export type Temps = typeof temps.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type ChecklistItem = typeof checklistItems.$inferSelect;

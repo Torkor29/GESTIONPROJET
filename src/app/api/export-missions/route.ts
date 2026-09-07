@@ -21,12 +21,12 @@ export async function GET(requete: Request) {
   const masquerTerminees = params.get("masquerTerminees") === "1";
 
   const toutes = await toutesLesTaches();
-  const lignes = toutes.filter(({ tache }) => {
+  const lignes = toutes.filter(({ tache, sousTaches: etapes }) => {
     if (etudeId && tache.etudeId !== etudeId) return false;
     if (statut && tache.statut !== statut) return false;
     if (masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
-      const texte = `${tache.titre} ${tache.notes ?? ""}`.toLowerCase();
+      const texte = `${tache.titre} ${tache.notes ?? ""} ${etapes.map((s) => s.titre).join(" ")}`.toLowerCase();
       if (!texte.includes(recherche)) return false;
     }
     return true;
@@ -63,6 +63,15 @@ export async function GET(requete: Request) {
         },
         { entete: "Commentaire", valeur: (l) => l.tache.notes ?? "" },
         {
+          entete: "Étapes",
+          valeur: (l) => {
+            const etapes = l.sousTaches ?? [];
+            if (etapes.length === 0) return "";
+            const faites = etapes.filter((s) => s.faite).length;
+            return `${faites}/${etapes.length}`;
+          },
+        },
+        {
           entete: "Terminée le",
           valeur: (l) => (l.tache.termineeLe ? formaterDate(l.tache.termineeLe) : ""),
         },
@@ -88,6 +97,7 @@ export async function GET(requete: Request) {
     { header: "Échéance", key: "echeance", width: 12 },
     { header: "En retard", key: "retard", width: 10 },
     { header: "Commentaire", key: "commentaire", width: 46 },
+    { header: "Étapes", key: "etapes", width: 10 },
     { header: "Terminée le", key: "termineeLe", width: 12 },
   ];
 
@@ -98,9 +108,11 @@ export async function GET(requete: Request) {
 
   const maintenant = Math.floor(Date.now() / 1000);
 
-  for (const { tache, etudeNom, etudeCode } of lignes) {
+  for (const { tache, etudeNom, etudeCode, sousTaches } of lignes) {
     const enRetard =
       tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant;
+    const etapes = sousTaches ?? [];
+    const etapesFaites = etapes.filter((s) => s.faite).length;
 
     const ligne = feuille.addRow({
       titre: tache.titre,
@@ -110,6 +122,7 @@ export async function GET(requete: Request) {
       echeance: tache.echeance ? new Date(tache.echeance * 1000) : null,
       retard: enRetard ? "OUI" : "",
       commentaire: tache.notes ?? "",
+      etapes: etapes.length === 0 ? "" : `${etapesFaites}/${etapes.length}`,
       termineeLe: tache.termineeLe ? new Date(tache.termineeLe * 1000) : null,
     });
 
@@ -123,7 +136,7 @@ export async function GET(requete: Request) {
   feuille.getColumn("commentaire").alignment = { wrapText: true, vertical: "top" };
 
   if (lignes.length > 0) {
-    feuille.autoFilter = { from: "A1", to: `H${lignes.length + 1}` };
+    feuille.autoFilter = { from: "A1", to: `I${lignes.length + 1}` };
   }
 
   const tampon = await classeur.xlsx.writeBuffer();

@@ -46,7 +46,7 @@ export default function BarreLaterale({
   return (
     <>
       {/* Barre supérieure, mobile uniquement */}
-      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-ligne bg-surface/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-ligne/70 bg-relief/80 px-4 py-2.5 shadow-posee backdrop-blur-md lg:hidden">
         <button
           type="button"
           onClick={() => setOuvert((o) => !o)}
@@ -79,29 +79,35 @@ export default function BarreLaterale({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-ligne bg-relief
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-ligne/70 bg-relief/90
+                    shadow-posee backdrop-blur-md
                     transition-transform duration-300 ease-souple
                     lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
                     ${ouvert ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="px-4 py-4">
+        <div className="px-4 py-5">
           <Marque complete={false} />
         </div>
 
-        <nav className="space-y-0.5 px-3">
+        <nav className="space-y-1 px-3">
           {liens.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               aria-current={actif(l.href) ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-200
+              className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-1.5 text-sm transition-all duration-200
                           ${
                             actif(l.href)
-                              ? "bg-accent-voile font-semibold text-accent-appuye"
+                              ? "bg-accent-voile font-semibold text-accent-appuye shadow-posee"
                               : "font-medium text-attenue hover:bg-creux hover:text-encre"
                           }`}
             >
-              <Icone nom={l.icone} className="h-[18px] w-[18px] shrink-0" />
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition
+                            ${actif(l.href) ? "bg-relief text-accent-appuye" : "bg-creux/80"}`}
+              >
+                <Icone nom={l.icone} className="h-[16px] w-[16px]" />
+              </span>
               {l.libelle}
             </Link>
           ))}

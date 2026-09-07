@@ -36,12 +36,13 @@ export default async function PageMissions({
   const recherche = (params.q ?? "").trim().toLowerCase();
   const masquerTerminees = params.masquerTerminees === "1";
 
-  const lignes = toutes.filter(({ tache }) => {
+  const lignes = toutes.filter(({ tache, sousTaches }) => {
     if (etudeId && tache.etudeId !== etudeId) return false;
     if (params.statut && tache.statut !== params.statut) return false;
     if (masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
-      const texte = `${tache.titre} ${tache.notes ?? ""}`.toLowerCase();
+      const etapes = (sousTaches ?? []).map((s) => s.titre).join(" ");
+      const texte = `${tache.titre} ${tache.notes ?? ""} ${etapes}`.toLowerCase();
       if (!texte.includes(recherche)) return false;
     }
     return true;
@@ -53,7 +54,7 @@ export default async function PageMissions({
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="anime-bloc flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-titre text-3xl font-bold">Suivi de missions</h1>
           <p className="mt-1 text-sm text-attenue">
@@ -78,7 +79,7 @@ export default async function PageMissions({
       </header>
 
       {/* Barre de vues */}
-      <nav className="flex flex-wrap gap-2">
+      <nav className="anime-bloc flex flex-wrap gap-2">
         {VUES.map((v) => {
           const q = new URLSearchParams(
             Object.entries(params).filter(([k, val]) => val && k !== "vue") as [string, string][],
@@ -89,11 +90,11 @@ export default async function PageMissions({
               key={v.cle}
               href={`/missions?${q.toString()}`}
               aria-current={vue === v.cle ? "page" : undefined}
-              className={`rounded-lg border px-3 py-1.5 text-sm transition
+              className={`rounded-full border px-4 py-1.5 text-sm transition
                           ${
                             vue === v.cle
-                              ? "border-accent bg-accent/10 font-medium text-accent"
-                              : "border-ligne text-attenue hover:text-encre"
+                              ? "border-accent bg-accent-voile font-medium text-accent-appuye shadow-posee"
+                              : "border-ligne text-attenue hover:border-encre/30 hover:text-encre"
                           }`}
             >
               {v.libelle}
@@ -103,7 +104,7 @@ export default async function PageMissions({
       </nav>
 
       {/* Filtres */}
-      <form method="get" className="sans-impression carte flex flex-wrap items-end gap-3 p-4">
+      <form method="get" className="sans-impression bloc-app anime-bloc flex flex-wrap items-end gap-3">
         <input type="hidden" name="vue" value={vue} />
 
         <div className="min-w-48 flex-1">
@@ -174,10 +175,10 @@ export default async function PageMissions({
             const duGroupe = lignes.filter((l) => l.tache.statut === statut);
             if (duGroupe.length === 0) return null;
             return (
-              <section key={statut}>
-                <h2 className="mb-2 px-1 text-sm font-medium">
+              <section key={statut} className="bloc-app">
+                <h2 className="mb-3 font-titre text-lg font-bold">
                   {libelle}
-                  <span className="chiffres ml-2 text-xs text-attenue">{duGroupe.length}</span>
+                  <span className="chiffres ml-2 text-sm font-normal text-attenue">{duGroupe.length}</span>
                 </h2>
                 <TableauMissions lignes={duGroupe} etudes={etudes} />
               </section>
@@ -236,10 +237,10 @@ function VueEcheances({
   return (
     <div className="space-y-5">
       {groupes.map((g) => (
-        <section key={g.titre}>
-          <h2 className="mb-2 px-1 text-sm font-medium">
+        <section key={g.titre} className="bloc-app">
+          <h2 className="mb-3 font-titre text-lg font-bold">
             {g.titre}
-            <span className="chiffres ml-2 text-xs text-attenue">{g.lignes.length}</span>
+            <span className="chiffres ml-2 text-sm font-normal text-attenue">{g.lignes.length}</span>
           </h2>
           <TableauMissions lignes={g.lignes} etudes={etudes} />
         </section>

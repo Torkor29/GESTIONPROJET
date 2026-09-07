@@ -153,16 +153,16 @@ export default async function PageEtude({
       </header>
 
       {/* ------------------------------------------------------- Sections */}
-      <nav className="flex flex-wrap gap-1.5 border-b border-ligne pb-2">
+      <nav className="flex flex-wrap gap-1.5">
         {SECTIONS.map((s) => (
           <Link
             key={s.cle}
             href={lien(s.cle)}
             aria-current={section === s.cle ? "page" : undefined}
-            className={`rounded-lg px-3 py-1.5 text-sm transition
+            className={`rounded-full px-4 py-1.5 text-sm transition
                         ${
                           section === s.cle
-                            ? "bg-accent/10 font-medium text-accent"
+                            ? "bg-accent-voile font-medium text-accent-appuye shadow-posee"
                             : "text-attenue hover:bg-creux hover:text-encre"
                         }`}
           >
@@ -253,7 +253,7 @@ export default async function PageEtude({
             <section>
               <h2 className="mb-2 font-semibold text-alerte">Missions en retard</h2>
               <TableauMissions
-                lignes={enRetard.map((t) => ({ tache: t }))}
+                lignes={enRetard.map((t) => ({ tache: t, sousTaches: t.sousTaches }))}
                 etudes={toutesEtudes}
                 afficherEtude={false}
               />
@@ -291,7 +291,7 @@ export default async function PageEtude({
 
       {/* ------------------------------------------------------- Missions */}
       {section === "missions" && (
-        <div className="space-y-4">
+        <div className="bloc-app space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-titre text-lg font-bold">Missions</h2>
             <FormulaireTache
@@ -302,7 +302,7 @@ export default async function PageEtude({
             />
           </div>
           <TableauMissions
-            lignes={missions.map((t) => ({ tache: t }))}
+            lignes={missions.map((t) => ({ tache: t, sousTaches: t.sousTaches }))}
             etudes={toutesEtudes}
             afficherEtude={false}
             message="Aucune mission sur cette étude."

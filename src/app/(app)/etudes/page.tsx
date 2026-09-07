@@ -53,7 +53,7 @@ export default async function PageEtudes() {
               <Link
                 key={e.id}
                 href={`/etudes/${e.id}`}
-                className="carte group flex flex-col overflow-hidden transition hover:border-accent/50"
+                className="carte-active group flex flex-col overflow-hidden"
               >
                 {e.imageCouverture ? (
                   // eslint-disable-next-line @next/next/no-img-element

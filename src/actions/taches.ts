@@ -1,9 +1,9 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { taches } from "@/db/schema";
+import { sousTaches, taches } from "@/db/schema";
 import { exigerAcces } from "@/lib/acces";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { depuisChampDate } from "@/lib/format";
@@ -24,14 +24,32 @@ export async function creerTache(
 
     const etudeIdBrut = donnees.get("etudeId");
 
-    await db.insert(taches).values({
-      proprietaireId: compte.id,
-      etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
-      titre,
-      notes: String(donnees.get("notes") ?? "").trim() || null,
-      priorite: String(donnees.get("priorite") ?? "normale"),
-      echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
-    });
+    const [creee] = await db
+      .insert(taches)
+      .values({
+        proprietaireId: compte.id,
+        etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
+        titre,
+        notes: String(donnees.get("notes") ?? "").trim() || null,
+        priorite: String(donnees.get("priorite") ?? "normale"),
+        echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+      })
+      .returning({ id: taches.id });
+
+    const etapes = String(donnees.get("lignesSousTaches") ?? "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    if (creee && etapes.length > 0) {
+      await db.insert(sousTaches).values(
+        etapes.map((titreEtape, i) => ({
+          tacheId: creee.id,
+          titre: titreEtape,
+          ordre: i,
+        })),
+      );
+    }
 
     revalidatePath("/", "layout");
     return { succes: (precedent.succes ?? 0) + 1 };
@@ -142,5 +160,70 @@ export async function supprimerTache(donnees: FormData) {
   await exigerAcces("taches", id, compte.id);
 
   await db.delete(taches).where(eq(taches.id, id));
+  revalidatePath("/", "layout");
+}
+
+/** Relit une sous-tâche et vérifie l'accès via la mission parente. */
+async function sousTacheAccessible(id: number, utilisateurId: number) {
+  const [ligne] = await db
+    .select({
+      id: sousTaches.id,
+      tacheId: sousTaches.tacheId,
+      faite: sousTaches.faite,
+    })
+    .from(sousTaches)
+    .where(eq(sousTaches.id, id))
+    .limit(1);
+  if (!ligne) throw new Error("Étape introuvable.");
+  await exigerAcces("taches", ligne.tacheId, utilisateurId);
+  return ligne;
+}
+
+export async function ajouterSousTache(donnees: FormData) {
+  const compte = await exigerSession();
+
+  const tacheId = Number(donnees.get("tacheId"));
+  const titre = String(donnees.get("titre") ?? "").trim();
+  if (!tacheId) throw new Error("Mission manquante.");
+  if (!titre) throw new Error("Le titre de l'étape est obligatoire.");
+  await exigerAcces("taches", tacheId, compte.id);
+
+  const [derniere] = await db
+    .select({ ordre: sousTaches.ordre })
+    .from(sousTaches)
+    .where(eq(sousTaches.tacheId, tacheId))
+    .orderBy(desc(sousTaches.ordre))
+    .limit(1);
+
+  await db.insert(sousTaches).values({
+    tacheId,
+    titre,
+    ordre: (derniere?.ordre ?? -1) + 1,
+  });
+  revalidatePath("/", "layout");
+}
+
+export async function basculerSousTache(donnees: FormData) {
+  const compte = await exigerSession();
+
+  const id = Number(donnees.get("id"));
+  if (!id) throw new Error("Étape manquante.");
+  const ligne = await sousTacheAccessible(id, compte.id);
+
+  await db
+    .update(sousTaches)
+    .set({ faite: !ligne.faite })
+    .where(eq(sousTaches.id, id));
+  revalidatePath("/", "layout");
+}
+
+export async function supprimerSousTache(donnees: FormData) {
+  const compte = await exigerSession();
+
+  const id = Number(donnees.get("id"));
+  if (!id) throw new Error("Étape manquante.");
+  await sousTacheAccessible(id, compte.id);
+
+  await db.delete(sousTaches).where(eq(sousTaches.id, id));
   revalidatePath("/", "layout");
 }

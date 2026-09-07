@@ -39,7 +39,7 @@ function Chiffre({
       <div className="flex items-start justify-between gap-2">
         <p className="sur-titre">{libelle}</p>
         <span
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
             alerte ? "bg-alerte-voile text-alerte" : "bg-accent-voile text-accent-appuye"
           }`}
         >
@@ -56,11 +56,11 @@ function Chiffre({
   );
 
   return href ? (
-    <Link href={href} className="carte-active p-4">
+    <Link href={href} className="carte-active p-5">
       {contenu}
     </Link>
   ) : (
-    <div className="carte p-4">{contenu}</div>
+    <div className="carte p-5">{contenu}</div>
   );
 }
 
@@ -93,8 +93,8 @@ export default async function TableauDeBord() {
   const maxMinutes = Math.max(1, ...repartition.map((r) => r.minutes));
 
   return (
-    <div className="space-y-8">
-      <header>
+    <div className="space-y-6">
+      <header className="anime-bloc">
         <p className="sur-titre">
           {new Date().toLocaleDateString("fr-FR", {
             weekday: "long",
@@ -107,8 +107,8 @@ export default async function TableauDeBord() {
       </header>
 
       {/* --------------------------------------------------- Ajouts rapides */}
-      <section>
-        <h2 className="sur-titre mb-3">Ajouts rapides</h2>
+      <section className="bloc-app anime-bloc">
+        <h2 className="sur-titre mb-4">Ajouts rapides</h2>
         <div className="flex flex-wrap gap-2">
           <FormulaireTache etudes={etudes} libelle="Nouvelle mission" variante="discret" />
           <FormulaireDocument etudes={etudes} libelle="Nouveau document" variante="discret" />
@@ -123,7 +123,7 @@ export default async function TableauDeBord() {
       </section>
 
       {/* --------------------------------------------------------- Chiffres */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="anime-bloc grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Chiffre
           libelle="Missions ouvertes"
           valeur={String(stats.tachesOuvertes)}
@@ -159,9 +159,9 @@ export default async function TableauDeBord() {
       </div>
 
       {/* --------------------------------------------------- Missions du jour */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-titre text-lg font-bold">À traiter en priorité</h2>
+      <section className="bloc-app anime-bloc">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-titre text-xl font-bold">À traiter en priorité</h2>
           <Link
             href="/missions"
             className="text-sm font-medium text-accent transition-opacity hover:opacity-70"
@@ -177,9 +177,9 @@ export default async function TableauDeBord() {
       </section>
 
       {/* ---------------------------------------------------------- Projets */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-titre text-lg font-bold">Projets</h2>
+      <section className="bloc-app anime-bloc">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-titre text-xl font-bold">Projets</h2>
           <Link
             href="/etudes"
             className="text-sm font-medium text-accent transition-opacity hover:opacity-70"
@@ -189,7 +189,7 @@ export default async function TableauDeBord() {
         </div>
 
         {etudes.length === 0 ? (
-          <div className="carte p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-ligne bg-creux/40 p-10 text-center">
             <p className="text-sm text-attenue">Aucune étude pour l&apos;instant.</p>
             <div className="mt-4 inline-flex">
               <FormulaireEtude libelle="Créer ma première étude" />
@@ -263,7 +263,7 @@ export default async function TableauDeBord() {
 
       {/* ------------------------------------------------------------ Temps */}
       {repartition.length > 0 && (
-        <section className="carte p-5">
+        <section className="bloc-app anime-bloc">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-titre text-lg font-bold">Temps de la semaine</h2>
             <Link

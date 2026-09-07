@@ -11,7 +11,7 @@
 :root {
   --creux: 239 235 232;
   --surface: 246 243 241;
-  --relief: 246 243 241;
+  --relief: 252 250 248;
 
   --ligne: 206 202 200;
   --ligne-forte: 206 202 200;
@@ -40,9 +40,9 @@
   --info: 43 89 209;
   --info-voile: 207 218 245;
 
-  --ombre-posee: none;
-  --ombre-douce: none;
-  --ombre-elevee: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
+  --ombre-posee: 0 1px 2px rgb(36 36 36 / 0.04);
+  --ombre-douce: 0 10px 28px -10px rgb(36 36 36 / 0.1), 0 2px 8px rgb(36 36 36 / 0.04);
+  --ombre-elevee: 0 18px 40px -12px rgb(36 36 36 / 0.14);
 
   color-scheme: light;
 }
@@ -80,9 +80,9 @@
     --info: 160 181 235;
     --info-voile: 20 32 60;
 
-    --ombre-posee: none;
-    --ombre-douce: none;
-    --ombre-elevee: 0 8px 32px rgb(0 0 0 / 0.45);
+    --ombre-posee: 0 1px 2px rgb(0 0 0 / 0.25);
+    --ombre-douce: 0 12px 32px rgb(0 0 0 / 0.35);
+    --ombre-elevee: 0 16px 40px rgb(0 0 0 / 0.5);
 
     color-scheme: dark;
   }
@@ -138,6 +138,9 @@ p {
   --surface: 246 243 241;
   --relief: 246 243 241;
   --ligne: 206 202 200;
+  --ombre-posee: none;
+  --ombre-douce: none;
+  --ombre-elevee: none;
   --ligne-forte: 206 202 200;
   --encre: 36 36 36;
   --attenue: 78 77 77;
@@ -152,11 +155,105 @@ p {
   --corail: 255 148 115;
 }
 
-.page-publique h1,
-.page-publique h2,
-.page-publique h3,
-.page-publique h4 {
-  font-weight: 400 !important;
+.page-publique .carte,
+.page-publique .carte-active {
+  border-radius: 40px;
+  box-shadow: none;
+}
+
+.page-publique .carte-active:hover {
+  transform: none;
+}
+
+/* Espace de travail : plus doux, cartes plus compactes, un peu de vie. */
+.page-app {
+  background:
+    radial-gradient(920px 320px at -8% -8%, rgb(var(--pervenche) / 0.55), transparent 58%),
+    radial-gradient(640px 260px at 110% 0%, rgb(var(--menthe) / 0.22), transparent 50%),
+    rgb(var(--surface));
+}
+
+.page-app .carte,
+.page-app .carte-active,
+.page-app .bloc-app {
+  border-radius: 28px;
+}
+
+.page-app .etiquette {
+  padding: 0.22rem 0.7rem;
+  font-size: 11px;
+}
+
+.page-app .bouton,
+.page-app .bouton-discret {
+  min-height: 2.65rem;
+  padding: 0.5rem 1.15rem;
+  font-size: 12px;
+}
+
+.page-app .anime-bloc {
+  animation: apparait 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-app .anime-bloc:nth-child(1) { animation-delay: 0.04s; }
+.page-app .anime-bloc:nth-child(2) { animation-delay: 0.1s; }
+.page-app .anime-bloc:nth-child(3) { animation-delay: 0.16s; }
+.page-app .anime-bloc:nth-child(4) { animation-delay: 0.22s; }
+.page-app .anime-bloc:nth-child(5) { animation-delay: 0.28s; }
+.page-app .anime-bloc:nth-child(6) { animation-delay: 0.34s; }
+
+.carte-mission {
+  border-radius: 22px;
+  border: 1px solid rgb(var(--ligne));
+  border-left-width: 4px;
+  background: rgb(var(--relief));
+  box-shadow: var(--ombre-posee);
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.carte-mission:hover {
+  box-shadow: var(--ombre-douce);
+}
+
+.bloc-app .carte-mission {
+  background: rgb(var(--surface) / 0.72);
+  box-shadow: none;
+}
+
+.mission-replie {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.25s ease;
+}
+
+.mission-replie.ouvert {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.mission-replie > * {
+  overflow: hidden;
+}
+
+.sous-tache-barre {
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--creux));
+  overflow: hidden;
+}
+
+.sous-tache-barre > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgb(var(--accent));
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer components {
@@ -201,15 +298,19 @@ p {
   }
 
   .carte {
-    @apply rounded-[40px] border border-ligne bg-surface shadow-none;
+    @apply rounded-[40px] border border-ligne bg-relief shadow-douce;
   }
 
   .carte-active {
-    @apply rounded-[40px] border border-ligne bg-surface shadow-none
-           transition-colors duration-200
-           hover:border-encre/40
+    @apply rounded-[40px] border border-ligne bg-relief shadow-douce
+           transition-[transform,box-shadow,border-color] duration-300 ease-souple
+           hover:-translate-y-0.5 hover:shadow-elevee hover:border-encre/20
            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
            focus-visible:outline-encre;
+  }
+
+  .bloc-app {
+    @apply rounded-[28px] border border-ligne bg-relief p-5 shadow-douce sm:p-6;
   }
 
   .etiquette {
@@ -298,9 +399,16 @@ p {
   }
 
   /* Un tableau ne défile pas sur du papier : il se déplie. */
-  .carte {
+  .carte,
+  .carte-mission,
+  .bloc-app {
     border-color: rgb(var(--ligne)) !important;
     break-inside: avoid;
+  }
+
+  .mission-replie {
+    display: block !important;
+    opacity: 1 !important;
   }
 
   .overflow-x-auto {
@@ -499,5 +607,16 @@ p {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
+  }
+
+  .page-app .bloc-app,
+  .page-app .anime-bloc,
+  .mission-replie {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .mission-replie:not(.ouvert) {
+    display: none;
   }
 }

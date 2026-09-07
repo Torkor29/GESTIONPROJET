@@ -43,7 +43,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
       <div className="sans-impression pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
         <Link
           href="/temps"
-          className="pointer-events-auto rounded-full border border-ligne bg-relief px-4 py-2.5 text-sm font-medium shadow-lg transition hover:border-accent/50 hover:text-accent"
+          className="pointer-events-auto rounded-full border border-ligne/80 bg-relief/95 px-5 py-2.5 text-sm font-medium shadow-elevee backdrop-blur-md transition hover:-translate-y-0.5 hover:border-accent/40 hover:text-accent"
         >
           ⏱ Démarrer un chronomètre
         </Link>
@@ -53,7 +53,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
 
   return (
     <div className="sans-impression pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
-      <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-ligne bg-relief py-2 pl-4 pr-2 shadow-lg">
+      <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-ligne/80 bg-relief/95 py-2 pl-4 pr-2 shadow-elevee backdrop-blur-md">
         <span
           aria-hidden
           className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full"
