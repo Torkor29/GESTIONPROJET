@@ -41,7 +41,7 @@ export default async function LayoutApplication({ children }: { children: React.
               quand elle date : sans cela, un tirage retrouvé dans un classeur
               six mois plus tard n'est plus interprétable. */}
           <div className="impression-seule mb-4 border-b border-ligne pb-2 text-xs text-attenue">
-            Vigie — {compte.nom} — édité le{" "}
+            Vigie Clinique — {compte.nom} — édité le{" "}
             {new Date().toLocaleDateString("fr-FR", {
               day: "numeric",
               month: "long",

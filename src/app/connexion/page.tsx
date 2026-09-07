@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { aucunCompte, estConnecte } from "@/lib/auth";
-import { Icone } from "@/components/icones";
+import { Marque } from "@/components/marque";
 import FormulaireConnexion from "./formulaire";
 
 export const dynamic = "force-dynamic";
@@ -20,18 +20,12 @@ export default async function PageConnexion() {
 
       <div className="relative w-full max-w-sm animate-apparait">
         <div className="text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2.5 font-titre text-lg font-bold tracking-tight"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-sur-accent shadow-douce">
-              <Icone nom="eclair" className="h-4.5 w-4.5" />
-            </span>
-            Vigie
+          <Link href="/" className="inline-flex" aria-label="Vigie Clinique — accueil">
+            <Marque />
           </Link>
-          <h1 className="mt-6 font-titre text-2xl font-bold">Bon retour</h1>
+          <h1 className="mt-6 font-titre text-2xl font-bold">Connexion</h1>
           <p className="mt-1.5 text-sm text-attenue">
-            Connectez-vous pour accéder à vos études.
+            Retrouvez votre espace de travail.
           </p>
         </div>
 
@@ -41,7 +35,7 @@ export default async function PageConnexion() {
 
         <p className="mt-6 text-center text-sm text-efface">
           <Link href="/" className="transition-colors hover:text-accent">
-            Découvrir Vigie
+            Découvrir Vigie Clinique
           </Link>
         </p>
       </div>

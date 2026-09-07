@@ -87,7 +87,8 @@ export default function FormulaireInscription() {
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium">Votre métier</legend>
         <p className="mb-2.5 text-xs text-efface">
-          Sert à vous proposer les modules qui vont avec. Modifiable à tout moment.
+          Sert à vous proposer les parties de l&apos;outil qui vont avec.
+          Modifiable à tout moment.
         </p>
         <div className="grid grid-cols-2 gap-2">
           {ROLES.map((r) => (

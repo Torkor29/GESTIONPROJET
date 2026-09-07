@@ -6,19 +6,9 @@ import { useEffect, useState } from "react";
 import type { Etude } from "@/db/schema";
 import { seDeconnecter } from "@/actions/session";
 import { Icone, type NomIcone } from "@/components/icones";
+import { Marque } from "@/components/marque";
 
 export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
-
-function Marque() {
-  return (
-    <span className="flex items-center gap-2.5 font-titre text-[15px] font-bold tracking-tight">
-      <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-accent text-sur-accent shadow-douce">
-        <Icone nom="eclair" className="h-4 w-4" />
-      </span>
-      Vigie
-    </span>
-  );
-}
 
 /** Initiales tirées du nom, pour la pastille d'identité. */
 function initiales(nom: string): string {
@@ -76,7 +66,7 @@ export default function BarreLaterale({
             {ouvert ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
         </button>
-        <Marque />
+        <Marque complete={false} />
       </div>
 
       {ouvert && (
@@ -95,7 +85,7 @@ export default function BarreLaterale({
                     ${ouvert ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="px-4 py-4">
-          <Marque />
+          <Marque complete={false} />
         </div>
 
         <nav className="space-y-0.5 px-3">

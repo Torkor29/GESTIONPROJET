@@ -90,6 +90,12 @@ body {
   height: 100%;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   background: rgb(var(--surface));
   color: rgb(var(--encre));
@@ -129,8 +135,8 @@ p {
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5
            text-sm font-semibold text-sur-accent shadow-douce
            transition-all duration-200 ease-souple
-           hover:bg-accent-appuye hover:shadow-elevee
-           active:scale-[0.97]
+           hover:bg-accent-appuye hover:shadow-elevee hover:-translate-y-px
+           active:translate-y-0 active:scale-[0.97]
            focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
            focus-visible:outline-accent
            disabled:pointer-events-none disabled:opacity-50;
@@ -166,7 +172,9 @@ p {
   .carte-active {
     @apply rounded-2xl border border-ligne bg-relief shadow-posee
            transition-all duration-200 ease-souple
-           hover:-translate-y-0.5 hover:border-ligne-forte hover:shadow-douce;
+           hover:-translate-y-1 hover:border-accent/20 hover:shadow-douce
+           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+           focus-visible:outline-accent;
   }
 
   /* --- Étiquettes -------------------------------------------------------- */
@@ -303,13 +311,126 @@ p {
   }
 }
 
+/* Lien d'évitement : hors écran tant qu'il n'a pas le focus clavier. */
+.lien-evitement {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 50;
+  transform: translateY(-200%);
+  border-radius: 0.75rem;
+  background: rgb(var(--accent));
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--sur-accent));
+}
+
+.lien-evitement:focus {
+  transform: none;
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+}
+.groupe-icone .icone-carte {
+  transition: transform 0.2s cubic-bezier(0.32, 1.25, 0.5, 1);
+}
+
+.groupe-icone:hover .icone-carte {
+  transform: translateY(-2px);
+}
+
+/* ---------------------------------------------------------------------------
+   Motion — pages publiques
+   Transform et opacity uniquement. Rien n'est indispensable à la lecture :
+   prefers-reduced-motion coupe le tout plus bas.
+--------------------------------------------------------------------------- */
+
+.apparition {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.apparition-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.hero-el {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-el-1 { animation-delay: 0.05s; }
+.hero-el-2 { animation-delay: 0.12s; }
+.hero-el-3 { animation-delay: 0.2s; }
+.hero-el-4 { animation-delay: 0.28s; }
+
+.apercu-produit {
+  animation: fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.36s both;
+}
+
+.apercu-barre {
+  transform-origin: left center;
+  animation: barre-remplit 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.7s both;
+}
+
+.apercu-ligne {
+  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apercu-ligne-1 { animation-delay: 0.85s; }
+.apercu-ligne-2 { animation-delay: 0.97s; }
+.apercu-ligne-3 { animation-delay: 1.09s; }
+
+.apercu-ligne-focus {
+  animation:
+    fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.85s both,
+    halo-ligne 3.2s ease-in-out 1.4s infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes barre-remplit {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes halo-ligne {
+  0%,
+  100% { border-color: rgb(var(--ligne)); }
+  50% { border-color: rgb(var(--accent) / 0.35); }
+}
+
 /* Respecte le réglage système « réduire les animations ». */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .apparition,
+  .hero-el,
+  .apercu-produit,
+  .apercu-barre,
+  .apercu-ligne,
+  .apercu-ligne-focus {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
   }
 }

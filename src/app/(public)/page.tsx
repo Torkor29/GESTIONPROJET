@@ -1,79 +1,131 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Icone, type NomIcone } from "@/components/icones";
+import { Apparition } from "@/components/public/apparition";
+import { ApercuProduit } from "@/components/public/apercu-produit";
+import { DESCRIPTION_SEO, NOM_PRODUIT } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Vigie — Gestion de projet en recherche clinique",
-  description:
-    "Vigie est un outil de gestion de projet destiné aux équipes de recherche clinique hospitalière : suivi des études et des missions, checklists réglementaires (RIPH, règlement UE 536/2014, MDR, IVDR, ICH E6(R3), CNIL), archivage documentaire TMF, base de connaissance et suivi du temps.",
+  title: `${NOM_PRODUIT} — Espace de travail de la recherche clinique`,
+  description: DESCRIPTION_SEO,
 };
 
-const metiers = [
+const metiers: {
+  role: string;
+  nom: string;
+  quotidien: string;
+  apporte: string[];
+}[] = [
   {
     role: "ARC",
     nom: "Attaché de recherche clinique",
-    suit: ["Visites de monitorage", "Écarts et actions correctives", "Vérification des données sources"],
+    quotidien:
+      "Vos visites, vos écarts et le fil d'une étude, sans le reconstruire à chaque fois.",
+    apporte: [
+      "Visites de monitorage planifiées et réalisées, par centre",
+      "Écarts constatés et actions correctives jusqu'à leur clôture",
+      "Portefeuille des études que vous suivez",
+    ],
   },
   {
     role: "TEC",
     nom: "Technicien d'étude clinique",
-    suit: ["Screening et inclusions", "Saisie et requêtes", "Facturation des actes"],
+    quotidien:
+      "Le dossier de l'étude, les missions du jour et les pièces à classer, au même endroit.",
+    apporte: [
+      "Dossier de chaque étude : identifiants, calendrier, statut",
+      "Missions et échéances, filtrables et exportables",
+      "Documents du TMF et temps passé, rattachés à l'étude",
+    ],
   },
   {
     role: "CP",
     nom: "Chef de projet",
-    suit: ["Portefeuille d'études", "Jalons réglementaires", "Charge de l'équipe"],
+    quotidien:
+      "Une vue de votre portefeuille, de la charge de l'équipe et des conventions en cours.",
+    apporte: [
+      "État de chaque étude en une ligne, et charge de chacun",
+      "Conventions, avenants, montants perçus et reste à percevoir",
+      "Indicateurs d'activité issus du travail déjà saisi",
+    ],
   },
 ];
 
-const fonctions: { icone: NomIcone; titre: string; texte: string }[] = [
+const piliers: { icone: NomIcone; titre: string; texte: string }[] = [
   {
     icone: "dossier",
-    titre: "Études",
+    titre: "Centraliser l'activité",
     texte:
-      "Un dossier par étude : promoteur, investigateur, ID-RCB, numéro CTIS, référence CPP, centre et calendrier. Le point d'entrée vers tout le reste.",
-  },
-  {
-    icone: "checklist",
-    titre: "Checklists réglementaires",
-    texte:
-      "Cochez le cadre applicable, les obligations correspondantes apparaissent — regroupées par phase, avec leur référence, cochables et annotables.",
+      "Chaque étude a son dossier. Missions, documents, obligations et temps passé s'y rattachent, au lieu de vivre dans des fichiers séparés.",
   },
   {
     icone: "drapeau",
-    titre: "Missions",
+    titre: "Suivre ce qui est en cours",
     texte:
-      "Ce qu'il reste à faire, en vue tableau, groupé par statut ou par échéance. Filtres par étude et par statut, commentaires, export.",
-  },
-  {
-    icone: "document",
-    titre: "Documents",
-    texte:
-      "Dépôt et classement selon les catégories d'un Trial Master File. Chaque document conserve sa version et sa date, et reste retrouvable.",
+      "Ce qu'il reste à faire, ce qui presse, ce qui est terminé : une vue à jour, filtrable par étude, par statut ou par échéance.",
   },
   {
     icone: "page",
-    titre: "Pages de travail",
+    titre: "Retrouver ses informations",
     texte:
-      "Un éditeur riche façon Notion — titres, listes, tableaux, images — rattaché à une étude et enregistré automatiquement.",
+      "Identifiants réglementaires, pièces du TMF, notes de travail, réponses déjà rédigées : ce qui sert au quotidien a une place.",
+  },
+  {
+    icone: "graphique",
+    titre: "Voir son portefeuille",
+    texte:
+      "L'état des études, la charge de l'équipe, l'avancement des checklists : une vue d'ensemble qui vient du travail déjà fait.",
+  },
+];
+
+const usages: { icone: NomIcone; titre: string; texte: string }[] = [
+  {
+    icone: "dossier",
+    titre: "Tenir le dossier de chaque étude",
+    texte:
+      "Promoteur, investigateur, ID-RCB, numéro CTIS, référence CPP, centre et calendrier. Le point d'entrée vers tout le reste.",
+  },
+  {
+    icone: "drapeau",
+    titre: "Savoir ce qu'il reste à faire",
+    texte:
+      "Missions en vue tableau, groupées par statut ou par échéance. Filtres, commentaires, export — pour prioriser sans tenir une liste à côté.",
+  },
+  {
+    icone: "checklist",
+    titre: "Suivre les obligations sans les reconstruire",
+    texte:
+      "Vous cochez le cadre applicable. Les lignes correspondantes apparaissent, par phase, avec leur référence. Cochables, annotables, ou marquées sans objet.",
+  },
+  {
+    icone: "document",
+    titre: "Classer les documents du TMF",
+    texte:
+      "Dépôt selon les catégories d'un Trial Master File. Chaque pièce conserve sa version et sa date, et reste retrouvable.",
+  },
+  {
+    icone: "page",
+    titre: "Noter à côté de l'étude",
+    texte:
+      "Un éditeur riche — titres, listes, tableaux, images — rattaché à l'étude et enregistré automatiquement.",
   },
   {
     icone: "chrono",
-    titre: "Suivi du temps",
+    titre: "Compter le temps passé",
     texte:
       "Chronomètre en un clic ou saisie manuelle aux formats usuels. Export valorisé, utile pour la refacturation au promoteur.",
   },
   {
     icone: "question",
-    titre: "Base de connaissance",
+    titre: "Capitaliser les réponses qui reviennent",
     texte:
-      "Les questions qui reviennent trouvent une réponse écrite une fois pour toutes, classée par thème, générale ou propre à une étude.",
+      "Les questions fréquentes trouvent une réponse écrite une fois, classée par thème, générale ou propre à une étude.",
   },
   {
-    icone: "graphique",
-    titre: "Indicateurs",
+    icone: "bouclier",
+    titre: "Suivre le monitorage et la qualité",
     texte:
-      "Avancement des missions, charge par étude, progression des checklists — des chiffres qu'on peut présenter en réunion.",
+      "Visites planifiées et réalisées, écarts constatés, actions correctives jusqu'à la vérification de leur efficacité.",
   },
 ];
 
@@ -89,187 +141,266 @@ const referentiels = [
 export default function PagePresentation() {
   return (
     <>
-      {/* L'en-tête et le pied de page vivent dans le gabarit du groupe
-          (public) : ils sont identiques sur toutes les pages publiques. */}
-      <div>
-        {/* ------------------------------------------------------------- hero */}
-        <section className="relative overflow-hidden px-6 pb-24 pt-20 sm:pt-28">
-          {/* Halo d'accent très dilué, pour que le haut de page ne soit pas plat. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 h-[440px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[100px]"
-          />
+      {/* ------------------------------------------------------------- hero */}
+      <section className="relative overflow-hidden px-6 pb-20 pt-16 sm:pb-24 sm:pt-24">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-0 h-[440px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[100px]"
+        />
 
-          <div className="relative mx-auto max-w-3xl text-center">
-            <span className="etiquette border border-accent/25 bg-accent-voile/60 text-accent-appuye">
-              Recherche clinique hospitalière
-            </span>
+        <div className="relative mx-auto max-w-3xl text-center">
+          <span className="hero-el hero-el-1 etiquette border border-accent/25 bg-accent-voile/60 text-accent-appuye">
+            Outil métier · Recherche clinique
+          </span>
 
-            <h1 className="mt-6 font-titre text-4xl font-bold leading-[1.1] sm:text-[3.4rem]">
-              Vos études, vos missions et vos obligations —{" "}
-              <span className="text-accent">au même endroit</span>
-            </h1>
+          <h1 className="hero-el hero-el-2 mt-6 font-titre text-4xl font-bold leading-[1.12] sm:text-[3.25rem]">
+            Votre activité clinique,{" "}
+            <span className="text-accent">au même endroit</span>
+          </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-attenue">
-              Vigie remplace le tableur, la boîte mail et le dossier partagé par
-              un outil qui parle le vocabulaire de la recherche clinique.
+          <p className="hero-el hero-el-3 mx-auto mt-6 max-w-xl text-lg leading-relaxed text-attenue">
+            Vigie Clinique est l&apos;espace de travail des équipes de recherche
+            clinique. Vous y suivez vos études, vos missions et vos priorités —
+            avec une interface pensée pour votre métier.
+          </p>
+
+          <div className="hero-el hero-el-4 mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/connexion" className="bouton">
+              Accéder à l&apos;espace de travail
+              <Icone nom="fleche" className="h-4 w-4" />
+            </Link>
+            <a href="#metiers" className="bouton-discret">
+              Découvrir l&apos;espace par métier
+            </a>
+          </div>
+        </div>
+
+        <ApercuProduit />
+      </section>
+
+      {/* -------------------------------------------------------- problème */}
+      <section id="constat" className="scroll-mt-20 border-y border-ligne bg-creux/60 px-6 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <Apparition className="max-w-2xl">
+            <p className="sur-titre">Le constat</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Quand l&apos;activité vit dans trop d&apos;endroits à la fois
+            </h2>
+            <p className="mt-4 max-w-xl text-lg leading-relaxed text-attenue">
+              Le travail est là. Les informations, un peu partout : un fichier
+              pour les études, un autre pour les tâches, un dossier partagé pour
+              les documents, des suivis en parallèle. Avoir une vue claire de
+              son activité devient un travail à part.
             </p>
+          </Apparition>
 
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/connexion" className="bouton">
-                Accéder à l&apos;application
-                <Icone nom="fleche" className="h-4 w-4" />
-              </Link>
-              <a href="#fonctions" className="bouton-discret">
-                Voir les fonctions
-              </a>
-            </div>
-          </div>
+          <Apparition className="mt-10 grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                titre: "Informations dispersées",
+                texte:
+                  "Identifiants, notes, pièces et listes de suivi ne se parlent pas. Retrouver le bon élément demande de savoir où il a été mis.",
+              },
+              {
+                titre: "Suivis parallèles",
+                texte:
+                  "Chacun tient le sien. Ce qui est à jour pour l'un ne l'est pas forcément pour l'autre. Les priorités se recollent à la main.",
+              },
+              {
+                titre: "Vue d'ensemble à reconstruire",
+                texte:
+                  "L'état d'un portefeuille, la charge d'une semaine, ce qui retarde : il faut les assembler, souvent le matin d'une réunion.",
+              },
+            ].map((c) => (
+              <article key={c.titre} className="carte p-6">
+                <h3 className="font-titre text-base font-bold">{c.titre}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-attenue">{c.texte}</p>
+              </article>
+            ))}
+          </Apparition>
+        </div>
+      </section>
 
-          {/* Aperçu : donne à voir l'outil plutôt que de le décrire. */}
-          <div className="relative mx-auto mt-16 max-w-3xl animate-apparait">
-            <div className="carte overflow-hidden !shadow-elevee">
-              <div className="flex items-center gap-2 border-b border-ligne bg-creux px-4 py-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-ligne-forte" />
-                <span className="h-2.5 w-2.5 rounded-full bg-ligne-forte" />
-                <span className="h-2.5 w-2.5 rounded-full bg-ligne-forte" />
-                <span className="ml-2 text-xs font-medium text-efface">PROTECT-2 — RIPH 1</span>
-              </div>
+      {/* --------------------------------------------------------- réponse */}
+      <section id="reponse" className="scroll-mt-20 px-6 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <Apparition className="max-w-2xl">
+            <p className="sur-titre">La réponse</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Un espace de travail qui structure l&apos;activité
+            </h2>
+            <p className="mt-4 max-w-xl text-lg leading-relaxed text-attenue">
+              Vigie Clinique rassemble le dossier de chaque étude, ce qu&apos;il
+              reste à faire, les documents, les obligations et le temps passé.
+              L&apos;interface s&apos;adapte au métier — ARC, TEC ou chef de
+              projet — sans imposer le même écran à tout le monde.
+            </p>
+          </Apparition>
 
-              <div className="space-y-5 p-5 sm:p-7">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="sur-titre">Étude interventionnelle</p>
-                    <h2 className="mt-1 font-titre text-xl font-bold">PROTECT-2</h2>
-                  </div>
-                  <span className="etiquette bg-reussite-voile text-reussite">En cours</span>
+          <Apparition className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {piliers.map((p) => (
+              <article key={p.titre} className="groupe-icone">
+                <span className="icone-carte flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
+                  <Icone nom={p.icone} />
+                </span>
+                <h3 className="mt-4 font-titre text-base font-bold">{p.titre}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-attenue">{p.texte}</p>
+              </article>
+            ))}
+          </Apparition>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- métiers */}
+      <section id="metiers" className="scroll-mt-20 border-y border-ligne bg-creux/60 px-6 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <Apparition className="max-w-2xl">
+            <p className="sur-titre">Par métier</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Un espace adapté à votre quotidien
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-attenue">
+              À l&apos;inscription, vous indiquez votre métier. Vigie Clinique
+              vous propose les parties de l&apos;outil qui vont avec. Vous les
+              ajustez ensuite, à tout moment.
+            </p>
+          </Apparition>
+
+          <Apparition className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {metiers.map((m) => (
+              <article key={m.role} className="carte-active groupe-icone p-6">
+                <div className="flex items-baseline gap-2.5">
+                  <span className="font-titre text-2xl font-bold text-accent">{m.role}</span>
+                  <span className="text-xs text-efface">{m.nom}</span>
                 </div>
-
-                <div>
-                  <div className="mb-2 flex items-baseline justify-between text-sm">
-                    <span className="font-medium">Checklist réglementaire</span>
-                    <span className="chiffres text-attenue">31 / 47</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-creux">
-                    <div className="h-full w-[66%] rounded-full bg-accent" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  {[
-                    { t: "Soumission de l'amendement n° 3", s: "À faire", c: "attention" },
-                    { t: "Visite de monitorage — centre 04", s: "En cours", c: "info" },
-                    { t: "Mise à jour du TMF", s: "Terminé", c: "reussite" },
-                  ].map((m) => (
-                    <div
-                      key={m.t}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-ligne bg-surface px-3.5 py-2.5"
-                    >
-                      <span className="truncate text-sm">{m.t}</span>
-                      <span
-                        className={`etiquette shrink-0 ${
-                          m.c === "attention"
-                            ? "bg-attention-voile text-attention"
-                            : m.c === "info"
-                              ? "bg-info-voile text-info"
-                              : "bg-reussite-voile text-reussite"
-                        }`}
-                      >
-                        {m.s}
-                      </span>
-                    </div>
+                <p className="mt-3 text-sm leading-relaxed">{m.quotidien}</p>
+                <ul className="mt-4 space-y-2">
+                  {m.apporte.map((s) => (
+                    <li key={s} className="flex items-start gap-2.5 text-sm text-attenue">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent/50" />
+                      {s}
+                    </li>
                   ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+                </ul>
+              </article>
+            ))}
+          </Apparition>
+        </div>
+      </section>
 
-        {/* ---------------------------------------------------------- métiers */}
-        <section className="border-y border-ligne bg-creux/60 px-6 py-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="max-w-2xl">
-              <p className="sur-titre">Par métier</p>
-              <h2 className="mt-3 font-titre text-3xl font-bold">
-                Chacun voit ce qui le concerne
-              </h2>
-              <p className="mt-3 text-attenue">
-                À l&apos;inscription, vous indiquez votre métier et Vigie vous
-                propose les modules qui vont avec. Vous les ajustez ensuite
-                librement, à tout moment.
+      {/* ----------------------------------------------------- usages */}
+      <section id="usages" className="scroll-mt-20 px-6 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <Apparition className="max-w-2xl">
+            <p className="sur-titre">Dans le travail</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Des réponses à des situations concrètes
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-attenue">
+              Chaque partie de l&apos;outil correspond à un geste du métier —
+              pas à une liste de fonctions à cocher.
+            </p>
+          </Apparition>
+
+          <Apparition className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {usages.map((f) => (
+              <article key={f.titre} className="groupe-icone">
+                <span className="icone-carte flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
+                  <Icone nom={f.icone} />
+                </span>
+                <h3 className="mt-4 font-titre text-base font-bold">{f.titre}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-attenue">{f.texte}</p>
+              </article>
+            ))}
+          </Apparition>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------ vision */}
+      <section id="pilotage" className="scroll-mt-20 border-y border-ligne bg-creux/60 px-6 py-20 sm:py-24">
+        <div className="mx-auto grid max-w-6xl items-start gap-12 lg:grid-cols-[1fr_1.05fr]">
+          <Apparition>
+            <p className="sur-titre">Vision d&apos;ensemble</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Une fois l&apos;activité structurée, la vue d&apos;ensemble vient
+              d&apos;elle-même
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-attenue">
+              Les indicateurs ne sont pas un produit à part. Ils lisent ce qui
+              a déjà été saisi : avancement des missions, charge par étude,
+              progression des checklists, conventions et reste à percevoir.
+              De quoi présenter l&apos;activité en réunion sans reconstruire un
+              tableau le matin.
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-attenue">
+              Le portefeuille donne l&apos;état de chaque étude en une ligne.
+              Le budget suit les conventions et les avenants. Le temps passé se
+              valorise pour la refacturation. Tout cela s&apos;appuie sur le
+              travail quotidien — il ne s&apos;y substitue pas.
+            </p>
+          </Apparition>
+
+          <Apparition>
+            <ul className="space-y-3">
+              {[
+                {
+                  titre: "Portefeuille et charge",
+                  texte: "L'état de chaque étude, et qui porte quoi sur celles que vous suivez.",
+                },
+                {
+                  titre: "Budget et conventions",
+                  texte: "Montant contractualisé, déjà perçu, reste à percevoir, échéances dépassées.",
+                },
+                {
+                  titre: "Indicateurs d'activité",
+                  texte: "Charge, retards, conformité des checklists, tendances du temps et des missions.",
+                },
+              ].map((l) => (
+                <li key={l.titre} className="carte p-5">
+                  <h3 className="font-titre font-bold">{l.titre}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-attenue">{l.texte}</p>
+                </li>
+              ))}
+            </ul>
+          </Apparition>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------ référentiels */}
+      <section className="px-6 py-20 sm:py-24">
+        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.15fr]">
+          <Apparition>
+            <p className="sur-titre">Dans l&apos;outil</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Les obligations, déjà rédigées
+            </h2>
+            <p className="mt-4 text-attenue">
+              Chaque ligne porte sa référence réglementaire, se coche,
+              s&apos;annote, ou se marque « sans objet » — auquel cas elle sort
+              du calcul de progression. Les lignes sont regroupées par phase :
+              conception, soumission, mise en place, conduite, clôture.
+            </p>
+            <div className="carte mt-7 border-attention/25 bg-attention-voile/40 p-5">
+              <p className="text-sm leading-relaxed text-attenue">
+                <strong className="font-semibold text-encre">
+                  Une aide au travail, pas un avis réglementaire.
+                </strong>{" "}
+                Les textes évoluent. Chaque référentiel affiche sa date de
+                vérification et ses liens officiels ; il revient à chaque
+                équipe de confirmer la version en vigueur auprès de
+                l&apos;ANSM, du CPP, de la CNIL ou de l&apos;EMA.
               </p>
             </div>
+            <Link
+              href="/reglementaire"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent-appuye"
+            >
+              Consulter les référentiels
+              <Icone nom="fleche" className="h-4 w-4" />
+            </Link>
+          </Apparition>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {metiers.map((m) => (
-                <article key={m.role} className="carte-active p-6">
-                  <div className="flex items-baseline gap-2.5">
-                    <span className="font-titre text-2xl font-bold text-accent">{m.role}</span>
-                    <span className="text-xs text-efface">{m.nom}</span>
-                  </div>
-                  <ul className="mt-4 space-y-2">
-                    {m.suit.map((s) => (
-                      <li key={s} className="flex items-start gap-2.5 text-sm text-attenue">
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent/50" />
-                        {s}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ----------------------------------------------------- fonctionnalités */}
-        <section id="fonctions" className="scroll-mt-16 px-6 py-24">
-          <div className="mx-auto max-w-6xl">
-            <div className="max-w-2xl">
-              <p className="sur-titre">Fonctions</p>
-              <h2 className="mt-3 font-titre text-3xl font-bold">Ce que fait Vigie</h2>
-            </div>
-
-            <div className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
-              {fonctions.map((f) => (
-                <article key={f.titre}>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
-                    <Icone nom={f.icone} />
-                  </span>
-                  <h3 className="mt-4 font-titre text-base font-bold">{f.titre}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-attenue">{f.texte}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ------------------------------------------------------ référentiels */}
-        <section className="border-y border-ligne bg-creux/60 px-6 py-24">
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.15fr]">
-            <div>
-              <p className="sur-titre">Référentiels</p>
-              <h2 className="mt-3 font-titre text-3xl font-bold">
-                Les obligations, déjà écrites
-              </h2>
-              <p className="mt-4 text-attenue">
-                Chaque ligne porte sa référence réglementaire, se coche,
-                s&apos;annote, ou se marque « sans objet » — auquel cas elle sort
-                du calcul de progression. Les lignes sont regroupées par phase :
-                conception, soumission, mise en place, conduite, clôture.
-              </p>
-              <div className="carte mt-7 border-attention/25 bg-attention-voile/40 p-5">
-                <p className="text-sm leading-relaxed text-attenue">
-                  <strong className="font-semibold text-encre">
-                    Une aide au travail, pas un avis réglementaire.
-                  </strong>{" "}
-                  Les textes évoluent. Chaque référentiel affiche sa date de
-                  vérification et ses liens officiels ; il revient à chaque
-                  équipe de confirmer la version en vigueur auprès de
-                  l&apos;ANSM, du CPP, de la CNIL ou de l&apos;EMA.
-                </p>
-              </div>
-            </div>
-
+          <Apparition>
             <ul className="space-y-2.5">
               {referentiels.map((r) => (
                 <li key={r.sigle} className="carte flex items-center gap-4 p-4">
@@ -280,18 +411,27 @@ export default function PagePresentation() {
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
+          </Apparition>
+        </div>
+      </section>
 
-        {/* -------------------------------------------------------- confiance */}
-        <section className="px-6 py-24">
-          <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-3">
+      {/* -------------------------------------------------------- confiance */}
+      <section className="border-t border-ligne px-6 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <Apparition className="max-w-2xl">
+            <p className="sur-titre">Confiance</p>
+            <h2 className="mt-3 font-titre text-3xl font-bold">
+              Un outil installé chez vous, pensé pour rester à sa place
+            </h2>
+          </Apparition>
+
+          <Apparition className="mt-10 grid gap-8 sm:grid-cols-3">
             {[
               {
                 icone: "bouclier" as NomIcone,
                 titre: "Aucune donnée patient",
                 texte:
-                  "Vigie suit des projets, pas des personnes incluses. Aucune donnée de santé identifiante n'a vocation à y entrer.",
+                  "Vigie Clinique suit des projets, pas des personnes incluses. Aucune donnée de santé identifiante n'a vocation à y entrer.",
               },
               {
                 icone: "personnes" as NomIcone,
@@ -306,96 +446,105 @@ export default function PagePresentation() {
                   "L'application s'installe sur votre propre serveur. Briques sous licence libre, versions figées : rien ne peut devenir payant.",
               },
             ].map((c) => (
-              <article key={c.titre}>
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-ligne bg-relief text-accent shadow-posee">
+              <article key={c.titre} className="groupe-icone">
+                <span className="icone-carte flex h-10 w-10 items-center justify-center rounded-xl border border-ligne bg-relief text-accent shadow-posee">
                   <Icone nom={c.icone} />
                 </span>
                 <h3 className="mt-4 font-titre text-base font-bold">{c.titre}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-attenue">{c.texte}</p>
               </article>
             ))}
-          </div>
-        </section>
+          </Apparition>
+        </div>
+      </section>
 
-        {/* --------------------------------------------------- pour aller plus loin */}
-        <section className="px-6 pb-24">
-          <div className="mx-auto max-w-5xl">
-            <p className="sur-titre text-center">En savoir plus</p>
+      {/* --------------------------------------------------- pour aller plus loin */}
+      <section className="px-6 pb-20 sm:pb-24">
+        <div className="mx-auto max-w-5xl">
+          <Apparition>
+            <p className="sur-titre text-center">Aller plus loin</p>
             <h2 className="mt-3 text-center font-titre text-3xl font-bold">
-              Deux sujets qui méritent leur propre page
+              Deux pages pour le détail
             </h2>
+          </Apparition>
 
-            <div className="mt-10 grid gap-5 sm:grid-cols-2">
-              <Link href="/reglementaire" className="carte carte-active group p-7">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
-                  <Icone nom="checklist" />
-                </span>
-                <h3 className="mt-4 font-titre text-lg font-bold">
-                  Les référentiels couverts
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-attenue">
-                  Le détail des cadres pris en charge — RIPH 1, 2 et 3, règlement
-                  UE 536/2014, MDR, IVDR, ICH E6(R3), méthodologies de référence
-                  de la CNIL, archivage — avec, pour chaque obligation, sa phase,
-                  sa référence et sa source officielle.
-                </p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-                  Consulter les référentiels
-                  <Icone
-                    nom="fleche"
-                    className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                  />
-                </span>
-              </Link>
+          <Apparition className="mt-10 grid gap-5 sm:grid-cols-2">
+            <Link href="/reglementaire" className="carte carte-active groupe-icone group p-7">
+              <span className="icone-carte flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
+                <Icone nom="checklist" />
+              </span>
+              <h3 className="mt-4 font-titre text-lg font-bold">
+                Les référentiels couverts
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-attenue">
+                Le détail des cadres pris en charge — RIPH 1, 2 et 3, règlement
+                UE 536/2014, MDR, IVDR, ICH E6(R3), méthodologies de référence
+                de la CNIL, archivage — avec, pour chaque obligation, sa phase,
+                sa référence et sa source officielle.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+                Consulter les référentiels
+                <Icone
+                  nom="fleche"
+                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </span>
+            </Link>
 
-              <Link href="/donnees" className="carte carte-active group p-7">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
-                  <Icone nom="bouclier" />
-                </span>
-                <h3 className="mt-4 font-titre text-lg font-bold">
-                  Données et sécurité
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-attenue">
-                  Ce que Vigie enregistre, ce qu&apos;il ne doit pas recevoir, où
-                  vivent les fichiers, comment les comptes et les partages sont
-                  cloisonnés, et ce qu&apos;implique la conduite d&apos;un suivi
-                  d&apos;inclusions.
-                </p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-                  Lire la page
-                  <Icone
-                    nom="fleche"
-                    className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                  />
-                </span>
-              </Link>
-            </div>
-          </div>
-        </section>
+            <Link href="/donnees" className="carte carte-active groupe-icone group p-7">
+              <span className="icone-carte flex h-10 w-10 items-center justify-center rounded-xl bg-accent-voile text-accent-appuye">
+                <Icone nom="bouclier" />
+              </span>
+              <h3 className="mt-4 font-titre text-lg font-bold">
+                Confidentialité et hébergement
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-attenue">
+                Ce que l&apos;outil enregistre, ce qu&apos;il n&apos;a pas vocation
+                à recevoir, où vivent les fichiers, comment les comptes et les
+                partages sont cloisonnés.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+                Lire la page sécurité
+                <Icone
+                  nom="fleche"
+                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </span>
+            </Link>
+          </Apparition>
+        </div>
+      </section>
 
-        {/* ------------------------------------------------------- appel final */}
-        <section className="px-6 pb-28">
+      {/* ------------------------------------------------------- appel final */}
+      <section className="px-6 pb-24 sm:pb-28">
+        <Apparition>
           <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-ligne bg-relief px-8 py-16 text-center shadow-douce">
             <div
               aria-hidden
               className="pointer-events-none absolute left-1/2 top-full h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[80px]"
             />
             <div className="relative">
-              <h2 className="font-titre text-3xl font-bold">Commencer</h2>
+              <h2 className="font-titre text-3xl font-bold">
+                Retrouver son activité, et la suivre
+              </h2>
               <p className="mx-auto mt-3 max-w-md text-attenue">
-                Vigie est un outil de travail à accès restreint. La consultation
-                des études, des missions et des documents demande un compte.
+                Vigie Clinique s&apos;installe chez vous. L&apos;accès à
+                l&apos;espace de travail se fait avec un compte — par invitation,
+                ou avec le compte déjà créé sur cette installation.
               </p>
-              <div className="mt-8">
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <Link href="/connexion" className="bouton">
                   Se connecter
                   <Icone nom="fleche" className="h-4 w-4" />
                 </Link>
+                <a href="#usages" className="bouton-discret">
+                  Explorer les usages
+                </a>
               </div>
             </div>
           </div>
-        </section>
-      </div>
+        </Apparition>
+      </section>
     </>
   );
 }
