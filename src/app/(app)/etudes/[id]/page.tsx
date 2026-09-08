@@ -253,7 +253,14 @@ export default async function PageEtude({
             <section>
               <h2 className="mb-2 font-semibold text-alerte">Missions en retard</h2>
               <TableauMissions
-                lignes={enRetard.map((t) => ({ tache: t, sousTaches: t.sousTaches }))}
+                lignes={enRetard.map((t) => ({
+                  tache: t,
+                  sousTaches: t.sousTaches,
+                  minutes: t.minutes,
+                  minutesParEtape: t.minutesParEtape,
+                  chronoEnCours: t.chronoEnCours,
+                  chronoSousTacheId: t.chronoSousTacheId,
+                }))}
                 etudes={toutesEtudes}
                 afficherEtude={false}
               />
@@ -302,7 +309,14 @@ export default async function PageEtude({
             />
           </div>
           <TableauMissions
-            lignes={missions.map((t) => ({ tache: t, sousTaches: t.sousTaches }))}
+            lignes={missions.map((t) => ({
+              tache: t,
+              sousTaches: t.sousTaches,
+              minutes: t.minutes,
+              minutesParEtape: t.minutesParEtape,
+              chronoEnCours: t.chronoEnCours,
+              chronoSousTacheId: t.chronoSousTacheId,
+            }))}
             etudes={toutesEtudes}
             afficherEtude={false}
             message="Aucune mission sur cette étude."
@@ -413,13 +427,16 @@ export default async function PageEtude({
             </p>
           ) : (
             <ul className="carte divide-y divide-ligne">
-              {temps.slice(0, 20).map(({ entree, tacheTitre }) => (
+              {temps.slice(0, 20).map(({ entree, tacheTitre, etapeTitre }) => (
                 <li key={entree.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm">
-                      {entree.description ?? tacheTitre ?? "Sans description"}
+                      {entree.description ?? etapeTitre ?? tacheTitre ?? "Sans description"}
                     </p>
-                    <p className="text-xs text-attenue">{formaterDate(entree.debut)}</p>
+                    <p className="text-xs text-attenue">
+                      {formaterDate(entree.debut)}
+                      {etapeTitre ? ` · ${etapeTitre}` : tacheTitre ? ` · ${tacheTitre}` : ""}
+                    </p>
                   </div>
                   <span className="chiffres shrink-0 text-sm font-medium">
                     {formaterDuree(dureeMinutes(entree))}

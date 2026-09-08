@@ -3,10 +3,10 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { temps } from "@/db/schema";
+import { sousTaches, taches, temps } from "@/db/schema";
 import { exigerAcces } from "@/lib/acces";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
-import { analyserDuree, analyserHeure } from "@/lib/duree";
+import { analyserDuree, analyserDureeCompacte, analyserHeure } from "@/lib/duree";
 import { depuisChampDate } from "@/lib/format";
 import { type EtatFormulaire, messageErreur } from "./etat";
 
@@ -33,6 +33,9 @@ async function arreterChronosOuverts(utilisateurId: number): Promise<void> {
 /**
  * Démarre un chronomètre. Un seul peut tourner à la fois : le précédent est
  * arrêté automatiquement, on ne peut donc pas compter deux fois la même heure.
+ *
+ * Si `sousTacheId` est fourni, le temps se rattache à cette étape (et à sa
+ * mission). Sinon, il se rattache à la mission ou à l'étude indiquée.
  */
 export async function demarrerChrono(donnees: FormData) {
   const compte = await exigerSession();
@@ -41,12 +44,27 @@ export async function demarrerChrono(donnees: FormData) {
 
   const etudeIdBrut = donnees.get("etudeId");
   const tacheIdBrut = donnees.get("tacheId");
+  const sousTacheIdBrut = donnees.get("sousTacheId");
+  const sousTacheId = sousTacheIdBrut ? Number(sousTacheIdBrut) : null;
+
+  let etudeId = etudeIdBrut ? Number(etudeIdBrut) : null;
+  let tacheId = tacheIdBrut ? Number(tacheIdBrut) : null;
+  let description = String(donnees.get("description") ?? "").trim() || null;
+
+  if (sousTacheId) {
+    const etape = await etapeAvecParent(sousTacheId);
+    await exigerAcces("taches", etape.tacheId, compte.id);
+    tacheId = etape.tacheId;
+    etudeId = etape.etudeId;
+    description = description ?? etape.titre;
+  }
 
   await db.insert(temps).values({
     proprietaireId: compte.id,
-    etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
-    tacheId: tacheIdBrut ? Number(tacheIdBrut) : null,
-    description: String(donnees.get("description") ?? "").trim() || null,
+    etudeId,
+    tacheId,
+    sousTacheId,
+    description,
     debut: maintenant(),
     fin: null,
   });
@@ -109,10 +127,12 @@ export async function ajouterTemps(
     if (lu.erreur) return { erreur: lu.erreur };
 
     const tacheIdBrut = donnees.get("tacheId");
+    const sousTacheIdBrut = donnees.get("sousTacheId");
     await db.insert(temps).values({
       ...lu.valeurs,
       proprietaireId: compte.id,
       tacheId: tacheIdBrut ? Number(tacheIdBrut) : null,
+      sousTacheId: sousTacheIdBrut ? Number(sousTacheIdBrut) : null,
     });
 
     revalidatePath("/", "layout");
@@ -154,5 +174,81 @@ export async function supprimerTemps(donnees: FormData) {
   await exigerAcces("temps", id, compte.id);
 
   await db.delete(temps).where(eq(temps.id, id));
+  revalidatePath("/", "layout");
+}
+
+/** Étape + mission parente, pour rattacher une saisie sans faire confiance au client. */
+async function etapeAvecParent(sousTacheId: number) {
+  const [ligne] = await db
+    .select({
+      id: sousTaches.id,
+      titre: sousTaches.titre,
+      tacheId: sousTaches.tacheId,
+      etudeId: taches.etudeId,
+      tacheTitre: taches.titre,
+    })
+    .from(sousTaches)
+    .innerJoin(taches, eq(sousTaches.tacheId, taches.id))
+    .where(eq(sousTaches.id, sousTacheId))
+    .limit(1);
+  if (!ligne) throw new Error("Étape introuvable.");
+  return ligne;
+}
+
+/**
+ * Saisie rapide depuis une mission ou une étape : on indique seulement la
+ * durée, le compteur s'arrête « maintenant ». Un entier nu se lit en minutes.
+ */
+export async function ajouterTempsRapide(donnees: FormData) {
+  const compte = await exigerSession();
+
+  const saisie = String(donnees.get("duree") ?? "");
+  const minutes = analyserDureeCompacte(saisie);
+  if (minutes === null || minutes <= 0) {
+    throw new Error("Durée invalide. Exemples : 45, 30min, 1h30.");
+  }
+  if (minutes > 24 * 60) {
+    throw new Error("Une saisie ne peut pas dépasser 24 h.");
+  }
+
+  const sousTacheIdBrut = Number(donnees.get("sousTacheId") || 0);
+  const tacheIdBrut = Number(donnees.get("tacheId") || 0);
+
+  let tacheId: number | null = tacheIdBrut || null;
+  let etudeId: number | null = null;
+  let description: string | null = null;
+  let sousTacheId: number | null = null;
+
+  if (sousTacheIdBrut) {
+    const etape = await etapeAvecParent(sousTacheIdBrut);
+    await exigerAcces("taches", etape.tacheId, compte.id);
+    tacheId = etape.tacheId;
+    etudeId = etape.etudeId;
+    description = etape.titre;
+    sousTacheId = etape.id;
+  } else if (tacheId) {
+    await exigerAcces("taches", tacheId, compte.id);
+    const [mission] = await db
+      .select({ etudeId: taches.etudeId, titre: taches.titre })
+      .from(taches)
+      .where(eq(taches.id, tacheId))
+      .limit(1);
+    if (!mission) throw new Error("Mission introuvable.");
+    etudeId = mission.etudeId;
+    description = mission.titre;
+  } else {
+    throw new Error("Mission manquante.");
+  }
+
+  const fin = maintenant();
+  await db.insert(temps).values({
+    proprietaireId: compte.id,
+    etudeId,
+    tacheId,
+    sousTacheId,
+    description,
+    debut: fin - minutes * 60,
+    fin,
+  });
   revalidatePath("/", "layout");
 }

@@ -141,7 +141,11 @@ export async function tachesDEtude(etudeId: number) {
     .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
 
   const parMission = await sousTachesParMission(liste.map((t) => t.id));
-  return liste.map((t) => ({ ...t, sousTaches: parMission.get(t.id) ?? [] }));
+  const cumul = await cumulTempsDesMissions(liste.map((t) => t.id));
+  return liste.map((t) => ({
+    ...t,
+    ...rattacherTemps(t, parMission.get(t.id) ?? [], cumul),
+  }));
 }
 
 /** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
@@ -164,11 +168,84 @@ export async function toutesLesTaches(filtreStatut?: string) {
     )
     .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
 
-  const parMission = await sousTachesParMission(lignes.map((l) => l.tache.id));
+  const ids = lignes.map((l) => l.tache.id);
+  const [parMission, cumul] = await Promise.all([
+    sousTachesParMission(ids),
+    cumulTempsDesMissions(ids),
+  ]);
   return lignes.map((l) => ({
     ...l,
-    sousTaches: parMission.get(l.tache.id) ?? [],
+    ...rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul),
   }));
+}
+
+type CumulTemps = {
+  parTache: Map<number, number>;
+  parEtape: Map<number, number>;
+  chronoSousTacheId: number | null;
+  chronoTacheId: number | null;
+};
+
+/** Minutes saisies (y compris un chrono en cours) pour un lot de missions. */
+async function cumulTempsDesMissions(tacheIds: number[]): Promise<CumulTemps> {
+  const vide: CumulTemps = {
+    parTache: new Map(),
+    parEtape: new Map(),
+    chronoSousTacheId: null,
+    chronoTacheId: null,
+  };
+  if (tacheIds.length === 0) return vide;
+
+  const id = await moi();
+  const lignes = await db
+    .select({
+      tacheId: temps.tacheId,
+      sousTacheId: temps.sousTacheId,
+      debut: temps.debut,
+      fin: temps.fin,
+    })
+    .from(temps)
+    .where(and(eq(temps.proprietaireId, id), inArray(temps.tacheId, tacheIds)));
+
+  const cumul: CumulTemps = {
+    parTache: new Map(),
+    parEtape: new Map(),
+    chronoSousTacheId: null,
+    chronoTacheId: null,
+  };
+
+  for (const l of lignes) {
+    if (!l.tacheId) continue;
+    const minutes = dureeMinutes(l);
+    cumul.parTache.set(l.tacheId, (cumul.parTache.get(l.tacheId) ?? 0) + minutes);
+    if (l.sousTacheId) {
+      cumul.parEtape.set(l.sousTacheId, (cumul.parEtape.get(l.sousTacheId) ?? 0) + minutes);
+    }
+    if (l.fin === null) {
+      cumul.chronoTacheId = l.tacheId;
+      cumul.chronoSousTacheId = l.sousTacheId;
+    }
+  }
+  return cumul;
+}
+
+function rattacherTemps<T extends { id: number }>(
+  tache: T,
+  etapes: SousTache[],
+  cumul: CumulTemps,
+) {
+  const minutesParEtape: Record<number, number> = {};
+  for (const s of etapes) {
+    minutesParEtape[s.id] = cumul.parEtape.get(s.id) ?? 0;
+  }
+  return {
+    sousTaches: etapes,
+    minutes: cumul.parTache.get(tache.id) ?? 0,
+    minutesParEtape,
+    chronoEnCours: cumul.chronoTacheId === tache.id,
+    chronoSousTacheId:
+      cumul.chronoTacheId === tache.id ? cumul.chronoSousTacheId : null,
+  };
 }
 
 // ------------------------------------------------------------- Documents
@@ -304,10 +381,12 @@ export async function chronoEnCours() {
       etudeNom: etudes.nom,
       etudeCouleur: etudes.couleur,
       tacheTitre: taches.titre,
+      etapeTitre: sousTaches.titre,
     })
     .from(temps)
     .leftJoin(etudes, eq(temps.etudeId, etudes.id))
     .leftJoin(taches, eq(temps.tacheId, taches.id))
+    .leftJoin(sousTaches, eq(temps.sousTacheId, sousTaches.id))
     .where(and(isNull(temps.fin), eq(temps.proprietaireId, id)))
     .orderBy(desc(temps.debut))
     .limit(1);
@@ -342,10 +421,12 @@ export async function entreesTemps(filtres: FiltresTemps = {}) {
       etudeClient: etudes.client,
       etudeTarif: etudes.tarifHoraire,
       tacheTitre: taches.titre,
+      etapeTitre: sousTaches.titre,
     })
     .from(temps)
     .leftJoin(etudes, eq(temps.etudeId, etudes.id))
     .leftJoin(taches, eq(temps.tacheId, taches.id))
+    .leftJoin(sousTaches, eq(temps.sousTacheId, sousTaches.id))
     .where(and(...conditions))
     .orderBy(desc(temps.debut));
 }

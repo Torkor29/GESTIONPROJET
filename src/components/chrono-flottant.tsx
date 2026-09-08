@@ -11,6 +11,7 @@ type Chrono = {
   etudeNom: string | null;
   etudeCouleur: string | null;
   tacheTitre: string | null;
+  etapeTitre?: string | null;
 } | null;
 
 export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
@@ -64,7 +65,9 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
             {chrono.etudeNom ?? "Sans étude"}
           </p>
           <p className="truncate text-xs leading-tight text-attenue">
-            {chrono.tacheTitre ?? chrono.entree.description ?? "En cours"}
+            {chrono.etapeTitre
+              ? `${chrono.etapeTitre}${chrono.tacheTitre ? ` · ${chrono.tacheTitre}` : ""}`
+              : (chrono.tacheTitre ?? chrono.entree.description ?? "En cours")}
           </p>
         </div>
         <span className="chiffres px-1 text-base font-semibold tabular-nums" aria-live="off">

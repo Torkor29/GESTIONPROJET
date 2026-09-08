@@ -208,7 +208,7 @@ export default async function PageTemps({
                   </div>
 
                   <ul className="carte divide-y divide-ligne">
-                    {entrees.map(({ entree, etudeNom, etudeCouleur, tacheTitre }) => (
+                    {entrees.map(({ entree, etudeNom, etudeCouleur, tacheTitre, etapeTitre }) => (
                       <li
                         key={entree.id}
                         className="group flex items-center gap-3 px-4 py-2.5"
@@ -221,11 +221,14 @@ export default async function PageTemps({
 
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm">
-                            {entree.description ?? tacheTitre ?? "Sans description"}
+                            {entree.description ?? etapeTitre ?? tacheTitre ?? "Sans description"}
                           </p>
                           <p className="truncate text-xs text-attenue">
                             {etudeNom ?? "Sans étude"}
-                            {tacheTitre && entree.description ? ` · ${tacheTitre}` : ""}
+                            {tacheTitre && (entree.description || etapeTitre) ? ` · ${tacheTitre}` : ""}
+                            {etapeTitre && entree.description && entree.description !== etapeTitre
+                              ? ` · ${etapeTitre}`
+                              : ""}
                           </p>
                         </div>
 

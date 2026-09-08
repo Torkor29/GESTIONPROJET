@@ -8,12 +8,12 @@ import {
   supprimerSousTache,
   supprimerTache,
 } from "@/actions/taches";
-import { demarrerChrono } from "@/actions/temps";
+import { ajouterTempsRapide, demarrerChrono } from "@/actions/temps";
 import FormulaireTache from "./formulaire-tache";
 import SelecteurStatut from "./selecteur-statut";
 import { EtiquettePriorite } from "./etiquettes";
 import { Icone } from "./icones";
-import { formaterDate } from "@/lib/format";
+import { formaterDate, formaterDuree } from "@/lib/format";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
 function BoutonAjouterEtape() {
@@ -22,6 +22,47 @@ function BoutonAjouterEtape() {
     <button type="submit" className="bouton-discret shrink-0 !min-h-9 !px-3 !py-1.5 !text-[11px]" disabled={pending}>
       {pending ? "…" : "Ajouter"}
     </button>
+  );
+}
+
+function BoutonEnregistrerTemps() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      title="Enregistrer ce temps"
+      aria-label="Enregistrer ce temps"
+      className="flex h-7 shrink-0 items-center rounded-lg px-2 text-[11px] font-medium uppercase tracking-wide text-accent transition hover:bg-accent-voile disabled:opacity-50"
+    >
+      {pending ? "…" : "OK"}
+    </button>
+  );
+}
+
+function SaisieDureeRapide({
+  tacheId,
+  sousTacheId,
+  compact,
+}: {
+  tacheId: number;
+  sousTacheId?: number;
+  compact?: boolean;
+}) {
+  return (
+    <form action={ajouterTempsRapide} className="flex min-w-0 items-center gap-1">
+      <input type="hidden" name="tacheId" value={tacheId} />
+      {sousTacheId ? <input type="hidden" name="sousTacheId" value={sousTacheId} /> : null}
+      <input
+        name="duree"
+        required
+        inputMode="text"
+        placeholder="45 min"
+        aria-label={sousTacheId ? "Temps passé sur cette étape" : "Temps passé sur cette mission"}
+        className={`champ !rounded-lg !px-2 !py-1 text-xs ${compact ? "w-[4.75rem]" : "w-24"}`}
+      />
+      <BoutonEnregistrerTemps />
+    </form>
   );
 }
 
@@ -55,6 +96,10 @@ export default function CarteMission({
   etudeCode,
   etudeCouleur,
   sousTaches,
+  minutes = 0,
+  minutesParEtape = {},
+  chronoEnCours = false,
+  chronoSousTacheId = null,
   etudes,
   afficherEtude = true,
 }: {
@@ -63,6 +108,10 @@ export default function CarteMission({
   etudeCode?: string | null;
   etudeCouleur?: string | null;
   sousTaches: SousTache[];
+  minutes?: number;
+  minutesParEtape?: Record<number, number>;
+  chronoEnCours?: boolean;
+  chronoSousTacheId?: number | null;
   etudes: Pick<Etude, "id" | "nom">[];
   afficherEtude?: boolean;
 }) {
@@ -72,6 +121,7 @@ export default function CarteMission({
   const faites = sousTaches.filter((s) => s.faite).length;
   const total = sousTaches.length;
   const progression = total === 0 ? 0 : Math.round((faites / total) * 100);
+  const chronoMission = chronoEnCours && chronoSousTacheId === null;
 
   const [ouverte, setOuverte] = useState(total > 0 && faites < total);
 
@@ -129,6 +179,11 @@ export default function CarteMission({
                 {faites}/{total} étape{total > 1 ? "s" : ""}
               </span>
             )}
+            {minutes > 0 && (
+              <span className="chiffres text-xs font-medium text-accent-appuye">
+                {formaterDuree(minutes)}
+              </span>
+            )}
           </div>
 
           {tache.notes && (
@@ -142,21 +197,21 @@ export default function CarteMission({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5">
-          {!terminee && (
-            <form action={demarrerChrono}>
-              <input type="hidden" name="etudeId" value={tache.etudeId ?? ""} />
-              <input type="hidden" name="tacheId" value={tache.id} />
-              <button
-                type="submit"
-                title="Démarrer le chronomètre sur cette mission"
-                aria-label="Démarrer le chronomètre sur cette mission"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-attenue transition hover:bg-creux hover:text-accent active:scale-95"
-              >
-                <Icone nom="chrono" className="h-4 w-4" />
-              </button>
-            </form>
-          )}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+          <SaisieDureeRapide tacheId={tache.id} />
+          <form action={demarrerChrono}>
+            <input type="hidden" name="etudeId" value={tache.etudeId ?? ""} />
+            <input type="hidden" name="tacheId" value={tache.id} />
+            <button
+              type="submit"
+              title="Démarrer le chronomètre sur cette mission"
+              aria-label="Démarrer le chronomètre sur cette mission"
+              className={`flex h-9 w-9 items-center justify-center rounded-xl transition hover:bg-creux hover:text-accent active:scale-95
+                          ${chronoMission ? "bg-accent-voile text-accent-appuye" : "text-attenue"}`}
+            >
+              <Icone nom="chrono" className="h-4 w-4" />
+            </button>
+          </form>
           <FormulaireTache tache={tache} etudes={etudes} libelle="✎" variante="icone" />
           <form action={supprimerTache}>
             <input type="hidden" name="id" value={tache.id} />
@@ -194,47 +249,71 @@ export default function CarteMission({
                 document…
               </p>
             ) : (
-              <ul className="mb-3 space-y-1.5">
-                {sousTaches.map((s) => (
-                  <li key={s.id} className="group/etape flex items-start gap-2">
-                    <form action={basculerSousTache}>
-                      <input type="hidden" name="id" value={s.id} />
-                      <button
-                        type="submit"
-                        aria-pressed={s.faite}
-                        aria-label={s.faite ? `Décocher : ${s.titre}` : `Cocher : ${s.titre}`}
-                        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition
-                                    ${
-                                      s.faite
-                                        ? "border-accent bg-accent text-sur-accent"
-                                        : "border-ligne bg-relief hover:border-accent"
-                                    }`}
-                      >
-                        {s.faite && (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3 w-3" aria-hidden>
-                            <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </button>
-                    </form>
-                    <span className={`min-w-0 flex-1 text-sm leading-snug ${s.faite ? "text-attenue line-through" : ""}`}>
-                      {s.titre}
-                    </span>
-                    <form action={supprimerSousTache} className="opacity-0 transition-opacity group-hover/etape:opacity-100 focus-within:opacity-100">
-                      <input type="hidden" name="id" value={s.id} />
-                      <button
-                        type="submit"
-                        title="Retirer cette étape"
-                        aria-label={`Retirer : ${s.titre}`}
-                        className="flex h-6 w-6 items-center justify-center rounded-md text-efface hover:text-alerte"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-3.5 w-3.5" aria-hidden>
-                          <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </form>
-                  </li>
-                ))}
+              <ul className="mb-3 space-y-2">
+                {sousTaches.map((s) => {
+                  const minutesEtape = minutesParEtape[s.id] ?? 0;
+                  const chronoIci = chronoSousTacheId === s.id;
+                  return (
+                    <li key={s.id} className="group/etape flex flex-wrap items-center gap-2">
+                      <form action={basculerSousTache}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button
+                          type="submit"
+                          aria-pressed={s.faite}
+                          aria-label={s.faite ? `Décocher : ${s.titre}` : `Cocher : ${s.titre}`}
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition
+                                      ${
+                                        s.faite
+                                          ? "border-accent bg-accent text-sur-accent"
+                                          : "border-ligne bg-relief hover:border-accent"
+                                      }`}
+                        >
+                          {s.faite && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3 w-3" aria-hidden>
+                              <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                      </form>
+                      <span className={`min-w-0 flex-1 text-sm leading-snug ${s.faite ? "text-attenue line-through" : ""}`}>
+                        {s.titre}
+                      </span>
+                      {minutesEtape > 0 && (
+                        <span className="chiffres text-xs text-accent-appuye">
+                          {formaterDuree(minutesEtape)}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-0.5">
+                        <SaisieDureeRapide tacheId={tache.id} sousTacheId={s.id} compact />
+                        <form action={demarrerChrono}>
+                          <input type="hidden" name="sousTacheId" value={s.id} />
+                          <button
+                            type="submit"
+                            title={chronoIci ? "Chronomètre en cours sur cette étape" : "Démarrer le chronomètre sur cette étape"}
+                            aria-label={chronoIci ? "Chronomètre en cours sur cette étape" : `Démarrer le chronomètre : ${s.titre}`}
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-relief hover:text-accent
+                                        ${chronoIci ? "bg-accent-voile text-accent-appuye" : "text-attenue"}`}
+                          >
+                            <Icone nom="chrono" className="h-3.5 w-3.5" />
+                          </button>
+                        </form>
+                        <form action={supprimerSousTache} className="opacity-0 transition-opacity group-hover/etape:opacity-100 focus-within:opacity-100">
+                          <input type="hidden" name="id" value={s.id} />
+                          <button
+                            type="submit"
+                            title="Retirer cette étape"
+                            aria-label={`Retirer : ${s.titre}`}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-efface hover:text-alerte"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-3.5 w-3.5" aria-hidden>
+                              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                            </svg>
+                          </button>
+                        </form>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
 
@@ -250,6 +329,12 @@ export default function CarteMission({
               />
               <BoutonAjouterEtape />
             </form>
+            {total > 0 && (
+              <p className="mt-2 text-xs text-efface">
+                Le total de la mission additionne le temps de chaque étape et celui saisi sur la
+                mission. Sans chrono : indiquez 45, 30min ou 1h30.
+              </p>
+            )}
           </div>
         </div>
       </div>

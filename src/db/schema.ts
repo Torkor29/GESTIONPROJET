@@ -159,12 +159,23 @@ export const temps = sqliteTable(
     }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     tacheId: integer("tache_id").references(() => taches.id, { onDelete: "set null" }),
+    /**
+     * Étape d'une mission, si le temps a été saisi ou chronométré dessus.
+     * Supprimer l'étape ne jette pas la saisie : elle reste sur la mission.
+     */
+    sousTacheId: integer("sous_tache_id").references(() => sousTaches.id, {
+      onDelete: "set null",
+    }),
     description: text("description"),
     debut: integer("debut").notNull(),
     fin: integer("fin"),
     creeLe: integer("cree_le").notNull().default(maintenant),
   },
-  (t) => [index("idx_temps_etude").on(t.etudeId), index("idx_temps_debut").on(t.debut)],
+  (t) => [
+    index("idx_temps_etude").on(t.etudeId),
+    index("idx_temps_debut").on(t.debut),
+    index("idx_temps_sous_tache").on(t.sousTacheId),
+  ],
 );
 
 /**

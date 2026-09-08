@@ -7,6 +7,10 @@ export type LigneMission = {
   etudeCode?: string | null;
   etudeCouleur?: string | null;
   sousTaches?: SousTache[];
+  minutes?: number;
+  minutesParEtape?: Record<number, number>;
+  chronoEnCours?: boolean;
+  chronoSousTacheId?: number | null;
 };
 
 export default function TableauMissions({
@@ -26,14 +30,18 @@ export default function TableauMissions({
 
   return (
     <div className="space-y-3">
-      {lignes.map(({ tache, etudeNom, etudeCode, etudeCouleur, sousTaches }) => (
+      {lignes.map((ligne) => (
         <CarteMission
-          key={tache.id}
-          tache={tache}
-          etudeNom={etudeNom}
-          etudeCode={etudeCode}
-          etudeCouleur={etudeCouleur}
-          sousTaches={sousTaches ?? []}
+          key={ligne.tache.id}
+          tache={ligne.tache}
+          etudeNom={ligne.etudeNom}
+          etudeCode={ligne.etudeCode}
+          etudeCouleur={ligne.etudeCouleur}
+          sousTaches={ligne.sousTaches ?? []}
+          minutes={ligne.minutes ?? 0}
+          minutesParEtape={ligne.minutesParEtape ?? {}}
+          chronoEnCours={ligne.chronoEnCours ?? false}
+          chronoSousTacheId={ligne.chronoSousTacheId ?? null}
           etudes={etudes}
           afficherEtude={afficherEtude}
         />
