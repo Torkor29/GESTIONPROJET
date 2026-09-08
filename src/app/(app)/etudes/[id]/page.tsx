@@ -15,6 +15,7 @@ import FormulaireTache from "@/components/formulaire-tache";
 import ListeDocuments from "@/components/liste-documents";
 import ListeFaq from "@/components/liste-faq";
 import TableauMissions from "@/components/tableau-missions";
+import { ChampFinInclusion } from "@/components/rappel-inclusion";
 import { formaterDate, formaterDuree, formaterMontant, heuresDecimales } from "@/lib/format";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
 import {
@@ -234,6 +235,7 @@ export default async function PageEtude({
                   <dd className={valeur ? "mt-0.5" : "mt-0.5 text-attenue"}>{valeur || "—"}</dd>
                 </div>
               ))}
+              <ChampFinInclusion date={etude.dateFinInclusion} statut={etude.statut} />
             </dl>
 
             {etude.imageCouverture && (

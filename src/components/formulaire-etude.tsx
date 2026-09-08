@@ -276,6 +276,22 @@ export default function FormulaireEtude({
                   className="champ"
                 />
               </div>
+              <div className="sm:col-span-2">
+                <label htmlFor={`${uid}-dateFinInclusion`} className="mb-1.5 block text-sm font-medium">
+                  Date de fin d&apos;inclusion prévue
+                </label>
+                <input
+                  id={`${uid}-dateFinInclusion`}
+                  name="dateFinInclusion"
+                  type="date"
+                  defaultValue={versChampDate(etude?.dateFinInclusion)}
+                  className="champ sm:max-w-xs"
+                />
+                <p className="mt-1 text-xs text-attenue">
+                  Distincte de la fin d&apos;étude. Affichée sur le tableau de bord pour voir si
+                  l&apos;inclusion est encore ouverte, sans ouvrir chaque dossier.
+                </p>
+              </div>
             </div>
           </Section>
 

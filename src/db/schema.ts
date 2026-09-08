@@ -67,6 +67,11 @@ export const etudes = sqliteTable("etudes", {
   numeroCpp: text("numero_cpp"),
   dateDebut: integer("date_debut"),
   dateFin: integer("date_fin"),
+  /**
+   * Fin d'inclusion prévue — distincte de la fin d'étude.
+   * Sert au rappel sur le tableau de bord (MS à anticiper).
+   */
+  dateFinInclusion: integer("date_fin_inclusion"),
 
   creeLe: integer("cree_le").notNull().default(maintenant),
   modifieLe: integer("modifie_le").notNull().default(maintenant),

@@ -44,6 +44,10 @@ export async function GET(requete: Request) {
     { entete: "Début", valeur: (e: Ligne) => (e.dateDebut ? formaterDate(e.dateDebut) : "") },
     { entete: "Fin prévue", valeur: (e: Ligne) => (e.dateFin ? formaterDate(e.dateFin) : "") },
     {
+      entete: "Fin d'inclusion",
+      valeur: (e: Ligne) => (e.dateFinInclusion ? formaterDate(e.dateFinInclusion) : ""),
+    },
+    {
       entete: "Conformité",
       valeur: (e: Ligne) => {
         const p = progressions.get(e.id);
@@ -87,7 +91,7 @@ export async function GET(requete: Request) {
   feuille.getColumn("Cadre réglementaire").alignment = { wrapText: true, vertical: "top" };
 
   if (etudes.length > 0) {
-    feuille.autoFilter = { from: "A1", to: `M${etudes.length + 1}` };
+    feuille.autoFilter = { from: "A1", to: `N${etudes.length + 1}` };
   }
 
   const tampon = await classeur.xlsx.writeBuffer();

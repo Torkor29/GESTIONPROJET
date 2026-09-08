@@ -4,10 +4,12 @@ import FormulaireDocument from "@/components/formulaire-document";
 import FormulaireEtude from "@/components/formulaire-etude";
 import FormulaireFaq from "@/components/formulaire-faq";
 import FormulaireTache from "@/components/formulaire-tache";
+import RappelInclusion from "@/components/rappel-inclusion";
 import TableauMissions from "@/components/tableau-missions";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { Icone, type NomIcone } from "@/components/icones";
 import { debutDeSemaine, formaterDuree } from "@/lib/format";
+import { lignesRappelInclusion } from "@/lib/inclusion";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
 import {
   listerEtudes,
@@ -164,6 +166,8 @@ export default async function TableauDeBord() {
           href="/etudes"
         />
       </div>
+
+      <RappelInclusion lignes={lignesRappelInclusion(etudes)} />
 
       {/* --------------------------------------------------- Missions du jour */}
       <section className="bloc-app anime-bloc">

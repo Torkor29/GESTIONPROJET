@@ -76,6 +76,7 @@ function champsCommuns(donnees: FormData) {
     numeroCpp: String(donnees.get("numeroCpp") ?? "").trim() || null,
     dateDebut: depuisChampDate(String(donnees.get("dateDebut") ?? "")),
     dateFin: depuisChampDate(String(donnees.get("dateFin") ?? "")),
+    dateFinInclusion: depuisChampDate(String(donnees.get("dateFinInclusion") ?? "")),
     reglementations: JSON.stringify(lireReglementationsFormulaire(donnees)),
   };
 }

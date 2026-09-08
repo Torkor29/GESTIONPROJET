@@ -204,6 +204,32 @@ p {
 .page-app .anime-bloc:nth-child(4) { animation-delay: 0.22s; }
 .page-app .anime-bloc:nth-child(5) { animation-delay: 0.28s; }
 .page-app .anime-bloc:nth-child(6) { animation-delay: 0.34s; }
+.page-app .anime-bloc:nth-child(7) { animation-delay: 0.4s; }
+
+/* Rappel fin d'inclusion : jaune < 4 mois, rouge < 3 mois. */
+.rappel-inclusion {
+  border-radius: 18px;
+  border: 1px solid rgb(var(--ligne));
+  background: rgb(var(--relief));
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.rappel-inclusion:hover {
+  transform: translateY(-1px);
+}
+.rappel-inclusion-jaune {
+  background: rgb(var(--or) / 0.72);
+  box-shadow: inset 5px 0 0 rgb(196 150 20);
+  border-color: transparent;
+}
+.rappel-inclusion-rouge {
+  background: rgb(var(--corail) / 0.55);
+  box-shadow: inset 5px 0 0 rgb(196 50 40);
+  border-color: transparent;
+}
+.rappel-inclusion-absent {
+  border-style: dashed;
+  background: rgb(var(--creux) / 0.45);
+}
 
 .carte-mission {
   border-radius: 22px;
