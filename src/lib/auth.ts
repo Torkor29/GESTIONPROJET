@@ -106,20 +106,71 @@ async function cookieSecurise(): Promise<boolean> {
   }
 }
 
+function optionsCookie(securise: boolean) {
+  return {
+    httpOnly: true as const,
+    sameSite: "lax" as const,
+    secure: securise,
+    path: "/",
+  };
+}
+
+/**
+ * En-tête Set-Cookie qui expire le témoin. Le navigateur n'efface un cookie
+ * que si le chemin — et, en HTTPS, l'attribut Secure — correspondent à ceux
+ * de la pose. On envoie donc les deux variantes.
+ */
+function enTeteCookieVide(securise: boolean): string {
+  const parts = [
+    `${NOM_COOKIE}=`,
+    "Path=/",
+    "Max-Age=0",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+  if (securise) parts.push("Secure");
+  return parts.join("; ");
+}
+
 export async function ouvrirSession(utilisateurId: number): Promise<void> {
   const boite = await cookies();
   boite.set(NOM_COOKIE, creerJeton(utilisateurId), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: await cookieSecurise(),
-    path: "/",
+    ...optionsCookie(await cookieSecurise()),
     maxAge: DUREE_SESSION,
   });
 }
 
 export async function fermerSession(): Promise<void> {
   const boite = await cookies();
-  boite.delete(NOM_COOKIE);
+  boite.set(NOM_COOKIE, "", {
+    ...optionsCookie(await cookieSecurise()),
+    maxAge: 0,
+    expires: new Date(0),
+  });
+}
+
+/** Adresse publique vue par le navigateur, derrière un reverse proxy. */
+export function originePublique(requete: Request): string {
+  const url = new URL(requete.url);
+  const proto = (requete.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", ""))
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+  const hote = (
+    requete.headers.get("x-forwarded-host") ??
+    requete.headers.get("host") ??
+    url.host
+  )
+    .split(",")[0]
+    .trim();
+  return `${proto === "https" ? "https" : "http"}://${hote}`;
+}
+
+/** Expire le cookie de session sur une réponse HTTP (les deux variantes Secure). */
+export function expirerCookieSession(enTetes: Headers): void {
+  enTetes.append("Set-Cookie", enTeteCookieVide(true));
+  enTetes.append("Set-Cookie", enTeteCookieVide(false));
 }
 
 /* -------------------------------------------------------------------------- */

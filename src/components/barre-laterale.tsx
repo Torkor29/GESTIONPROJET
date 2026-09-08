@@ -4,9 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Etude } from "@/db/schema";
-import { seDeconnecter } from "@/actions/session";
 import { Icone, type NomIcone } from "@/components/icones";
 import { Marque } from "@/components/marque";
+
+function IconeSortie({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`shrink-0 ${className ?? ""}`}
+      aria-hidden
+    >
+      <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
 
 export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
 
@@ -67,6 +83,15 @@ export default function BarreLaterale({
           </svg>
         </button>
         <Marque complete={false} />
+        <form action="/deconnexion" method="post" className="ml-auto">
+          <button
+            type="submit"
+            aria-label="Se déconnecter"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-ligne bg-relief text-attenue shadow-posee transition-all duration-200 hover:text-encre active:scale-95"
+          >
+            <IconeSortie className="h-4 w-4" />
+          </button>
+        </form>
       </div>
 
       {ouvert && (
@@ -79,7 +104,7 @@ export default function BarreLaterale({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-ligne/70 bg-relief/90
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col overflow-y-auto border-r border-ligne/70 bg-relief/90
                     shadow-posee backdrop-blur-md
                     transition-transform duration-300 ease-souple
                     lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
@@ -180,23 +205,12 @@ export default function BarreLaterale({
             </span>
           </div>
 
-          <form action={seDeconnecter}>
+          <form action="/deconnexion" method="post">
             <button
               type="submit"
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium text-attenue transition-all duration-200 hover:bg-creux hover:text-encre"
             >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-[18px] w-[18px] shrink-0"
-              aria-hidden
-            >
-                <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
-              </svg>
+              <IconeSortie className="h-[18px] w-[18px]" />
               Se déconnecter
             </button>
           </form>
