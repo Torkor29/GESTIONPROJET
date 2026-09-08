@@ -206,24 +206,22 @@ p {
 .page-app .anime-bloc:nth-child(6) { animation-delay: 0.34s; }
 .page-app .anime-bloc:nth-child(7) { animation-delay: 0.4s; }
 
-/* Rappel fin d'inclusion : jaune < 4 mois, rouge < 3 mois. */
+/* Rappel fin d'inclusion : pastilles, jaune < 4 mois, rouge < 3 mois. */
 .rappel-inclusion {
-  border-radius: 18px;
+  border-radius: 999px;
   border: 1px solid rgb(var(--ligne));
-  background: rgb(var(--relief));
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  background: rgb(var(--creux) / 0.55);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .rappel-inclusion:hover {
   transform: translateY(-1px);
 }
 .rappel-inclusion-jaune {
-  background: rgb(var(--or) / 0.72);
-  box-shadow: inset 5px 0 0 rgb(196 150 20);
+  background: rgb(var(--or) / 0.85);
   border-color: transparent;
 }
 .rappel-inclusion-rouge {
-  background: rgb(var(--corail) / 0.55);
-  box-shadow: inset 5px 0 0 rgb(196 50 40);
+  background: rgb(var(--corail) / 0.7);
   border-color: transparent;
 }
 .rappel-inclusion-absent {

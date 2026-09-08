@@ -60,26 +60,28 @@ describe("libelleDelaiInclusion", () => {
 });
 
 describe("lignesRappelInclusion", () => {
-  it("ne retient que les études encore ouvertes, urgences d'abord", () => {
+  it("ne retient que les études ouvertes à moins de 5 mois, urgences d'abord", () => {
     const lignes = lignesRappelInclusion(
       [
-        { id: 1, nom: "OK", code: "OK", statut: "active", dateFinInclusion: sec("2027-09-08") },
+        { id: 1, nom: "Loin", code: "LOIN", statut: "active", dateFinInclusion: sec("2027-09-08") },
         { id: 2, nom: "Rouge", code: "RG", statut: "active", dateFinInclusion: sec("2026-10-01") },
         { id: 3, nom: "Jaune", code: "JN", statut: "en_pause", dateFinInclusion: sec("2026-12-20") },
         { id: 4, nom: "Sans date", code: null, statut: "active", dateFinInclusion: null },
         { id: 5, nom: "Finie", code: "FN", statut: "terminee", dateFinInclusion: sec("2026-10-01") },
         { id: 6, nom: "Archivée", code: "AR", statut: "archivee", dateFinInclusion: sec("2026-10-01") },
+        { id: 7, nom: "Cinq mois", code: "M5", statut: "active", dateFinInclusion: sec("2027-02-08") },
+        { id: 8, nom: "Sous cinq", code: "S5", statut: "active", dateFinInclusion: sec("2027-02-07") },
       ],
       auj,
     );
 
     assert.deepEqual(
-      lignes.map((l) => l.nom),
-      ["Rouge", "Jaune", "Sans date", "OK"],
+      lignes.map((l) => l.code),
+      ["RG", "JN", "S5"],
     );
     assert.equal(lignes[0].niveau, "rouge");
     assert.equal(lignes[1].niveau, "jaune");
-    assert.equal(lignes[2].niveau, "absent");
-    assert.equal(lignes[3].niveau, "ok");
+    assert.equal(lignes[2].niveau, "ok");
+    assert.equal(lignes[0].delai, "01/10/2026");
   });
 });

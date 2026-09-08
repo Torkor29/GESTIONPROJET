@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { formaterDate } from "@/lib/format";
 import { libelleDelaiInclusion, niveauFinInclusion, type LigneInclusion } from "@/lib/inclusion";
 
@@ -13,36 +12,22 @@ const STYLES: Record<LigneInclusion["niveau"], string> = {
 export default function RappelInclusion({ lignes }: { lignes: LigneInclusion[] }) {
   if (lignes.length === 0) return null;
 
-  const urgentes = lignes.filter((l) => l.niveau === "rouge" || l.niveau === "jaune").length;
-
   return (
     <section className="bloc-app anime-bloc">
-      <div className="mb-1 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="font-titre text-xl font-bold">Fin d&apos;inclusion</h2>
-        {urgentes > 0 && (
-          <p className="text-sm text-attenue">
-            {urgentes} délai{urgentes > 1 ? "s" : ""} sous 4 mois
-          </p>
-        )}
+        <p className="text-xs text-attenue">moins de 5 mois · jaune &lt; 4 · rouge &lt; 3</p>
       </div>
-      <p className="mb-4 max-w-2xl text-sm text-attenue">
-        Pour les études encore ouvertes. Moins de 4 mois avant la date prévue : jaune. Moins de
-        3 mois, ou déjà dépassée : rouge — une MS est souvent à prévoir.
-      </p>
-      <ul className="space-y-2">
+      <ul className="flex flex-wrap gap-1.5">
         {lignes.map((l) => (
           <li key={l.id}>
-            <Link href={`/etudes/${l.id}`} className={`${STYLES[l.niveau]} block p-4 no-underline`}>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <span className="flex min-w-0 items-center gap-2">
-                  {l.code && (
-                    <span className="text-xs font-bold tracking-tight text-attenue">{l.code}</span>
-                  )}
-                  <span className="truncate font-titre text-sm font-bold">{l.nom}</span>
-                </span>
-                <EtiquetteStatutEtude statut={l.statut} />
-              </div>
-              <p className="mt-1 text-sm">{l.delai}</p>
+            <Link
+              href={`/etudes/${l.id}`}
+              title={l.nom}
+              className={`${STYLES[l.niveau]} inline-flex items-baseline gap-2 px-2.5 py-1 text-sm no-underline`}
+            >
+              <span className="font-bold tracking-tight">{l.code || l.nom}</span>
+              <span className="chiffres text-sm">{l.delai}</span>
             </Link>
           </li>
         ))}

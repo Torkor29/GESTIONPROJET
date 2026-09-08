@@ -1,13 +1,16 @@
 /**
  * Fin d'inclusion prévue : seuils du rappel sur le tableau de bord.
  *
+ * Affiché seulement sous 5 mois.
  * Moins de 3 mois (ou déjà dépassée) → rouge.
  * Moins de 4 mois → jaune.
- * Au-delà → encore de la marge.
  *
  * Les mois sont calendaires (8 septembre + 3 mois = 8 décembre),
  * pas 90 jours glissants.
  */
+
+/** Au-delà, le rappel n'encombre pas le tableau de bord. */
+export const SEUIL_AFFICHAGE_MOIS = 5;
 
 import { formaterDate, versChampDate } from "./format";
 
@@ -57,17 +60,22 @@ function libelleMoisJours(mois: number, jours: number): string {
   return `${partieMois} et ${jours} jours`;
 }
 
+/** Vrai si la date tombe strictement avant aujourd'hui + `mois` calendaires. */
+export function delaiSousMois(
+  dateFinInclusion: number,
+  mois: number,
+  aujourdHui: Date = new Date(),
+): boolean {
+  return versChampDate(dateFinInclusion) < ajouterMois(isoDateLocale(aujourdHui), mois);
+}
+
 export function niveauFinInclusion(
   dateFinInclusion: number | null | undefined,
   aujourdHui: Date = new Date(),
 ): NiveauInclusion {
   if (!dateFinInclusion) return "absent";
-  const fin = versChampDate(dateFinInclusion);
-  const auj = isoDateLocale(aujourdHui);
-  const plus3 = ajouterMois(auj, 3);
-  const plus4 = ajouterMois(auj, 4);
-  if (fin < plus3) return "rouge";
-  if (fin < plus4) return "jaune";
+  if (delaiSousMois(dateFinInclusion, 3, aujourdHui)) return "rouge";
+  if (delaiSousMois(dateFinInclusion, 4, aujourdHui)) return "jaune";
   return "ok";
 }
 
@@ -107,7 +115,10 @@ const ORDRE_NIVEAU: Record<NiveauInclusion, number> = {
   ok: 3,
 };
 
-/** Études encore ouvertes, les plus urgentes d'abord. */
+/**
+ * Études encore ouvertes dont la fin d'inclusion tombe dans moins de
+ * 5 mois — assez pour anticiper une MS, sans lister tout le portefeuille.
+ */
 export function lignesRappelInclusion(
   etudes: {
     id: number;
@@ -120,20 +131,19 @@ export function lignesRappelInclusion(
 ): LigneInclusion[] {
   return etudes
     .filter((e) => e.statut === "active" || e.statut === "en_pause")
-    .map((e) => {
-      const niveau = niveauFinInclusion(e.dateFinInclusion, aujourdHui);
-      return {
-        ...e,
-        niveau,
-        delai:
-          e.dateFinInclusion == null
-            ? "date à renseigner"
-            : libelleDelaiInclusion(e.dateFinInclusion, aujourdHui),
-      };
-    })
+    .filter(
+      (e) =>
+        e.dateFinInclusion != null &&
+        delaiSousMois(e.dateFinInclusion, SEUIL_AFFICHAGE_MOIS, aujourdHui),
+    )
+    .map((e) => ({
+      ...e,
+      niveau: niveauFinInclusion(e.dateFinInclusion, aujourdHui),
+      delai: formaterDate(e.dateFinInclusion),
+    }))
     .sort((a, b) => {
       const parNiveau = ORDRE_NIVEAU[a.niveau] - ORDRE_NIVEAU[b.niveau];
       if (parNiveau !== 0) return parNiveau;
-      return (a.dateFinInclusion ?? Number.POSITIVE_INFINITY) - (b.dateFinInclusion ?? Number.POSITIVE_INFINITY);
+      return (a.dateFinInclusion ?? 0) - (b.dateFinInclusion ?? 0);
     });
 }
