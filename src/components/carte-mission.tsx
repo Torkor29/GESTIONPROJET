@@ -13,7 +13,7 @@ import FormulaireTache from "./formulaire-tache";
 import SelecteurStatut from "./selecteur-statut";
 import { EtiquettePriorite } from "./etiquettes";
 import { Icone } from "./icones";
-import { formaterDate, formaterDuree } from "@/lib/format";
+import { formaterDate, formaterDuree, statutDepuisEtapes } from "@/lib/format";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
 function BoutonAjouterEtape() {
@@ -115,7 +115,8 @@ export default function CarteMission({
   etudes: Pick<Etude, "id" | "nom">[];
   afficherEtude?: boolean;
 }) {
-  const terminee = tache.statut === "terminee";
+  const statut = statutDepuisEtapes(tache.statut, sousTaches);
+  const terminee = statut === "terminee";
   const maintenant = Math.floor(Date.now() / 1000);
   const enRetard = !terminee && Boolean(tache.echeance && tache.echeance < maintenant);
   const faites = sousTaches.filter((s) => s.faite).length;
@@ -165,7 +166,7 @@ export default function CarteMission({
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-            <SelecteurStatut id={tache.id} statut={tache.statut} />
+            <SelecteurStatut id={tache.id} statut={statut} verrouille={total > 0} />
             {tache.echeance ? (
               <span className={`chiffres ${enRetard ? "font-semibold text-alerte" : "text-attenue"}`}>
                 {enRetard ? "⚠ " : ""}
@@ -212,7 +213,13 @@ export default function CarteMission({
               <Icone nom="chrono" className="h-4 w-4" />
             </button>
           </form>
-          <FormulaireTache tache={tache} etudes={etudes} libelle="✎" variante="icone" />
+          <FormulaireTache
+            tache={tache}
+            etudes={etudes}
+            libelle="✎"
+            variante="icone"
+            statutSuitEtapes={total > 0}
+          />
           <form action={supprimerTache}>
             <input type="hidden" name="id" value={tache.id} />
             <button

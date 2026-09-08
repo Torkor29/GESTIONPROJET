@@ -23,12 +23,15 @@ export default function FormulaireTache({
   etudeIdParDefaut,
   libelle,
   variante = "principal",
+  statutSuitEtapes = false,
 }: {
   tache?: Tache;
   etudes: Pick<Etude, "id" | "nom">[];
   etudeIdParDefaut?: number;
   libelle: string;
   variante?: "principal" | "discret" | "icone";
+  /** S'il y a des étapes, le statut de la mission n'est plus saisi à la main. */
+  statutSuitEtapes?: boolean;
 }) {
   // Plusieurs de ces formulaires cohabitent sur une même page : les identifiants
   // doivent être uniques, sinon les libellés pointent vers le mauvais champ.
@@ -160,7 +163,7 @@ export default function FormulaireTache({
             </div>
           </div>
 
-          {edition && (
+          {edition && !statutSuitEtapes && (
             <div>
               <label htmlFor={`${uid}-statut`} className="mb-1.5 block text-sm font-medium">
                 Statut
@@ -173,6 +176,12 @@ export default function FormulaireTache({
                 ))}
               </select>
             </div>
+          )}
+          {edition && statutSuitEtapes && (
+            <p className="text-sm text-attenue">
+              Le statut suit les étapes : en cours tant qu&apos;il en reste, terminée quand
+              toutes sont cochées.
+            </p>
           )}
 
           <div>

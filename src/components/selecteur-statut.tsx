@@ -23,7 +23,16 @@ const PASTILLES: Record<string, string> = {
  * React 19 réinitialise un formulaire après son action, ce qui faisait
  * réapparaître l'ancien statut à l'écran juste après l'enregistrement.
  */
-export default function SelecteurStatut({ id, statut }: { id: number; statut: string }) {
+export default function SelecteurStatut({
+  id,
+  statut,
+  verrouille = false,
+}: {
+  id: number;
+  statut: string;
+  /** Le statut suit les étapes : on l'affiche, on ne le change plus à la main. */
+  verrouille?: boolean;
+}) {
   const [valeur, setValeur] = useState(statut);
   const [enCours, demarrer] = useTransition();
 
@@ -38,8 +47,13 @@ export default function SelecteurStatut({ id, statut }: { id: number; statut: st
       />
       <select
         value={valeur}
-        disabled={enCours}
+        disabled={enCours || verrouille}
         aria-label="Statut de la mission"
+        title={
+          verrouille
+            ? "Le statut suit les étapes : en cours tant qu'il en reste, terminée quand toutes sont cochées."
+            : undefined
+        }
         onChange={(e) => {
           const choix = e.target.value;
           setValeur(choix);
@@ -53,8 +67,8 @@ export default function SelecteurStatut({ id, statut }: { id: number; statut: st
             }
           });
         }}
-        className={`cursor-pointer appearance-none bg-transparent text-xs font-medium outline-none
-                    disabled:opacity-60 ${COULEURS[valeur] ?? "text-attenue"}`}
+        className={`${verrouille ? "cursor-default" : "cursor-pointer"} appearance-none bg-transparent text-xs font-medium outline-none
+                    disabled:opacity-80 ${COULEURS[valeur] ?? "text-attenue"}`}
       >
         {Object.entries(LIBELLES_STATUT_MISSION).map(([v, l]) => (
           <option key={v} value={v} className="text-encre">

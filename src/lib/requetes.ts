@@ -22,7 +22,7 @@ import {
 } from "@/db/schema";
 import { etudeAccessible, idsEtudesAccessibles, objetAccessible } from "./acces";
 import { utilisateurActuel } from "./auth";
-import { debutDeMois, debutDeSemaine } from "./format";
+import { debutDeMois, debutDeSemaine, statutDepuisEtapes } from "./format";
 
 /** Une semaine en jours : évite un 7 magique au milieu des calculs de fenêtre. */
 const SECONDES_SEMAINE_JOURS = 86400;
@@ -142,10 +142,10 @@ export async function tachesDEtude(etudeId: number) {
 
   const parMission = await sousTachesParMission(liste.map((t) => t.id));
   const cumul = await cumulTempsDesMissions(liste.map((t) => t.id));
-  return liste.map((t) => ({
-    ...t,
-    ...rattacherTemps(t, parMission.get(t.id) ?? [], cumul),
-  }));
+  return liste.map((t) => {
+    const extra = rattacherTemps(t, parMission.get(t.id) ?? [], cumul);
+    return { ...t, ...extra };
+  });
 }
 
 /** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
@@ -163,7 +163,6 @@ export async function toutesLesTaches(filtreStatut?: string) {
     .where(
       and(
         objetAccessible(taches.proprietaireId, taches.etudeId, id),
-        filtreStatut ? eq(taches.statut, filtreStatut) : undefined,
       ),
     )
     .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
@@ -173,10 +172,15 @@ export async function toutesLesTaches(filtreStatut?: string) {
     sousTachesParMission(ids),
     cumulTempsDesMissions(ids),
   ]);
-  return lignes.map((l) => ({
-    ...l,
-    ...rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul),
-  }));
+  const resultat = lignes.map((l) => {
+    const extra = rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul);
+    return {
+      ...l,
+      tache: { ...l.tache, statut: extra.statut },
+      ...extra,
+    };
+  });
+  return filtreStatut ? resultat.filter((l) => l.tache.statut === filtreStatut) : resultat;
 }
 
 type CumulTemps = {
@@ -229,7 +233,7 @@ async function cumulTempsDesMissions(tacheIds: number[]): Promise<CumulTemps> {
   return cumul;
 }
 
-function rattacherTemps<T extends { id: number }>(
+function rattacherTemps<T extends { id: number; statut?: string }>(
   tache: T,
   etapes: SousTache[],
   cumul: CumulTemps,
@@ -240,6 +244,7 @@ function rattacherTemps<T extends { id: number }>(
   }
   return {
     sousTaches: etapes,
+    statut: statutDepuisEtapes(tache.statut ?? "a_faire", etapes),
     minutes: cumul.parTache.get(tache.id) ?? 0,
     minutesParEtape,
     chronoEnCours: cumul.chronoTacheId === tache.id,
@@ -460,22 +465,20 @@ export async function statistiques() {
 
   const accessibles = objetAccessible(taches.proprietaireId, taches.etudeId, id);
 
-  const [{ n: tachesOuvertes }] = await db
-    .select({ n: sql<number>`count(*)` })
+  const missions = await db
+    .select({ id: taches.id, statut: taches.statut, echeance: taches.echeance })
     .from(taches)
-    .where(and(sql`${taches.statut} != 'terminee'`, accessibles));
+    .where(accessibles);
+  const etapesParMission = await sousTachesParMission(missions.map((t) => t.id));
+  const effectives = missions.map((t) => ({
+    ...t,
+    statut: statutDepuisEtapes(t.statut, etapesParMission.get(t.id) ?? []),
+  }));
 
-  const [{ n: tachesEnRetard }] = await db
-    .select({ n: sql<number>`count(*)` })
-    .from(taches)
-    .where(
-      and(
-        sql`${taches.statut} != 'terminee'`,
-        sql`${taches.echeance} is not null`,
-        lt(taches.echeance, maintenant),
-        accessibles,
-      ),
-    );
+  const tachesOuvertes = effectives.filter((t) => t.statut !== "terminee").length;
+  const tachesEnRetard = effectives.filter(
+    (t) => t.statut !== "terminee" && t.echeance !== null && t.echeance < maintenant,
+  ).length;
 
   return { minutesSemaine, minutesMois, etudesActives, tachesOuvertes, tachesEnRetard };
 }

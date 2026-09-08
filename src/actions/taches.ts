@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { sousTaches, taches } from "@/db/schema";
 import { exigerAcces } from "@/lib/acces";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
-import { depuisChampDate } from "@/lib/format";
+import { depuisChampDate, statutDepuisEtapes } from "@/lib/format";
 import { type EtatFormulaire, messageErreur } from "./etat";
 
 const maintenant = () => Math.floor(Date.now() / 1000);
@@ -23,6 +23,10 @@ export async function creerTache(
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
     const etudeIdBrut = donnees.get("etudeId");
+    const etapes = String(donnees.get("lignesSousTaches") ?? "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
 
     const [creee] = await db
       .insert(taches)
@@ -33,13 +37,9 @@ export async function creerTache(
         notes: String(donnees.get("notes") ?? "").trim() || null,
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+        statut: etapes.length > 0 ? "en_cours" : "a_faire",
       })
       .returning({ id: taches.id });
-
-    const etapes = String(donnees.get("lignesSousTaches") ?? "")
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
 
     if (creee && etapes.length > 0) {
       await db.insert(sousTaches).values(
@@ -88,6 +88,8 @@ export async function modifierTache(
         modifieLe: maintenant(),
       })
       .where(eq(taches.id, id));
+
+    await appliquerStatutDepuisEtapes(id);
 
     revalidatePath("/", "layout");
     return { succes: (precedent.succes ?? 0) + 1 };
@@ -140,6 +142,17 @@ export async function definirStatutTache(id: number, statut: string) {
   }
   await exigerAcces("taches", id, compte.id);
 
+  const etapes = await db
+    .select({ id: sousTaches.id })
+    .from(sousTaches)
+    .where(eq(sousTaches.tacheId, id))
+    .limit(1);
+  if (etapes.length > 0) {
+    await appliquerStatutDepuisEtapes(id);
+    revalidatePath("/", "layout");
+    return;
+  }
+
   await db
     .update(taches)
     .set({
@@ -161,6 +174,35 @@ export async function supprimerTache(donnees: FormData) {
 
   await db.delete(taches).where(eq(taches.id, id));
   revalidatePath("/", "layout");
+}
+
+/**
+ * Aligne le statut de la mission sur ses étapes, s'il y en a.
+ * Sans étape, le statut manuel est laissé tel quel.
+ */
+async function appliquerStatutDepuisEtapes(tacheId: number) {
+  const etapes = await db
+    .select({ faite: sousTaches.faite })
+    .from(sousTaches)
+    .where(eq(sousTaches.tacheId, tacheId));
+  const [mission] = await db
+    .select({ statut: taches.statut })
+    .from(taches)
+    .where(eq(taches.id, tacheId))
+    .limit(1);
+  if (!mission) return;
+
+  const statut = statutDepuisEtapes(mission.statut, etapes);
+  if (statut === mission.statut) return;
+
+  await db
+    .update(taches)
+    .set({
+      statut,
+      termineeLe: statut === "terminee" ? maintenant() : null,
+      modifieLe: maintenant(),
+    })
+    .where(eq(taches.id, tacheId));
 }
 
 /** Relit une sous-tâche et vérifie l'accès via la mission parente. */
@@ -200,6 +242,7 @@ export async function ajouterSousTache(donnees: FormData) {
     titre,
     ordre: (derniere?.ordre ?? -1) + 1,
   });
+  await appliquerStatutDepuisEtapes(tacheId);
   revalidatePath("/", "layout");
 }
 
@@ -214,6 +257,7 @@ export async function basculerSousTache(donnees: FormData) {
     .update(sousTaches)
     .set({ faite: !ligne.faite })
     .where(eq(sousTaches.id, id));
+  await appliquerStatutDepuisEtapes(ligne.tacheId);
   revalidatePath("/", "layout");
 }
 
@@ -222,8 +266,9 @@ export async function supprimerSousTache(donnees: FormData) {
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Étape manquante.");
-  await sousTacheAccessible(id, compte.id);
+  const ligne = await sousTacheAccessible(id, compte.id);
 
   await db.delete(sousTaches).where(eq(sousTaches.id, id));
+  await appliquerStatutDepuisEtapes(ligne.tacheId);
   revalidatePath("/", "layout");
 }
