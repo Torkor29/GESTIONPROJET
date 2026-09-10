@@ -3,13 +3,44 @@
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { sousTaches, taches } from "@/db/schema";
-import { exigerAcces } from "@/lib/acces";
+import { etudes, sousTaches, taches, utilisateurs } from "@/db/schema";
+import { exigerAcces, exigerEcritureMission, exigerGestionMission } from "@/lib/acces";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { depuisChampDate, statutDepuisEtapes } from "@/lib/format";
+import { assurerPartageEtude } from "./partages";
 import { type EtatFormulaire, messageErreur } from "./etat";
 
 const maintenant = () => Math.floor(Date.now() / 1000);
+
+async function lireAssigneA(
+  donnees: FormData,
+  compteId: number,
+  etudeId: number | null,
+): Promise<{ assigneA: number | null } | { erreur: string }> {
+  const brut = String(donnees.get("assigneA") ?? "").trim();
+  if (!brut) return { assigneA: null };
+
+  const assigneA = Number(brut);
+  if (!Number.isInteger(assigneA) || assigneA <= 0) {
+    return { erreur: "Personne introuvable pour cette attribution." };
+  }
+
+  const personne = db.select({ id: utilisateurs.id }).from(utilisateurs).where(eq(utilisateurs.id, assigneA)).get();
+  if (!personne) return { erreur: "Personne introuvable pour cette attribution." };
+
+  if (!etudeId) {
+    return { erreur: "Pour attribuer une mission, rattachez-la d'abord à une étude." };
+  }
+
+  const etude = db.select().from(etudes).where(eq(etudes.id, etudeId)).get();
+  if (!etude) return { erreur: "Étude introuvable." };
+  if (etude.proprietaireId !== compteId) {
+    return { erreur: "Seul le propriétaire de l'étude peut attribuer une mission." };
+  }
+
+  await assurerPartageEtude(etudeId, assigneA, compteId);
+  return { assigneA };
+}
 
 export async function creerTache(
   precedent: EtatFormulaire,
@@ -23,6 +54,17 @@ export async function creerTache(
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
     const etudeIdBrut = donnees.get("etudeId");
+    const etudeId = etudeIdBrut ? Number(etudeIdBrut) : null;
+    if (etudeId) {
+      const etude = db.select().from(etudes).where(eq(etudes.id, etudeId)).get();
+      if (!etude || etude.proprietaireId !== compte.id) {
+        return { erreur: "Seul le propriétaire peut créer une mission sur cette étude." };
+      }
+    }
+
+    const attribution = await lireAssigneA(donnees, compte.id, etudeId);
+    if ("erreur" in attribution) return { erreur: attribution.erreur };
+
     const etapes = String(donnees.get("lignesSousTaches") ?? "")
       .split("\n")
       .map((l) => l.trim())
@@ -32,11 +74,12 @@ export async function creerTache(
       .insert(taches)
       .values({
         proprietaireId: compte.id,
-        etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
+        etudeId,
         titre,
         notes: String(donnees.get("notes") ?? "").trim() || null,
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+        assigneA: attribution.assigneA,
         statut: etapes.length > 0 ? "en_cours" : "a_faire",
       })
       .returning({ id: taches.id });
@@ -70,20 +113,53 @@ export async function modifierTache(
     const titre = String(donnees.get("titre") ?? "").trim();
     if (!id) return { erreur: "Tâche introuvable." };
     await exigerAcces("taches", id, compte.id);
+    await exigerEcritureMission(id, compte.id);
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
     const statut = String(donnees.get("statut") ?? "a_faire");
     const etudeIdBrut = donnees.get("etudeId");
+    const etudeId = etudeIdBrut ? Number(etudeIdBrut) : null;
+
+    const actuelle = db.select().from(taches).where(eq(taches.id, id)).get();
+    if (!actuelle) return { erreur: "Tâche introuvable." };
+
+    const etudeCible = etudeId
+      ? db.select().from(etudes).where(eq(etudes.id, etudeId)).get()
+      : null;
+    const estProprietaireEtude = Boolean(etudeCible && etudeCible.proprietaireId === compte.id);
+    const peutGerer =
+      estProprietaireEtude ||
+      (etudeId == null && actuelle.proprietaireId === compte.id);
+
+    if (!peutGerer) {
+      // Une personne conviée met à jour le statut et le commentaire de SA mission.
+      await db
+        .update(taches)
+        .set({
+          notes: String(donnees.get("notes") ?? "").trim() || null,
+          statut,
+          termineeLe: statut === "terminee" ? maintenant() : null,
+          modifieLe: maintenant(),
+        })
+        .where(eq(taches.id, id));
+      await appliquerStatutDepuisEtapes(id);
+      revalidatePath("/", "layout");
+      return { succes: (precedent.succes ?? 0) + 1 };
+    }
+
+    const attribution = await lireAssigneA(donnees, compte.id, etudeId);
+    if ("erreur" in attribution) return { erreur: attribution.erreur };
 
     await db
       .update(taches)
       .set({
-        etudeId: etudeIdBrut ? Number(etudeIdBrut) : null,
+        etudeId,
         titre,
         notes: String(donnees.get("notes") ?? "").trim() || null,
         statut,
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+        assigneA: attribution.assigneA,
         termineeLe: statut === "terminee" ? maintenant() : null,
         modifieLe: maintenant(),
       })
@@ -104,7 +180,7 @@ export async function basculerTache(donnees: FormData) {
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Tâche manquante.");
-  await exigerAcces("taches", id, compte.id);
+  await exigerEcritureMission(id, compte.id);
 
   const [tache] = await db
     .select({ statut: taches.statut })
@@ -140,7 +216,7 @@ export async function definirStatutTache(id: number, statut: string) {
   if (!id || !["a_faire", "en_cours", "terminee"].includes(statut)) {
     throw new Error("Statut de mission invalide.");
   }
-  await exigerAcces("taches", id, compte.id);
+  await exigerEcritureMission(id, compte.id);
 
   const etapes = await db
     .select({ id: sousTaches.id })
@@ -170,7 +246,7 @@ export async function supprimerTache(donnees: FormData) {
 
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Tâche manquante.");
-  await exigerAcces("taches", id, compte.id);
+  await exigerGestionMission(id, compte.id);
 
   await db.delete(taches).where(eq(taches.id, id));
   revalidatePath("/", "layout");
@@ -217,7 +293,7 @@ async function sousTacheAccessible(id: number, utilisateurId: number) {
     .where(eq(sousTaches.id, id))
     .limit(1);
   if (!ligne) throw new Error("Étape introuvable.");
-  await exigerAcces("taches", ligne.tacheId, utilisateurId);
+  await exigerEcritureMission(ligne.tacheId, utilisateurId);
   return ligne;
 }
 
@@ -228,7 +304,7 @@ export async function ajouterSousTache(donnees: FormData) {
   const titre = String(donnees.get("titre") ?? "").trim();
   if (!tacheId) throw new Error("Mission manquante.");
   if (!titre) throw new Error("Le titre de l'étape est obligatoire.");
-  await exigerAcces("taches", tacheId, compte.id);
+  await exigerEcritureMission(tacheId, compte.id);
 
   const [derniere] = await db
     .select({ ordre: sousTaches.ordre })

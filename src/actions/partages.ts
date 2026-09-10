@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { etudes, partages, utilisateurs } from "@/db/schema";
+import { etudes, partages, taches, utilisateurs } from "@/db/schema";
 import { exigerSession } from "@/lib/auth";
 
 export type EtatPartage = { erreur?: string; message?: string };
@@ -81,7 +81,7 @@ export async function partagerEtude(
     }
 
     revalidatePath("/", "layout");
-    return { message: `${beneficiaire.nom} a maintenant accès à cette étude.` };
+    return { message: `${beneficiaire.nom} a maintenant accès à cette étude. Attribuez-lui des missions pour qu'elles apparaissent chez elle.` };
   } catch (e) {
     return { erreur: e instanceof Error ? e.message : "Le partage a échoué." };
   }
@@ -98,6 +98,11 @@ export async function retirerPartage(donnees: FormData): Promise<void> {
 
   await exigerProprietaire(partage.ressourceId, compte.id);
 
+  db.update(taches)
+    .set({ assigneA: null })
+    .where(and(eq(taches.etudeId, partage.ressourceId), eq(taches.assigneA, partage.utilisateurId)))
+    .run();
+
   db.delete(partages).where(eq(partages.id, id)).run();
   revalidatePath("/", "layout");
 }
@@ -107,6 +112,7 @@ export async function invitesDeLEtude(etudeId: number) {
   return db
     .select({
       id: partages.id,
+      utilisateurId: partages.utilisateurId,
       niveau: partages.niveau,
       nom: utilisateurs.nom,
       email: utilisateurs.email,
@@ -120,8 +126,45 @@ export async function invitesDeLEtude(etudeId: number) {
 /** Comptes joignables pour un partage : tout le monde sauf soi-même. */
 export async function comptesDisponibles(sauf: number) {
   return db
-    .select({ nom: utilisateurs.nom, email: utilisateurs.email })
+    .select({ id: utilisateurs.id, nom: utilisateurs.nom, email: utilisateurs.email })
     .from(utilisateurs)
     .where(and(ne(utilisateurs.id, sauf), eq(utilisateurs.actif, true)))
     .orderBy(utilisateurs.nom);
+}
+
+/**
+ * Si la personne n'est pas encore sur l'étude, l'y convie en écriture
+ * pour qu'elle puisse avancer les missions qu'on lui attribue.
+ */
+export async function assurerPartageEtude(
+  etudeId: number,
+  utilisateurId: number,
+  parId: number,
+): Promise<void> {
+  const etude = db.select().from(etudes).where(eq(etudes.id, etudeId)).get();
+  if (!etude) throw new Error("Étude introuvable.");
+  if (etude.proprietaireId === utilisateurId) return;
+
+  const existant = db
+    .select({ id: partages.id })
+    .from(partages)
+    .where(
+      and(
+        eq(partages.type, "etude"),
+        eq(partages.ressourceId, etudeId),
+        eq(partages.utilisateurId, utilisateurId),
+      ),
+    )
+    .get();
+  if (existant) return;
+
+  db.insert(partages)
+    .values({
+      type: "etude",
+      ressourceId: etudeId,
+      utilisateurId,
+      niveau: "ecriture",
+      partagePar: parId,
+    })
+    .run();
 }

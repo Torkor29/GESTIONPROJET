@@ -7,6 +7,7 @@ import { creerTache, modifierTache } from "@/actions/taches";
 import { VIDE } from "@/actions/etat";
 import type { Etude, Tache } from "@/db/schema";
 import { LIBELLES_PRIORITE, LIBELLES_STATUT_TACHE, versChampDate } from "@/lib/format";
+import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -24,6 +25,9 @@ export default function FormulaireTache({
   libelle,
   variante = "principal",
   statutSuitEtapes = false,
+  membres = [],
+  comptes = [],
+  peutAttribuer = false,
 }: {
   tache?: Tache;
   etudes: Pick<Etude, "id" | "nom">[];
@@ -32,6 +36,9 @@ export default function FormulaireTache({
   variante?: "principal" | "discret" | "icone";
   /** S'il y a des étapes, le statut de la mission n'est plus saisi à la main. */
   statutSuitEtapes?: boolean;
+  membres?: MembreAttribution[];
+  comptes?: CompteChoix[];
+  peutAttribuer?: boolean;
 }) {
   // Plusieurs de ces formulaires cohabitent sur une même page : les identifiants
   // doivent être uniques, sinon les libellés pointent vers le mauvais champ.
@@ -48,6 +55,16 @@ export default function FormulaireTache({
       setOuverte(false);
     }
   }, [etat.succes]);
+
+  const [etudeChoisie, setEtudeChoisie] = useState(
+    String(tache?.etudeId ?? etudeIdParDefaut ?? ""),
+  );
+  const etudeIdNum = Number(etudeChoisie) || 0;
+  const etudesPossedees = etudes.filter((e) => membres.some((m) => m.etudeId === e.id));
+  const dejaSurLEtude = membres.filter((m) => m.etudeId === etudeIdNum);
+  const idsDeja = new Set(dejaSurLEtude.map((m) => m.utilisateurId));
+  const autresComptes = comptes.filter((c) => !idsDeja.has(c.id));
+  const editionRestreinte = edition && !peutAttribuer;
 
   const classes = {
     principal: "bouton",
@@ -81,6 +98,18 @@ export default function FormulaireTache({
         <form key={tache?.modifieLe ?? "nouvelle"} action={action} className="space-y-4">
           {edition && <input type="hidden" name="id" value={tache!.id} />}
 
+          {editionRestreinte ? (
+            <>
+              <input type="hidden" name="titre" value={tache!.titre} />
+              <input type="hidden" name="etudeId" value={tache!.etudeId ?? ""} />
+              <p className="font-titre text-lg font-bold">{tache!.titre}</p>
+              <p className="text-sm text-attenue">
+                Vous pouvez mettre à jour le commentaire et le statut. L&apos;attribution et
+                les délais restent chez le propriétaire de l&apos;étude.
+              </p>
+            </>
+          ) : (
+            <>
           <div>
             <label htmlFor={`${uid}-titre`} className="mb-1.5 block text-sm font-medium">
               Mission
@@ -118,17 +147,57 @@ export default function FormulaireTache({
             <select
               id={`${uid}-etudeId`}
               name="etudeId"
-              defaultValue={tache?.etudeId ?? etudeIdParDefaut ?? ""}
+              value={etudeChoisie}
+              onChange={(e) => setEtudeChoisie(e.target.value)}
               className="champ"
             >
               <option value="">Sans étude</option>
-              {etudes.map((e) => (
+              {etudesPossedees.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.nom}
                 </option>
               ))}
             </select>
           </div>
+
+          {peutAttribuer && etudeIdNum > 0 && (
+            <div>
+              <label htmlFor={`${uid}-assigneA`} className="mb-1.5 block text-sm font-medium">
+                Attribuer à
+              </label>
+              <select
+                key={etudeChoisie}
+                id={`${uid}-assigneA`}
+                name="assigneA"
+                defaultValue={tache?.assigneA ?? ""}
+                className="champ"
+              >
+                <option value="">Non attribuée — vous seul la voyez</option>
+                {dejaSurLEtude.length > 0 && (
+                  <optgroup label="Déjà sur l'étude">
+                    {dejaSurLEtude.map((m) => (
+                      <option key={`m-${m.utilisateurId}`} value={m.utilisateurId}>
+                        {m.nom}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {autresComptes.length > 0 && (
+                  <optgroup label="Autre compte — sera convié sur l'étude">
+                    {autresComptes.map((c) => (
+                      <option key={`c-${c.id}`} value={c.id}>
+                        {c.nom} ({c.email})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <p className="mt-1 text-xs text-attenue">
+                La personne verra les informations de l&apos;étude, et uniquement les missions
+                qui lui sont attribuées.
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -162,6 +231,8 @@ export default function FormulaireTache({
               />
             </div>
           </div>
+            </>
+          )}
 
           {edition && !statutSuitEtapes && (
             <div>

@@ -26,6 +26,8 @@ import {
   etudeParId,
   faqDEtude,
   listerEtudes,
+  membresPourAttribution,
+  niveauxPartage,
   pagesDEtude,
   progression,
   tachesDEtude,
@@ -71,9 +73,14 @@ export default async function PageEtude({
   // voient l'étude sans pouvoir en élargir l'accès.
   const compte = await utilisateurActuel();
   const estProprietaire = compte !== null && etude.proprietaireId === compte.id;
-  const [invites, comptes] = estProprietaire
-    ? await Promise.all([invitesDeLEtude(etudeId), comptesDisponibles(compte.id)])
-    : [[], []];
+  const [invites, comptes, membres, niveaux] = estProprietaire
+    ? await Promise.all([
+        invitesDeLEtude(etudeId),
+        comptesDisponibles(compte.id),
+        membresPourAttribution(),
+        Promise.resolve({} as Record<number, string>),
+      ])
+    : [[], [], [], await niveauxPartage()];
 
   const maintenant = Math.floor(Date.now() / 1000);
   const minutesTotal = temps.reduce((t, l) => t + dureeMinutes(l.entree), 0);
@@ -143,7 +150,9 @@ export default async function PageEtude({
                 ⏱ Démarrer
               </button>
             </form>
-            <FormulaireEtude etude={etude} libelle="Modifier" variante="discret" />
+            {estProprietaire && (
+              <FormulaireEtude etude={etude} libelle="Modifier" variante="discret" />
+            )}
             {/* Seul le propriétaire gère les accès : une personne conviée en
                 écriture modifie le contenu, pas la liste des invités. */}
             {estProprietaire && (
@@ -238,7 +247,7 @@ export default async function PageEtude({
               <ChampFinInclusion date={etude.dateFinInclusion} statut={etude.statut} />
             </dl>
 
-            {etude.imageCouverture && (
+            {etude.imageCouverture && estProprietaire && (
               <form action={retirerCouverture} className="mt-4 border-t border-ligne pt-3">
                 <input type="hidden" name="id" value={etude.id} />
                 <button
@@ -257,18 +266,25 @@ export default async function PageEtude({
               <TableauMissions
                 lignes={enRetard.map((t) => ({
                   tache: t,
+                  assigneNom: t.assigneNom,
                   sousTaches: t.sousTaches,
                   minutes: t.minutes,
                   minutesParEtape: t.minutesParEtape,
                   chronoEnCours: t.chronoEnCours,
                   chronoSousTacheId: t.chronoSousTacheId,
+                  etudeProprietaireId: etude.proprietaireId,
                 }))}
                 etudes={toutesEtudes}
                 afficherEtude={false}
+                membres={membres}
+                comptes={comptes}
+                utilisateurId={compte?.id}
+                niveauxPartage={niveaux}
               />
             </section>
           )}
 
+          {estProprietaire && (
           <section className="border-t border-ligne pt-6">
             <details>
               <summary className="cursor-pointer text-sm text-attenue hover:text-alerte">
@@ -295,6 +311,7 @@ export default async function PageEtude({
               </div>
             </details>
           </section>
+          )}
         </div>
       )}
 
@@ -303,25 +320,40 @@ export default async function PageEtude({
         <div className="bloc-app space-y-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-titre text-lg font-bold">Missions</h2>
-            <FormulaireTache
-              etudes={toutesEtudes}
-              etudeIdParDefaut={etude.id}
-              libelle="+ Nouvelle mission"
-              variante="discret"
-            />
+            {estProprietaire && (
+              <FormulaireTache
+                etudes={toutesEtudes}
+                etudeIdParDefaut={etude.id}
+                libelle="+ Nouvelle mission"
+                variante="discret"
+                membres={membres}
+                comptes={comptes}
+                peutAttribuer
+              />
+            )}
           </div>
           <TableauMissions
             lignes={missions.map((t) => ({
               tache: t,
+              assigneNom: t.assigneNom,
               sousTaches: t.sousTaches,
               minutes: t.minutes,
               minutesParEtape: t.minutesParEtape,
               chronoEnCours: t.chronoEnCours,
               chronoSousTacheId: t.chronoSousTacheId,
+              etudeProprietaireId: etude.proprietaireId,
             }))}
             etudes={toutesEtudes}
             afficherEtude={false}
-            message="Aucune mission sur cette étude."
+            message={
+              estProprietaire
+                ? "Aucune mission sur cette étude."
+                : "Aucune mission ne vous est attribuée sur cette étude."
+            }
+            membres={membres}
+            comptes={comptes}
+            utilisateurId={compte?.id}
+            niveauxPartage={niveaux}
           />
         </div>
       )}

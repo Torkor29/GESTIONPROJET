@@ -20,9 +20,10 @@ import {
   visites,
   type SousTache,
 } from "@/db/schema";
-import { etudeAccessible, idsEtudesAccessibles, objetAccessible } from "./acces";
+import { etudeAccessible, idsEtudesAccessibles, missionVisible, objetAccessible } from "./acces";
 import { utilisateurActuel } from "./auth";
 import { debutDeMois, debutDeSemaine, statutDepuisEtapes } from "./format";
+import type { MembreAttribution } from "./attribution";
 
 /** Une semaine en jours : évite un 7 magique au milieu des calculs de fenêtre. */
 const SECONDES_SEMAINE_JOURS = 86400;
@@ -69,6 +70,62 @@ export async function etudeParId(id: number) {
     .where(and(eq(etudes.id, id), etudeAccessible(etudes.id, utilisateur)))
     .limit(1);
   return ligne ?? null;
+}
+
+export type { MembreAttribution };
+
+/** Personnes à qui le propriétaire peut attribuer une mission sur ses études. */
+export async function membresPourAttribution(): Promise<MembreAttribution[]> {
+  const id = await moi();
+  const possedees = await db
+    .select({
+      etudeId: etudes.id,
+      utilisateurId: etudes.proprietaireId,
+      nom: utilisateurs.nom,
+    })
+    .from(etudes)
+    .innerJoin(utilisateurs, eq(etudes.proprietaireId, utilisateurs.id))
+    .where(eq(etudes.proprietaireId, id));
+
+  const membres: MembreAttribution[] = possedees
+    .filter((e) => e.utilisateurId != null)
+    .map((e) => ({
+      etudeId: e.etudeId,
+      utilisateurId: e.utilisateurId as number,
+      nom: e.nom,
+    }));
+
+  if (possedees.length === 0) return membres;
+
+  const invites = await db
+    .select({
+      etudeId: partages.ressourceId,
+      utilisateurId: partages.utilisateurId,
+      nom: utilisateurs.nom,
+    })
+    .from(partages)
+    .innerJoin(utilisateurs, eq(partages.utilisateurId, utilisateurs.id))
+    .where(
+      and(
+        eq(partages.type, "etude"),
+        inArray(
+          partages.ressourceId,
+          possedees.map((e) => e.etudeId),
+        ),
+      ),
+    );
+
+  return [...membres, ...invites].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+}
+
+/** Niveau d'accès (lecture / écriture) de la personne connectée, par étude. */
+export async function niveauxPartage(): Promise<Record<number, string>> {
+  const id = await moi();
+  const lignes = await db
+    .select({ etudeId: partages.ressourceId, niveau: partages.niveau })
+    .from(partages)
+    .where(and(eq(partages.type, "etude"), eq(partages.utilisateurId, id)));
+  return Object.fromEntries(lignes.map((l) => [l.etudeId, l.niveau]));
 }
 
 export async function pagesDEtude(etudeId: number) {
@@ -129,42 +186,39 @@ async function sousTachesParMission(tacheIds: number[]): Promise<Map<number, Sou
 
 export async function tachesDEtude(etudeId: number) {
   const id = await moi();
+  const assigne = alias(utilisateurs, "assigne");
   const liste = await db
-    .select()
+    .select({ tache: taches, assigneNom: assigne.nom })
     .from(taches)
-    .where(
-      and(
-        eq(taches.etudeId, etudeId),
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
-      ),
-    )
+    .leftJoin(assigne, eq(taches.assigneA, assigne.id))
+    .where(and(eq(taches.etudeId, etudeId), missionVisible(id)))
     .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
 
-  const parMission = await sousTachesParMission(liste.map((t) => t.id));
-  const cumul = await cumulTempsDesMissions(liste.map((t) => t.id));
-  return liste.map((t) => {
-    const extra = rattacherTemps(t, parMission.get(t.id) ?? [], cumul);
-    return { ...t, ...extra };
+  const parMission = await sousTachesParMission(liste.map((l) => l.tache.id));
+  const cumul = await cumulTempsDesMissions(liste.map((l) => l.tache.id));
+  return liste.map((l) => {
+    const extra = rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul);
+    return { ...l.tache, ...extra, assigneNom: l.assigneNom };
   });
 }
 
 /** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
 export async function toutesLesTaches(filtreStatut?: string) {
   const id = await moi();
+  const assigne = alias(utilisateurs, "assigne");
   const lignes = await db
     .select({
       tache: taches,
       etudeNom: etudes.nom,
       etudeCode: etudes.code,
       etudeCouleur: etudes.couleur,
+      etudeProprietaireId: etudes.proprietaireId,
+      assigneNom: assigne.nom,
     })
     .from(taches)
     .leftJoin(etudes, eq(taches.etudeId, etudes.id))
-    .where(
-      and(
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
-      ),
-    )
+    .leftJoin(assigne, eq(taches.assigneA, assigne.id))
+    .where(missionVisible(id))
     .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
 
   const ids = lignes.map((l) => l.tache.id);
@@ -463,7 +517,7 @@ export async function statistiques() {
     .from(etudes)
     .where(and(eq(etudes.statut, "active"), etudeAccessible(etudes.id, id)));
 
-  const accessibles = objetAccessible(taches.proprietaireId, taches.etudeId, id);
+  const accessibles = missionVisible(id);
 
   const missions = await db
     .select({ id: taches.id, statut: taches.statut, echeance: taches.echeance })
@@ -578,7 +632,7 @@ export async function fluxMissionsParMois(nbMois = 6): Promise<FluxMois[]> {
     .from(taches)
     .where(
       and(
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
+        missionVisible(id),
         sql`(${taches.creeLe} >= ${premier} or ${taches.termineeLe} >= ${premier})`,
       ),
     );
@@ -705,7 +759,7 @@ export async function respectDesEcheances(): Promise<{
     .from(taches)
     .where(
       and(
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
+        missionVisible(id),
         eq(taches.statut, "terminee"),
         sql`${taches.echeance} is not null`,
         sql`${taches.termineeLe} is not null`,

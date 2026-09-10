@@ -3,7 +3,10 @@ import FormulaireTache from "@/components/formulaire-tache";
 import MenuExport from "@/components/menu-export";
 import TableauMissions from "@/components/tableau-missions";
 import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
-import { listerEtudes, toutesLesTaches } from "@/lib/requetes";
+import { utilisateurActuel } from "@/lib/auth";
+import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
+import { comptesDisponibles } from "@/actions/partages";
+import { listerEtudes, membresPourAttribution, niveauxPartage, toutesLesTaches } from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +33,14 @@ export default async function PageMissions({
   const vue = params.vue ?? "tableau";
   const maintenant = Math.floor(Date.now() / 1000);
 
-  const [toutes, etudes] = await Promise.all([toutesLesTaches(), listerEtudes()]);
+  const [toutes, etudes, membres, compte, niveaux] = await Promise.all([
+    toutesLesTaches(),
+    listerEtudes(),
+    membresPourAttribution(),
+    utilisateurActuel(),
+    niveauxPartage(),
+  ]);
+  const comptes = compte ? await comptesDisponibles(compte.id) : [];
 
   const etudeId = params.etude ? Number(params.etude) : null;
   const recherche = (params.q ?? "").trim().toLowerCase();
@@ -74,7 +84,13 @@ export default async function PageMissions({
               ) as Record<string, string>
             }
           />
-          <FormulaireTache etudes={etudes} libelle="Nouvelle mission" />
+          <FormulaireTache
+            etudes={etudes}
+            libelle="Nouvelle mission"
+            membres={membres}
+            comptes={comptes}
+            peutAttribuer
+          />
         </div>
       </header>
 
@@ -180,18 +196,37 @@ export default async function PageMissions({
                   {libelle}
                   <span className="chiffres ml-2 text-sm font-normal text-attenue">{duGroupe.length}</span>
                 </h2>
-                <TableauMissions lignes={duGroupe} etudes={etudes} />
+                <TableauMissions
+                  lignes={duGroupe}
+                  etudes={etudes}
+                  membres={membres}
+                  comptes={comptes}
+                  utilisateurId={compte?.id}
+                  niveauxPartage={niveaux}
+                />
               </section>
             );
           })}
         </div>
       ) : vue === "echeances" ? (
-        <VueEcheances lignes={lignes} etudes={etudes} maintenant={maintenant} />
+        <VueEcheances
+          lignes={lignes}
+          etudes={etudes}
+          maintenant={maintenant}
+          membres={membres}
+          comptes={comptes}
+          utilisateurId={compte?.id}
+          niveauxPartage={niveaux}
+        />
       ) : (
         <TableauMissions
           lignes={lignes}
           etudes={etudes}
           message="Aucune mission ne correspond à ces filtres."
+          membres={membres}
+          comptes={comptes}
+          utilisateurId={compte?.id}
+          niveauxPartage={niveaux}
         />
       )}
     </div>
@@ -203,10 +238,18 @@ function VueEcheances({
   lignes,
   etudes,
   maintenant,
+  membres,
+  comptes,
+  utilisateurId,
+  niveauxPartage,
 }: {
   lignes: Awaited<ReturnType<typeof toutesLesTaches>>;
   etudes: Awaited<ReturnType<typeof listerEtudes>>;
   maintenant: number;
+  membres: MembreAttribution[];
+  comptes: CompteChoix[];
+  utilisateurId?: number;
+  niveauxPartage: Record<number, string>;
 }) {
   const dansUneSemaine = maintenant + 7 * 86400;
   const ouvertes = lignes.filter((l) => l.tache.statut !== "terminee");
@@ -242,7 +285,14 @@ function VueEcheances({
             {g.titre}
             <span className="chiffres ml-2 text-sm font-normal text-attenue">{g.lignes.length}</span>
           </h2>
-          <TableauMissions lignes={g.lignes} etudes={etudes} />
+          <TableauMissions
+            lignes={g.lignes}
+            etudes={etudes}
+            membres={membres}
+            comptes={comptes}
+            utilisateurId={utilisateurId}
+            niveauxPartage={niveauxPartage}
+          />
         </section>
       ))}
     </div>

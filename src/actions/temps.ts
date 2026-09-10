@@ -4,7 +4,7 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { sousTaches, taches, temps } from "@/db/schema";
-import { exigerAcces } from "@/lib/acces";
+import { exigerAcces, exigerEcritureMission } from "@/lib/acces";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { analyserDuree, analyserDureeCompacte, analyserHeure } from "@/lib/duree";
 import { depuisChampDate } from "@/lib/format";
@@ -53,10 +53,12 @@ export async function demarrerChrono(donnees: FormData) {
 
   if (sousTacheId) {
     const etape = await etapeAvecParent(sousTacheId);
-    await exigerAcces("taches", etape.tacheId, compte.id);
+    await exigerEcritureMission(etape.tacheId, compte.id);
     tacheId = etape.tacheId;
     etudeId = etape.etudeId;
     description = description ?? etape.titre;
+  } else if (tacheId) {
+    await exigerEcritureMission(tacheId, compte.id);
   }
 
   await db.insert(temps).values({
@@ -221,13 +223,13 @@ export async function ajouterTempsRapide(donnees: FormData) {
 
   if (sousTacheIdBrut) {
     const etape = await etapeAvecParent(sousTacheIdBrut);
-    await exigerAcces("taches", etape.tacheId, compte.id);
+    await exigerEcritureMission(etape.tacheId, compte.id);
     tacheId = etape.tacheId;
     etudeId = etape.etudeId;
     description = etape.titre;
     sousTacheId = etape.id;
   } else if (tacheId) {
-    await exigerAcces("taches", tacheId, compte.id);
+    await exigerEcritureMission(tacheId, compte.id);
     const [mission] = await db
       .select({ etudeId: taches.etudeId, titre: taches.titre })
       .from(taches)

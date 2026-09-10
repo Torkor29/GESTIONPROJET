@@ -11,8 +11,12 @@ import { Icone, type NomIcone } from "@/components/icones";
 import { debutDeSemaine, formaterDuree } from "@/lib/format";
 import { lignesRappelInclusion } from "@/lib/inclusion";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
+import { utilisateurActuel } from "@/lib/auth";
+import { comptesDisponibles } from "@/actions/partages";
 import {
   listerEtudes,
+  membresPourAttribution,
+  niveauxPartage,
   progressionParEtude,
   statistiques,
   totauxParEtude,
@@ -68,13 +72,17 @@ function Chiffre({
 
 export default async function TableauDeBord() {
   const maintenant = Math.floor(Date.now() / 1000);
+  const compte = await utilisateurActuel();
 
-  const [stats, etudes, missions, repartition, progressions] = await Promise.all([
+  const [stats, etudes, missions, repartition, progressions, membres, comptes, niveaux] = await Promise.all([
     statistiques(),
     listerEtudes(),
     toutesLesTaches(),
     totauxParEtude({ du: debutDeSemaine(maintenant) }),
     progressionParEtude(),
+    membresPourAttribution(),
+    compte ? comptesDisponibles(compte.id) : Promise.resolve([]),
+    niveauxPartage(),
   ]);
 
   const dansUneSemaine = maintenant + 7 * 86400;
@@ -119,7 +127,14 @@ export default async function TableauDeBord() {
       <section className="bloc-app anime-bloc">
         <h2 className="sur-titre mb-4">Ajouts rapides</h2>
         <div className="flex flex-wrap gap-2">
-          <FormulaireTache etudes={etudes} libelle="Nouvelle mission" variante="discret" />
+          <FormulaireTache
+            etudes={etudes}
+            libelle="Nouvelle mission"
+            variante="discret"
+            membres={membres}
+            comptes={comptes}
+            peutAttribuer
+          />
           <FormulaireDocument etudes={etudes} libelle="Nouveau document" variante="discret" />
           <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
           <form action={creerPage}>
@@ -184,6 +199,10 @@ export default async function TableauDeBord() {
           lignes={aTraiter.slice(0, 10)}
           etudes={etudes}
           message="Aucune mission ouverte. Vous êtes à jour."
+          membres={membres}
+          comptes={comptes}
+          utilisateurId={compte?.id}
+          niveauxPartage={niveaux}
         />
       </section>
 

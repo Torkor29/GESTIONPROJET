@@ -14,6 +14,7 @@ import SelecteurStatut from "./selecteur-statut";
 import { EtiquettePriorite } from "./etiquettes";
 import { Icone } from "./icones";
 import { formaterDate, formaterDuree, statutDepuisEtapes } from "@/lib/format";
+import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
 function BoutonAjouterEtape() {
@@ -102,6 +103,11 @@ export default function CarteMission({
   chronoSousTacheId = null,
   etudes,
   afficherEtude = true,
+  assigneNom = null,
+  membres = [],
+  comptes = [],
+  peutGerer = true,
+  peutEcrire = true,
 }: {
   tache: Tache;
   etudeNom?: string | null;
@@ -114,6 +120,11 @@ export default function CarteMission({
   chronoSousTacheId?: number | null;
   etudes: Pick<Etude, "id" | "nom">[];
   afficherEtude?: boolean;
+  assigneNom?: string | null;
+  membres?: MembreAttribution[];
+  comptes?: CompteChoix[];
+  peutGerer?: boolean;
+  peutEcrire?: boolean;
 }) {
   const statut = statutDepuisEtapes(tache.statut, sousTaches);
   const terminee = statut === "terminee";
@@ -163,10 +174,13 @@ export default function CarteMission({
             {afficherEtude && (
               <EtiquetteEtude nom={etudeNom} code={etudeCode} couleur={etudeCouleur} />
             )}
+            {assigneNom && (
+              <span className="etiquette bg-accent-voile text-accent-appuye">{assigneNom}</span>
+            )}
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-            <SelecteurStatut id={tache.id} statut={statut} verrouille={total > 0} />
+            <SelecteurStatut id={tache.id} statut={statut} verrouille={total > 0 || !peutEcrire} />
             {tache.echeance ? (
               <span className={`chiffres ${enRetard ? "font-semibold text-alerte" : "text-attenue"}`}>
                 {enRetard ? "⚠ " : ""}
@@ -199,7 +213,8 @@ export default function CarteMission({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-          <SaisieDureeRapide tacheId={tache.id} />
+          {peutEcrire && <SaisieDureeRapide tacheId={tache.id} />}
+          {peutEcrire && (
           <form action={demarrerChrono}>
             <input type="hidden" name="etudeId" value={tache.etudeId ?? ""} />
             <input type="hidden" name="tacheId" value={tache.id} />
@@ -213,14 +228,21 @@ export default function CarteMission({
               <Icone nom="chrono" className="h-4 w-4" />
             </button>
           </form>
-          <FormulaireTache
-            tache={tache}
-            etudes={etudes}
-            libelle="✎"
-            variante="icone"
-            statutSuitEtapes={total > 0}
-          />
-          <form action={supprimerTache}>
+          )}
+          {peutEcrire && (
+            <FormulaireTache
+              tache={tache}
+              etudes={etudes}
+              libelle="✎"
+              variante="icone"
+              statutSuitEtapes={total > 0}
+              membres={membres}
+              comptes={comptes}
+              peutAttribuer={peutGerer}
+            />
+          )}
+          {peutGerer && (
+            <form action={supprimerTache}>
             <input type="hidden" name="id" value={tache.id} />
             <button
               type="submit"
@@ -241,6 +263,7 @@ export default function CarteMission({
               </svg>
             </button>
           </form>
+          )}
         </div>
       </div>
 
@@ -252,8 +275,9 @@ export default function CarteMission({
           <div className="border-t border-ligne/80 bg-creux/35 px-4 py-4 sm:px-5">
             {total === 0 ? (
               <p className="mb-3 text-sm text-attenue">
-                Découpez cette mission : relancer quelqu&apos;un, attendre un retour, déposer un
-                document…
+                {peutEcrire
+                  ? "Découpez cette mission : relancer quelqu'un, attendre un retour, déposer un document…"
+                  : "Aucune étape sur cette mission."}
               </p>
             ) : (
               <ul className="mb-3 space-y-2">
@@ -262,6 +286,7 @@ export default function CarteMission({
                   const chronoIci = chronoSousTacheId === s.id;
                   return (
                     <li key={s.id} className="group/etape flex flex-wrap items-center gap-2">
+                      {peutEcrire ? (
                       <form action={basculerSousTache}>
                         <input type="hidden" name="id" value={s.id} />
                         <button
@@ -282,6 +307,19 @@ export default function CarteMission({
                           )}
                         </button>
                       </form>
+                      ) : (
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border
+                                      ${s.faite ? "border-accent bg-accent text-sur-accent" : "border-ligne bg-relief"}`}
+                          aria-hidden
+                        >
+                          {s.faite && (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3 w-3" aria-hidden>
+                              <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                      )}
                       <span className={`min-w-0 flex-1 text-sm leading-snug ${s.faite ? "text-attenue line-through" : ""}`}>
                         {s.titre}
                       </span>
@@ -290,6 +328,7 @@ export default function CarteMission({
                           {formaterDuree(minutesEtape)}
                         </span>
                       )}
+                      {peutEcrire && (
                       <div className="flex items-center gap-0.5">
                         <SaisieDureeRapide tacheId={tache.id} sousTacheId={s.id} compact />
                         <form action={demarrerChrono}>
@@ -318,12 +357,14 @@ export default function CarteMission({
                           </button>
                         </form>
                       </div>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             )}
 
+            {peutEcrire && (
             <form action={ajouterSousTache} className="flex items-center gap-2">
               <input type="hidden" name="tacheId" value={tache.id} />
               <input
@@ -336,6 +377,7 @@ export default function CarteMission({
               />
               <BoutonAjouterEtape />
             </form>
+            )}
             {total > 0 && (
               <p className="mt-2 text-xs text-efface">
                 Le total de la mission additionne le temps de chaque étape et celui saisi sur la

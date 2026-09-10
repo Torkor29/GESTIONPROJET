@@ -124,12 +124,24 @@ export const taches = sqliteTable(
     priorite: text("priorite").notNull().default("normale"),
     // Date d'échéance, en secondes Unix (minuit heure locale).
     echeance: integer("echeance"),
+    /**
+     * Personne à qui la mission est confiée. Sur une étude partagée, elle ne
+     * voit que les missions qui lui sont attribuées — le propriétaire les voit
+     * toutes. Sans attribution, la mission reste chez le propriétaire.
+     */
+    assigneA: integer("assigne_a").references(() => utilisateurs.id, {
+      onDelete: "set null",
+    }),
     ordre: integer("ordre").notNull().default(0),
     termineeLe: integer("terminee_le"),
     creeLe: integer("cree_le").notNull().default(maintenant),
     modifieLe: integer("modifie_le").notNull().default(maintenant),
   },
-  (t) => [index("idx_taches_etude").on(t.etudeId), index("idx_taches_statut").on(t.statut)],
+  (t) => [
+    index("idx_taches_etude").on(t.etudeId),
+    index("idx_taches_statut").on(t.statut),
+    index("idx_taches_assigne").on(t.assigneA),
+  ],
 );
 
 /**
@@ -448,8 +460,8 @@ export type Convention = typeof conventions.$inferSelect;
 
 /**
  * Un partage : une personne conviée sur une ressource dont elle n'est pas
- * propriétaire. Partager une étude donne accès à tout ce qui s'y rattache —
- * missions, documents, pages, FAQ, temps.
+ * propriétaire. Partager une étude donne accès aux informations du dossier ;
+ * les missions, elles, ne s'affichent que si elles lui sont attribuées.
  */
 export const partages = sqliteTable(
   "partages",
