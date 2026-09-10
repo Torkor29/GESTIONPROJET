@@ -95,7 +95,12 @@ export default function PersonnaliserAccueil({
 
   return (
     <>
-      <button type="button" onClick={() => setOuverte(true)} className="bouton-discret">
+      <button
+        type="button"
+        onClick={() => setOuverte(true)}
+        className="bouton-discret"
+        aria-label="Personnaliser l'accueil"
+      >
         Personnaliser
       </button>
       <Modale
