@@ -7,6 +7,7 @@ import { creerTache, modifierTache } from "@/actions/taches";
 import { VIDE } from "@/actions/etat";
 import type { Etude, Tache } from "@/db/schema";
 import { LIBELLES_PRIORITE, LIBELLES_STATUT_TACHE, versChampDate } from "@/lib/format";
+import { PALETTE_COULEURS } from "@/lib/couleurs";
 import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
@@ -257,6 +258,47 @@ export default function FormulaireTache({
               />
             </div>
           </div>
+
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium">Couleur</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer" title="Reprendre la couleur de l'étude">
+                <input
+                  type="radio"
+                  name="couleur"
+                  value="etude"
+                  defaultChecked={!tache?.couleur}
+                  className="peer sr-only"
+                />
+                <span
+                  className="block h-7 w-7 rounded-full border border-dashed border-ligne-forte ring-offset-2 ring-offset-raised transition
+                             peer-checked:ring-2 peer-checked:ring-ink peer-focus-visible:ring-2"
+                  aria-hidden
+                />
+                <span className="sr-only">Couleur de l&apos;étude</span>
+              </label>
+              {PALETTE_COULEURS.map((c) => (
+                <label key={c} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="couleur"
+                    value={c}
+                    defaultChecked={tache?.couleur === c}
+                    className="peer sr-only"
+                  />
+                  <span
+                    className="block h-7 w-7 rounded-full ring-offset-2 ring-offset-raised transition
+                               peer-checked:ring-2 peer-checked:ring-ink peer-focus-visible:ring-2"
+                    style={{ backgroundColor: c }}
+                  />
+                  <span className="sr-only">Couleur {c}</span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-attenue">
+              Elle reste la même partout : accueil, suivi, dossier.
+            </p>
+          </fieldset>
             </>
           )}
 

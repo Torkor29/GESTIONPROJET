@@ -22,6 +22,11 @@ export const utilisateurs = sqliteTable("utilisateurs", {
    * Vide au départ : la sélection suggérée par le métier s'applique alors.
    */
   modules: text("modules"),
+  /**
+   * Widgets du tableau de bord, en JSON : ["chiffres","timeline","priorite"].
+   * Vide = sélection par défaut (tout afficher).
+   */
+  accueil: text("accueil"),
   /** Un compte désactivé conserve ses données mais ne peut plus se connecter. */
   actif: integer("actif", { mode: "boolean" }).notNull().default(true),
   creeLe: integer("cree_le").notNull().default(maintenant),
@@ -125,6 +130,11 @@ export const taches = sqliteTable(
     priorite: text("priorite").notNull().default("normale"),
     // Date d'échéance, en secondes Unix (minuit heure locale).
     echeance: integer("echeance"),
+    /**
+     * Couleur propre à la mission. Sans valeur, on reprend celle de l'étude.
+     * Permet de reconnaître une mission partout (accueil, suivi, dossier).
+     */
+    couleur: text("couleur"),
     /**
      * Personne à qui la mission est confiée. Sur une étude partagée, elle ne
      * voit que les missions qui lui sont attribuées — le propriétaire les voit

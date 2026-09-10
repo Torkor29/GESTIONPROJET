@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { appliquerMetier, enregistrerModules } from "@/actions/modules";
 import ChoixModules from "@/components/choix-modules";
+import PersonnaliserAccueil from "@/components/personnaliser-accueil";
 import FormulaireChangerMotDePasse from "./formulaire-mot-de-passe";
 import { utilisateurActuel } from "@/lib/auth";
+import { lireWidgetsAccueil } from "@/lib/accueil";
 import { LIBELLES_ROLE } from "@/lib/constantes";
 import { DOMAINES, MODULES, construit, lireModules } from "@/lib/modules";
 
@@ -37,6 +39,17 @@ export default async function PageParametres() {
         <Link href="/parametres/equipe" className="bouton-discret">
           Gérer l&apos;équipe
         </Link>
+      </section>
+
+      <section className="carte p-5">
+        <h2 className="font-titre text-lg font-bold">Votre accueil</h2>
+        <p className="mt-1 text-sm text-attenue">
+          Les vues du tableau de bord : échéances, indicateurs, projets. Chaque
+          compte compose le sien, sans toucher aux données.
+        </p>
+        <div className="mt-4">
+          <PersonnaliserAccueil actifs={lireWidgetsAccueil(compte.accueil)} />
+        </div>
       </section>
 
       <section className="carte p-5">

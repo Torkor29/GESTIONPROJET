@@ -14,6 +14,7 @@ import SelecteurStatut from "./selecteur-statut";
 import { EtiquettePriorite } from "./etiquettes";
 import { Icone } from "./icones";
 import { formaterDate, formaterDuree, statutDepuisEtapes } from "@/lib/format";
+import { couleurAffichee } from "@/lib/couleurs";
 import type { CompteChoix, EtudeLiee, MembreAttribution } from "@/lib/attribution";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
@@ -144,6 +145,7 @@ export default function CarteMission({
         ? [{ id: 0, nom: etudeNom, code: etudeCode ?? null, couleur: etudeCouleur ?? "#a8a29e", proprietaireId: null }]
         : [];
   const premiereCouleur = etiquettesEtudes[0]?.couleur;
+  const teinte = couleurAffichee(tache.couleur, premiereCouleur ?? etudeCouleur);
 
   const [ouverte, setOuverte] = useState(total > 0 && faites < total);
 
@@ -151,7 +153,7 @@ export default function CarteMission({
     <article
       className={`carte-mission overflow-hidden ${terminee ? "opacity-70" : ""}`}
       style={{
-        borderLeftColor: premiereCouleur ?? etudeCouleur ?? "rgb(var(--ligne))",
+        borderLeftColor: teinte,
       }}
     >
       <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5">
@@ -177,6 +179,11 @@ export default function CarteMission({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
+            <span
+              aria-hidden
+              className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
+              style={{ backgroundColor: teinte }}
+            />
             <h3 className={`font-titre text-lg leading-snug ${terminee ? "text-attenue line-through" : ""}`}>
               {tache.titre}
             </h3>

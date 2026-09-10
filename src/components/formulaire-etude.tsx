@@ -7,18 +7,8 @@ import { creerEtude, modifierEtude } from "@/actions/etudes";
 import { VIDE } from "@/actions/etat";
 import type { Etude } from "@/db/schema";
 import { LIBELLES_STATUT_ETUDE, versChampDate } from "@/lib/format";
+import { PALETTE_COULEURS } from "@/lib/couleurs";
 import { REFERENTIELS, lireReglementations } from "@/lib/referentiels";
-
-const COULEURS = [
-  "#6366f1",
-  "#0ea5e9",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#ec4899",
-  "#8b5cf6",
-  "#78716c",
-];
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -318,7 +308,7 @@ export default function FormulaireEtude({
             <fieldset>
               <legend className="mb-1.5 text-sm font-medium">Couleur</legend>
               <div className="flex flex-wrap gap-2">
-                {COULEURS.map((c, i) => (
+                {PALETTE_COULEURS.map((c, i) => (
                   <label key={c} className="cursor-pointer">
                     <input
                       type="radio"

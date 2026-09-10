@@ -92,6 +92,13 @@
       "when": 1789120000000,
       "tag": "0012_missions_plusieurs_etudes",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1789200000000,
+      "tag": "0013_accueil_widgets",
+      "breakpoints": true
     }
   ]
 }

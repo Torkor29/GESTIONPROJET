@@ -7,6 +7,7 @@ import { etudes, sousTaches, taches, tachesEtudes, utilisateurs } from "@/db/sch
 import { exigerAcces, exigerEcritureMission, exigerGestionMission } from "@/lib/acces";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { depuisChampDate, statutDepuisEtapes } from "@/lib/format";
+import { lireCouleur } from "@/lib/couleurs";
 import { assurerPartageEtude } from "./partages";
 import { type EtatFormulaire, messageErreur } from "./etat";
 
@@ -100,6 +101,7 @@ export async function creerTache(
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
         assigneA: attribution.assigneA,
+        couleur: lireCouleur(String(donnees.get("couleur") ?? "")),
         statut: etapes.length > 0 ? "en_cours" : "a_faire",
       })
       .returning({ id: taches.id });
@@ -180,6 +182,9 @@ export async function modifierTache(
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
         assigneA: attribution.assigneA,
+        couleur: donnees.has("couleur")
+          ? lireCouleur(String(donnees.get("couleur") ?? ""))
+          : actuelle.couleur,
         termineeLe: statut === "terminee" ? maintenant() : null,
         modifieLe: maintenant(),
       })
