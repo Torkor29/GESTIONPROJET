@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const maintenant = sql`(unixepoch())`;
 
@@ -105,7 +105,8 @@ export const pages = sqliteTable(
 );
 
 /**
- * Une tâche à suivre. Rattachée à une étude, éventuellement à une page.
+ * Une tâche à suivre. Rattachée à une ou plusieurs études via `taches_etudes`.
+ * `etudeId` reprend la première, pour le chronomètre et l'existant.
  */
 export const taches = sqliteTable(
   "taches",
@@ -141,6 +142,27 @@ export const taches = sqliteTable(
     index("idx_taches_etude").on(t.etudeId),
     index("idx_taches_statut").on(t.statut),
     index("idx_taches_assigne").on(t.assigneA),
+  ],
+);
+
+/**
+ * Une mission peut concerner plusieurs études (archivage, envoi CSTS…).
+ * Elle apparaît alors dans le suivi et dans chaque dossier. `taches.etude_id`
+ * reste la première étude, pour le temps et les anciens écrans.
+ */
+export const tachesEtudes = sqliteTable(
+  "taches_etudes",
+  {
+    tacheId: integer("tache_id")
+      .notNull()
+      .references(() => taches.id, { onDelete: "cascade" }),
+    etudeId: integer("etude_id")
+      .notNull()
+      .references(() => etudes.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tacheId, t.etudeId] }),
+    index("idx_taches_etudes_etude").on(t.etudeId),
   ],
 );
 
@@ -515,6 +537,7 @@ export type Invitation = typeof invitations.$inferSelect;
 export type Etude = typeof etudes.$inferSelect;
 export type Page = typeof pages.$inferSelect;
 export type Tache = typeof taches.$inferSelect;
+export type TacheEtude = typeof tachesEtudes.$inferSelect;
 export type SousTache = typeof sousTaches.$inferSelect;
 export type Temps = typeof temps.$inferSelect;
 export type Document = typeof documents.$inferSelect;

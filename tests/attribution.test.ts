@@ -6,6 +6,7 @@ const proprio = 1;
 const invitee = 2;
 const autre = 3;
 const etude = 10;
+const etudeB = 11;
 
 describe("missionEstVisiblePour", () => {
   it("le propriétaire de l'étude voit toutes les missions, attribuées ou non", () => {
@@ -14,7 +15,7 @@ describe("missionEstVisiblePour", () => {
         utilisateurId: proprio,
         proprietaireId: proprio,
         assigneA: invitee,
-        etudeId: etude,
+        etudeIds: [etude],
         idsEtudesPossedees: [etude],
       }),
       true,
@@ -24,7 +25,7 @@ describe("missionEstVisiblePour", () => {
         utilisateurId: proprio,
         proprietaireId: proprio,
         assigneA: null,
-        etudeId: etude,
+        etudeIds: [etude],
         idsEtudesPossedees: [etude],
       }),
       true,
@@ -37,7 +38,7 @@ describe("missionEstVisiblePour", () => {
         utilisateurId: invitee,
         proprietaireId: proprio,
         assigneA: invitee,
-        etudeId: etude,
+        etudeIds: [etude],
         idsEtudesPossedees: [],
       }),
       true,
@@ -47,17 +48,30 @@ describe("missionEstVisiblePour", () => {
         utilisateurId: invitee,
         proprietaireId: proprio,
         assigneA: null,
-        etudeId: etude,
+        etudeIds: [etude],
         idsEtudesPossedees: [],
       }),
       false,
+    );
+  });
+
+  it("une mission sur plusieurs études apparaît chez le propriétaire de chacune", () => {
+    assert.equal(
+      missionEstVisiblePour({
+        utilisateurId: proprio,
+        proprietaireId: autre,
+        assigneA: null,
+        etudeIds: [etude, etudeB],
+        idsEtudesPossedees: [etudeB],
+      }),
+      true,
     );
     assert.equal(
       missionEstVisiblePour({
         utilisateurId: invitee,
         proprietaireId: proprio,
-        assigneA: autre,
-        etudeId: etude,
+        assigneA: null,
+        etudeIds: [etude, etudeB],
         idsEtudesPossedees: [],
       }),
       false,
@@ -70,7 +84,7 @@ describe("missionEstVisiblePour", () => {
         utilisateurId: proprio,
         proprietaireId: proprio,
         assigneA: null,
-        etudeId: null,
+        etudeIds: [],
         idsEtudesPossedees: [],
       }),
       true,
@@ -80,7 +94,7 @@ describe("missionEstVisiblePour", () => {
         utilisateurId: invitee,
         proprietaireId: proprio,
         assigneA: null,
-        etudeId: null,
+        etudeIds: [],
         idsEtudesPossedees: [],
       }),
       false,
@@ -93,20 +107,19 @@ describe("droitsSurMission", () => {
     const duProprio = droitsSurMission({
       utilisateurId: proprio,
       proprietaireId: proprio,
-      etudeId: etude,
-      etudeProprietaireId: proprio,
+      etudeIds: [etude],
+      etudesLiees: [{ id: etude, proprietaireId: proprio }],
       assigneA: invitee,
-      niveauPartage: null,
     });
     assert.deepEqual(duProprio, { peutGerer: true, peutEcrire: true });
 
     const deLInvitee = droitsSurMission({
       utilisateurId: invitee,
       proprietaireId: proprio,
-      etudeId: etude,
-      etudeProprietaireId: proprio,
+      etudeIds: [etude],
+      etudesLiees: [{ id: etude, proprietaireId: proprio }],
       assigneA: invitee,
-      niveauPartage: "ecriture",
+      niveauxPartage: { [etude]: "ecriture" },
     });
     assert.deepEqual(deLInvitee, { peutGerer: false, peutEcrire: true });
   });
@@ -115,10 +128,10 @@ describe("droitsSurMission", () => {
     const lecture = droitsSurMission({
       utilisateurId: invitee,
       proprietaireId: proprio,
-      etudeId: etude,
-      etudeProprietaireId: proprio,
+      etudeIds: [etude],
+      etudesLiees: [{ id: etude, proprietaireId: proprio }],
       assigneA: invitee,
-      niveauPartage: "lecture",
+      niveauxPartage: { [etude]: "lecture" },
     });
     assert.deepEqual(lecture, { peutGerer: false, peutEcrire: false });
   });

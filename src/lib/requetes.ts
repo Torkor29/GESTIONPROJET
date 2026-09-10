@@ -16,14 +16,15 @@ import {
   pages,
   sousTaches,
   taches,
+  tachesEtudes,
   temps,
   visites,
   type SousTache,
 } from "@/db/schema";
-import { etudeAccessible, idsEtudesAccessibles, missionVisible, objetAccessible } from "./acces";
+import { etudeAccessible, idsEtudesAccessibles, missionLieeA, missionVisible, objetAccessible } from "./acces";
 import { utilisateurActuel } from "./auth";
 import { debutDeMois, debutDeSemaine, statutDepuisEtapes } from "./format";
-import type { MembreAttribution } from "./attribution";
+import type { EtudeLiee, MembreAttribution } from "./attribution";
 
 /** Une semaine en jours : évite un 7 magique au milieu des calculs de fenêtre. */
 const SECONDES_SEMAINE_JOURS = 86400;
@@ -72,7 +73,7 @@ export async function etudeParId(id: number) {
   return ligne ?? null;
 }
 
-export type { MembreAttribution };
+export type { EtudeLiee, MembreAttribution };
 
 /** Personnes à qui le propriétaire peut attribuer une mission sur ses études. */
 export async function membresPourAttribution(): Promise<MembreAttribution[]> {
@@ -184,6 +185,41 @@ async function sousTachesParMission(tacheIds: number[]): Promise<Map<number, Sou
   return parTache;
 }
 
+/** Études rattachées à un lot de missions, groupées par mission. */
+async function etudesDesMissions(tacheIds: number[]): Promise<Map<number, EtudeLiee[]>> {
+  const parTache = new Map<number, EtudeLiee[]>();
+  if (tacheIds.length === 0) return parTache;
+
+  const lignes = await db
+    .select({
+      tacheId: tachesEtudes.tacheId,
+      id: etudes.id,
+      nom: etudes.nom,
+      code: etudes.code,
+      couleur: etudes.couleur,
+      proprietaireId: etudes.proprietaireId,
+    })
+    .from(tachesEtudes)
+    .innerJoin(etudes, eq(tachesEtudes.etudeId, etudes.id))
+    .where(inArray(tachesEtudes.tacheId, tacheIds))
+    .orderBy(asc(etudes.nom));
+
+  for (const l of lignes) {
+    const etude: EtudeLiee = {
+      id: l.id,
+      nom: l.nom,
+      code: l.code,
+      couleur: l.couleur,
+      proprietaireId: l.proprietaireId,
+    };
+    const deja = parTache.get(l.tacheId);
+    if (deja) {
+      if (!deja.some((e) => e.id === etude.id)) deja.push(etude);
+    } else parTache.set(l.tacheId, [etude]);
+  }
+  return parTache;
+}
+
 export async function tachesDEtude(etudeId: number) {
   const id = await moi();
   const assigne = alias(utilisateurs, "assigne");
@@ -191,46 +227,58 @@ export async function tachesDEtude(etudeId: number) {
     .select({ tache: taches, assigneNom: assigne.nom })
     .from(taches)
     .leftJoin(assigne, eq(taches.assigneA, assigne.id))
-    .where(and(eq(taches.etudeId, etudeId), missionVisible(id)))
+    .where(and(missionLieeA(etudeId), missionVisible(id)))
     .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
 
-  const parMission = await sousTachesParMission(liste.map((l) => l.tache.id));
-  const cumul = await cumulTempsDesMissions(liste.map((l) => l.tache.id));
+  const ids = liste.map((l) => l.tache.id);
+  const [parMission, cumul, parEtudes] = await Promise.all([
+    sousTachesParMission(ids),
+    cumulTempsDesMissions(ids),
+    etudesDesMissions(ids),
+  ]);
   return liste.map((l) => {
     const extra = rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul);
-    return { ...l.tache, ...extra, assigneNom: l.assigneNom };
+    return {
+      ...l.tache,
+      ...extra,
+      assigneNom: l.assigneNom,
+      etudesLiees: parEtudes.get(l.tache.id) ?? [],
+    };
   });
 }
 
-/** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
+/** Toutes les missions, avec les études concernées. */
 export async function toutesLesTaches(filtreStatut?: string) {
   const id = await moi();
   const assigne = alias(utilisateurs, "assigne");
   const lignes = await db
     .select({
       tache: taches,
-      etudeNom: etudes.nom,
-      etudeCode: etudes.code,
-      etudeCouleur: etudes.couleur,
-      etudeProprietaireId: etudes.proprietaireId,
       assigneNom: assigne.nom,
     })
     .from(taches)
-    .leftJoin(etudes, eq(taches.etudeId, etudes.id))
     .leftJoin(assigne, eq(taches.assigneA, assigne.id))
     .where(missionVisible(id))
     .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
 
   const ids = lignes.map((l) => l.tache.id);
-  const [parMission, cumul] = await Promise.all([
+  const [parMission, cumul, parEtudes] = await Promise.all([
     sousTachesParMission(ids),
     cumulTempsDesMissions(ids),
+    etudesDesMissions(ids),
   ]);
   const resultat = lignes.map((l) => {
     const extra = rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul);
+    const etudesLiees = parEtudes.get(l.tache.id) ?? [];
+    const premiere = etudesLiees[0];
     return {
-      ...l,
       tache: { ...l.tache, statut: extra.statut },
+      assigneNom: l.assigneNom,
+      etudesLiees,
+      etudeNom: premiere?.nom ?? null,
+      etudeCode: premiere?.code ?? null,
+      etudeCouleur: premiere?.couleur ?? null,
+      etudeProprietaireId: premiere?.proprietaireId ?? null,
       ...extra,
     };
   });
@@ -711,16 +759,24 @@ export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
     return m;
   };
 
-  const ouvertes = compter(
-    missions.filter(({ tache }) => tache.statut !== "terminee"),
-    ({ tache }) => tache.etudeId,
-  );
-  const enRetard = compter(
+  const compterEtudes = (
+    liste: { tache: { etudeId: number | null }; etudesLiees?: { id: number }[] }[],
+  ) => {
+    const m = new Map<number, number>();
+    for (const x of liste) {
+      const ids = (x.etudesLiees ?? []).map((e) => e.id);
+      if (ids.length === 0 && x.tache.etudeId) ids.push(x.tache.etudeId);
+      for (const k of ids) m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  };
+
+  const ouvertes = compterEtudes(missions.filter(({ tache }) => tache.statut !== "terminee"));
+  const enRetard = compterEtudes(
     missions.filter(
       ({ tache }) =>
         tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant,
     ),
-    ({ tache }) => tache.etudeId,
   );
   const nbDocs = compter(docs, (d) => d.document.etudeId);
 

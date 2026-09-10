@@ -273,6 +273,7 @@ export default async function PageEtude({
                   chronoEnCours: t.chronoEnCours,
                   chronoSousTacheId: t.chronoSousTacheId,
                   etudeProprietaireId: etude.proprietaireId,
+                  etudesLiees: t.etudesLiees,
                 }))}
                 etudes={toutesEtudes}
                 afficherEtude={false}
@@ -342,6 +343,7 @@ export default async function PageEtude({
               chronoEnCours: t.chronoEnCours,
               chronoSousTacheId: t.chronoSousTacheId,
               etudeProprietaireId: etude.proprietaireId,
+              etudesLiees: t.etudesLiees,
             }))}
             etudes={toutesEtudes}
             afficherEtude={false}

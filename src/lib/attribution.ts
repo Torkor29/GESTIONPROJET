@@ -12,11 +12,20 @@ export type CompteChoix = {
   email: string;
 };
 
+/** Étude rattachée à une mission (une mission peut en concerner plusieurs). */
+export type EtudeLiee = {
+  id: number;
+  nom: string;
+  code: string | null;
+  couleur: string;
+  proprietaireId: number | null;
+};
+
 type VisibiliteMission = {
   utilisateurId: number;
   proprietaireId: number | null;
   assigneA: number | null;
-  etudeId: number | null;
+  etudeIds: readonly number[];
   idsEtudesPossedees: ReadonlySet<number> | readonly number[];
 };
 
@@ -26,33 +35,33 @@ function possede(ids: VisibiliteMission["idsEtudesPossedees"], etudeId: number):
 
 /**
  * Même règle que `missionVisible` en SQL : créateur, personne à qui c'est
- * attribué, ou propriétaire de l'étude. Être convié sur l'étude ne suffit pas.
+ * attribué, ou propriétaire de l'une des études. Être convié ne suffit pas.
  */
 export function missionEstVisiblePour({
   utilisateurId,
   proprietaireId,
   assigneA,
-  etudeId,
+  etudeIds,
   idsEtudesPossedees,
 }: VisibiliteMission): boolean {
   if (proprietaireId === utilisateurId) return true;
   if (assigneA === utilisateurId) return true;
-  if (etudeId != null && possede(idsEtudesPossedees, etudeId)) return true;
-  return false;
+  return etudeIds.some((id) => possede(idsEtudesPossedees, id));
 }
 
 export function droitsSurMission(opts: {
   utilisateurId: number;
   proprietaireId: number | null;
-  etudeId: number | null;
-  etudeProprietaireId: number | null | undefined;
+  etudeIds: readonly number[];
+  etudesLiees?: readonly Pick<EtudeLiee, "id" | "proprietaireId">[];
   assigneA: number | null;
-  niveauPartage: string | null | undefined;
+  niveauxPartage?: Record<number, string>;
 }): { peutGerer: boolean; peutEcrire: boolean } {
-  const estProprietaireEtude = opts.etudeProprietaireId === opts.utilisateurId;
-  const estMissionPerso = opts.etudeId == null && opts.proprietaireId === opts.utilisateurId;
-  const peutGerer = estProprietaireEtude || estMissionPerso;
-  const peutEcrire =
-    peutGerer || (opts.assigneA === opts.utilisateurId && opts.niveauPartage === "ecriture");
+  const etudes = opts.etudesLiees ?? opts.etudeIds.map((id) => ({ id, proprietaireId: null }));
+  const possedeEtude = etudes.some((e) => e.proprietaireId === opts.utilisateurId);
+  const estMissionPerso = etudes.length === 0 && opts.proprietaireId === opts.utilisateurId;
+  const peutGerer = possedeEtude || estMissionPerso;
+  const ecriture = etudes.some((e) => opts.niveauxPartage?.[e.id] === "ecriture");
+  const peutEcrire = peutGerer || (opts.assigneA === opts.utilisateurId && ecriture);
   return { peutGerer, peutEcrire };
 }

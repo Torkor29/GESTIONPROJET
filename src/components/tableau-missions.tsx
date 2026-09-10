@@ -1,6 +1,6 @@
 import CarteMission from "./carte-mission";
 import { droitsSurMission } from "@/lib/attribution";
-import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
+import type { CompteChoix, EtudeLiee, MembreAttribution } from "@/lib/attribution";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
 export type LigneMission = {
@@ -9,6 +9,7 @@ export type LigneMission = {
   etudeCode?: string | null;
   etudeCouleur?: string | null;
   etudeProprietaireId?: number | null;
+  etudesLiees?: EtudeLiee[];
   assigneNom?: string | null;
   sousTaches?: SousTache[];
   minutes?: number;
@@ -30,7 +31,7 @@ export default function TableauMissions({
   niveauxPartage = {},
 }: {
   lignes: LigneMission[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   afficherEtude?: boolean;
   message?: string;
   membres?: MembreAttribution[];
@@ -45,16 +46,16 @@ export default function TableauMissions({
   return (
     <div className="space-y-3">
       {lignes.map((ligne) => {
+        const etudesLiees = ligne.etudesLiees ?? [];
         const calcules =
           utilisateurId != null
             ? droitsSurMission({
                 utilisateurId,
                 proprietaireId: ligne.tache.proprietaireId,
-                etudeId: ligne.tache.etudeId,
-                etudeProprietaireId: ligne.etudeProprietaireId,
+                etudeIds: etudesLiees.map((e) => e.id),
+                etudesLiees,
                 assigneA: ligne.tache.assigneA,
-                niveauPartage:
-                  ligne.tache.etudeId != null ? niveauxPartage[ligne.tache.etudeId] : null,
+                niveauxPartage,
               })
             : { peutGerer: ligne.peutGerer ?? true, peutEcrire: ligne.peutEcrire ?? true };
         return (
@@ -64,6 +65,7 @@ export default function TableauMissions({
           etudeNom={ligne.etudeNom}
           etudeCode={ligne.etudeCode}
           etudeCouleur={ligne.etudeCouleur}
+          etudesLiees={etudesLiees}
           assigneNom={ligne.assigneNom}
           sousTaches={ligne.sousTaches ?? []}
           minutes={ligne.minutes ?? 0}

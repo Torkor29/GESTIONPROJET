@@ -1,9 +1,9 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { etudes, sousTaches, taches, utilisateurs } from "@/db/schema";
+import { etudes, sousTaches, taches, tachesEtudes, utilisateurs } from "@/db/schema";
 import { exigerAcces, exigerEcritureMission, exigerGestionMission } from "@/lib/acces";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { depuisChampDate, statutDepuisEtapes } from "@/lib/format";
@@ -12,10 +12,39 @@ import { type EtatFormulaire, messageErreur } from "./etat";
 
 const maintenant = () => Math.floor(Date.now() / 1000);
 
+function lireEtudeIds(donnees: FormData): number[] {
+  const bruts = [...donnees.getAll("etudeIds"), donnees.get("etudeId")]
+    .map((v) => String(v ?? "").trim())
+    .filter(Boolean);
+  const ids = bruts.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  return [...new Set(ids)];
+}
+
+async function exigerProprietaireDesEtudes(
+  etudeIds: number[],
+  compteId: number,
+): Promise<{ erreur: string } | { etudes: typeof etudes.$inferSelect[] }> {
+  if (etudeIds.length === 0) return { etudes: [] };
+  const lignes = db.select().from(etudes).where(inArray(etudes.id, etudeIds)).all();
+  if (lignes.length !== etudeIds.length) return { erreur: "Étude introuvable." };
+  if (lignes.some((e) => e.proprietaireId !== compteId)) {
+    return { erreur: "Seul le propriétaire peut rattacher une mission à ces études." };
+  }
+  return { etudes: lignes };
+}
+
+async function enregistrerLiens(tacheId: number, etudeIds: number[]): Promise<void> {
+  db.delete(tachesEtudes).where(eq(tachesEtudes.tacheId, tacheId)).run();
+  if (etudeIds.length === 0) return;
+  db.insert(tachesEtudes)
+    .values(etudeIds.map((etudeId) => ({ tacheId, etudeId })))
+    .run();
+}
+
 async function lireAssigneA(
   donnees: FormData,
   compteId: number,
-  etudeId: number | null,
+  etudeIds: number[],
 ): Promise<{ assigneA: number | null } | { erreur: string }> {
   const brut = String(donnees.get("assigneA") ?? "").trim();
   if (!brut) return { assigneA: null };
@@ -28,17 +57,13 @@ async function lireAssigneA(
   const personne = db.select({ id: utilisateurs.id }).from(utilisateurs).where(eq(utilisateurs.id, assigneA)).get();
   if (!personne) return { erreur: "Personne introuvable pour cette attribution." };
 
-  if (!etudeId) {
+  if (etudeIds.length === 0) {
     return { erreur: "Pour attribuer une mission, rattachez-la d'abord à une étude." };
   }
 
-  const etude = db.select().from(etudes).where(eq(etudes.id, etudeId)).get();
-  if (!etude) return { erreur: "Étude introuvable." };
-  if (etude.proprietaireId !== compteId) {
-    return { erreur: "Seul le propriétaire de l'étude peut attribuer une mission." };
+  for (const etudeId of etudeIds) {
+    await assurerPartageEtude(etudeId, assigneA, compteId);
   }
-
-  await assurerPartageEtude(etudeId, assigneA, compteId);
   return { assigneA };
 }
 
@@ -53,16 +78,11 @@ export async function creerTache(
     const titre = String(donnees.get("titre") ?? "").trim();
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
-    const etudeIdBrut = donnees.get("etudeId");
-    const etudeId = etudeIdBrut ? Number(etudeIdBrut) : null;
-    if (etudeId) {
-      const etude = db.select().from(etudes).where(eq(etudes.id, etudeId)).get();
-      if (!etude || etude.proprietaireId !== compte.id) {
-        return { erreur: "Seul le propriétaire peut créer une mission sur cette étude." };
-      }
-    }
+    const etudeIds = lireEtudeIds(donnees);
+    const possession = await exigerProprietaireDesEtudes(etudeIds, compte.id);
+    if ("erreur" in possession) return { erreur: possession.erreur };
 
-    const attribution = await lireAssigneA(donnees, compte.id, etudeId);
+    const attribution = await lireAssigneA(donnees, compte.id, etudeIds);
     if ("erreur" in attribution) return { erreur: attribution.erreur };
 
     const etapes = String(donnees.get("lignesSousTaches") ?? "")
@@ -74,7 +94,7 @@ export async function creerTache(
       .insert(taches)
       .values({
         proprietaireId: compte.id,
-        etudeId,
+        etudeId: etudeIds[0] ?? null,
         titre,
         notes: String(donnees.get("notes") ?? "").trim() || null,
         priorite: String(donnees.get("priorite") ?? "normale"),
@@ -83,6 +103,8 @@ export async function creerTache(
         statut: etapes.length > 0 ? "en_cours" : "a_faire",
       })
       .returning({ id: taches.id });
+
+    if (creee) await enregistrerLiens(creee.id, etudeIds);
 
     if (creee && etapes.length > 0) {
       await db.insert(sousTaches).values(
@@ -117,22 +139,18 @@ export async function modifierTache(
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
     const statut = String(donnees.get("statut") ?? "a_faire");
-    const etudeIdBrut = donnees.get("etudeId");
-    const etudeId = etudeIdBrut ? Number(etudeIdBrut) : null;
+    const etudeIds = lireEtudeIds(donnees);
 
     const actuelle = db.select().from(taches).where(eq(taches.id, id)).get();
     if (!actuelle) return { erreur: "Tâche introuvable." };
 
-    const etudeCible = etudeId
-      ? db.select().from(etudes).where(eq(etudes.id, etudeId)).get()
-      : null;
-    const estProprietaireEtude = Boolean(etudeCible && etudeCible.proprietaireId === compte.id);
+    const possession = await exigerProprietaireDesEtudes(etudeIds, compte.id);
+    const estProprietaireEtude = !("erreur" in possession) && etudeIds.length > 0;
     const peutGerer =
       estProprietaireEtude ||
-      (etudeId == null && actuelle.proprietaireId === compte.id);
+      (etudeIds.length === 0 && actuelle.proprietaireId === compte.id);
 
     if (!peutGerer) {
-      // Une personne conviée met à jour le statut et le commentaire de SA mission.
       await db
         .update(taches)
         .set({
@@ -147,13 +165,15 @@ export async function modifierTache(
       return { succes: (precedent.succes ?? 0) + 1 };
     }
 
-    const attribution = await lireAssigneA(donnees, compte.id, etudeId);
+    if ("erreur" in possession) return { erreur: possession.erreur };
+
+    const attribution = await lireAssigneA(donnees, compte.id, etudeIds);
     if ("erreur" in attribution) return { erreur: attribution.erreur };
 
     await db
       .update(taches)
       .set({
-        etudeId,
+        etudeId: etudeIds[0] ?? null,
         titre,
         notes: String(donnees.get("notes") ?? "").trim() || null,
         statut,
@@ -165,6 +185,7 @@ export async function modifierTache(
       })
       .where(eq(taches.id, id));
 
+    await enregistrerLiens(id, etudeIds);
     await appliquerStatutDepuisEtapes(id);
 
     revalidatePath("/", "layout");

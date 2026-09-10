@@ -21,8 +21,11 @@ export async function GET(requete: Request) {
   const masquerTerminees = params.get("masquerTerminees") === "1";
 
   const toutes = await toutesLesTaches();
-  const lignes = toutes.filter(({ tache, sousTaches: etapes }) => {
-    if (etudeId && tache.etudeId !== etudeId) return false;
+  const lignes = toutes.filter(({ tache, sousTaches: etapes, etudesLiees }) => {
+    if (etudeId) {
+      const ids = (etudesLiees ?? []).map((e) => e.id);
+      if (ids.length === 0 ? tache.etudeId !== etudeId : !ids.includes(etudeId)) return false;
+    }
     if (statut && tache.statut !== statut) return false;
     if (masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
@@ -42,8 +45,13 @@ export async function GET(requete: Request) {
         { entete: "Mission", valeur: (l) => l.tache.titre },
         {
           entete: "Étude",
-          valeur: (l) =>
-            l.etudeCode ? `${l.etudeCode} — ${l.etudeNom}` : (l.etudeNom ?? "Sans étude"),
+          valeur: (l) => {
+            const liees = l.etudesLiees ?? [];
+            if (liees.length > 0) {
+              return liees.map((e) => (e.code ? `${e.code} — ${e.nom}` : e.nom)).join(" · ");
+            }
+            return l.etudeCode ? `${l.etudeCode} — ${l.etudeNom}` : (l.etudeNom ?? "Sans étude");
+          },
         },
         { entete: "Attribuée à", valeur: (l) => l.assigneNom ?? "" },
         {
@@ -110,15 +118,21 @@ export async function GET(requete: Request) {
 
   const maintenant = Math.floor(Date.now() / 1000);
 
-  for (const { tache, etudeNom, etudeCode, assigneNom, sousTaches } of lignes) {
+  for (const { tache, etudeNom, etudeCode, assigneNom, sousTaches, etudesLiees } of lignes) {
     const enRetard =
       tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant;
     const etapes = sousTaches ?? [];
     const etapesFaites = etapes.filter((s) => s.faite).length;
+    const libelleEtudes =
+      etudesLiees && etudesLiees.length > 0
+        ? etudesLiees.map((e) => (e.code ? `${e.code} — ${e.nom}` : e.nom)).join(" · ")
+        : etudeCode
+          ? `${etudeCode} — ${etudeNom}`
+          : (etudeNom ?? "Sans étude");
 
     const ligne = feuille.addRow({
       titre: tache.titre,
-      etude: etudeCode ? `${etudeCode} — ${etudeNom}` : (etudeNom ?? "Sans étude"),
+      etude: libelleEtudes,
       assignee: assigneNom ?? "",
       statut: LIBELLES_STATUT_MISSION[tache.statut] ?? tache.statut,
       priorite: LIBELLES_PRIORITE[tache.priorite] ?? tache.priorite,

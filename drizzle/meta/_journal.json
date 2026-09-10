@@ -85,6 +85,13 @@
       "when": 1789040000000,
       "tag": "0011_mission_assignee",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1789120000000,
+      "tag": "0012_missions_plusieurs_etudes",
+      "breakpoints": true
     }
   ]
 }

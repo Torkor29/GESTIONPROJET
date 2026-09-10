@@ -22,6 +22,7 @@ export default function FormulaireTache({
   tache,
   etudes,
   etudeIdParDefaut,
+  etudeIdsInitiales,
   libelle,
   variante = "principal",
   statutSuitEtapes = false,
@@ -30,8 +31,9 @@ export default function FormulaireTache({
   peutAttribuer = false,
 }: {
   tache?: Tache;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   etudeIdParDefaut?: number;
+  etudeIdsInitiales?: number[];
   libelle: string;
   variante?: "principal" | "discret" | "icone";
   /** S'il y a des étapes, le statut de la mission n'est plus saisi à la main. */
@@ -56,15 +58,25 @@ export default function FormulaireTache({
     }
   }, [etat.succes]);
 
-  const [etudeChoisie, setEtudeChoisie] = useState(
-    String(tache?.etudeId ?? etudeIdParDefaut ?? ""),
-  );
-  const etudeIdNum = Number(etudeChoisie) || 0;
+  const [idsChoisis, setIdsChoisis] = useState<number[]>(() => {
+    if (etudeIdsInitiales && etudeIdsInitiales.length > 0) return etudeIdsInitiales;
+    if (tache?.etudeId) return [tache.etudeId];
+    if (etudeIdParDefaut) return [etudeIdParDefaut];
+    return [];
+  });
   const etudesPossedees = etudes.filter((e) => membres.some((m) => m.etudeId === e.id));
-  const dejaSurLEtude = membres.filter((m) => m.etudeId === etudeIdNum);
+  const dejaSurLEtude = [
+    ...new Map(
+      membres.filter((m) => idsChoisis.includes(m.etudeId)).map((m) => [m.utilisateurId, m]),
+    ).values(),
+  ];
   const idsDeja = new Set(dejaSurLEtude.map((m) => m.utilisateurId));
   const autresComptes = comptes.filter((c) => !idsDeja.has(c.id));
   const editionRestreinte = edition && !peutAttribuer;
+
+  function basculerEtude(id: number, cochee: boolean) {
+    setIdsChoisis((deja) => (cochee ? [...deja, id] : deja.filter((x) => x !== id)));
+  }
 
   const classes = {
     principal: "bouton",
@@ -101,7 +113,9 @@ export default function FormulaireTache({
           {editionRestreinte ? (
             <>
               <input type="hidden" name="titre" value={tache!.titre} />
-              <input type="hidden" name="etudeId" value={tache!.etudeId ?? ""} />
+              {idsChoisis.map((id) => (
+                <input key={id} type="hidden" name="etudeIds" value={id} />
+              ))}
               <p className="font-titre text-lg font-bold">{tache!.titre}</p>
               <p className="text-sm text-attenue">
                 Vous pouvez mettre à jour le commentaire et le statut. L&apos;attribution et
@@ -141,32 +155,44 @@ export default function FormulaireTache({
           )}
 
           <div>
-            <label htmlFor={`${uid}-etudeId`} className="mb-1.5 block text-sm font-medium">
-              Étude
-            </label>
-            <select
-              id={`${uid}-etudeId`}
-              name="etudeId"
-              value={etudeChoisie}
-              onChange={(e) => setEtudeChoisie(e.target.value)}
-              className="champ"
-            >
-              <option value="">Sans étude</option>
-              {etudesPossedees.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nom}
-                </option>
-              ))}
-            </select>
+            <p className="mb-1.5 text-sm font-medium">Études concernées</p>
+            {etudesPossedees.length === 0 ? (
+              <p className="text-sm text-attenue">Sans étude — visible seulement dans le suivi.</p>
+            ) : (
+              <fieldset className="max-h-44 space-y-1 overflow-y-auto rounded-xl border border-ligne bg-creux/30 p-2.5">
+                <legend className="sr-only">Études concernées</legend>
+                {etudesPossedees.map((e) => (
+                  <label
+                    key={e.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-relief"
+                  >
+                    <input
+                      type="checkbox"
+                      name="etudeIds"
+                      value={e.id}
+                      checked={idsChoisis.includes(e.id)}
+                      onChange={(ev) => basculerEtude(e.id, ev.target.checked)}
+                      className="h-4 w-4 accent-indigo-600"
+                    />
+                    <span className="min-w-0 truncate">
+                      {e.code ? `${e.code} — ${e.nom}` : e.nom}
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            <p className="mt-1 text-xs text-attenue">
+              Une ou plusieurs. La mission apparaît dans le suivi et dans chaque dossier.
+            </p>
           </div>
 
-          {peutAttribuer && etudeIdNum > 0 && (
+          {peutAttribuer && idsChoisis.length > 0 && (
             <div>
               <label htmlFor={`${uid}-assigneA`} className="mb-1.5 block text-sm font-medium">
                 Attribuer à
               </label>
               <select
-                key={etudeChoisie}
+                key={idsChoisis.join("-")}
                 id={`${uid}-assigneA`}
                 name="assigneA"
                 defaultValue={tache?.assigneA ?? ""}
@@ -193,8 +219,8 @@ export default function FormulaireTache({
                 )}
               </select>
               <p className="mt-1 text-xs text-attenue">
-                La personne verra les informations de l&apos;étude, et uniquement les missions
-                qui lui sont attribuées.
+                La personne verra les informations de chaque étude concernée, et uniquement
+                les missions qui lui sont attribuées.
               </p>
             </div>
           )}

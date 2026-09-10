@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { etudes, partages, taches, utilisateurs } from "@/db/schema";
 import { exigerSession } from "@/lib/auth";
@@ -100,7 +100,17 @@ export async function retirerPartage(donnees: FormData): Promise<void> {
 
   db.update(taches)
     .set({ assigneA: null })
-    .where(and(eq(taches.etudeId, partage.ressourceId), eq(taches.assigneA, partage.utilisateurId)))
+    .where(
+      and(
+        eq(taches.assigneA, partage.utilisateurId),
+        sql`(
+          ${taches.etudeId} = ${partage.ressourceId}
+          or ${taches.id} in (
+            select tache_id from taches_etudes where etude_id = ${partage.ressourceId}
+          )
+        )`,
+      ),
+    )
     .run();
 
   db.delete(partages).where(eq(partages.id, id)).run();

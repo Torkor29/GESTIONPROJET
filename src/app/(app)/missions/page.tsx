@@ -46,8 +46,11 @@ export default async function PageMissions({
   const recherche = (params.q ?? "").trim().toLowerCase();
   const masquerTerminees = params.masquerTerminees === "1";
 
-  const lignes = toutes.filter(({ tache, sousTaches }) => {
-    if (etudeId && tache.etudeId !== etudeId) return false;
+  const lignes = toutes.filter(({ tache, sousTaches, etudesLiees }) => {
+    if (etudeId) {
+      const ids = (etudesLiees ?? []).map((e) => e.id);
+      if (ids.length === 0 ? tache.etudeId !== etudeId : !ids.includes(etudeId)) return false;
+    }
     if (params.statut && tache.statut !== params.statut) return false;
     if (masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {

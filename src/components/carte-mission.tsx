@@ -14,7 +14,7 @@ import SelecteurStatut from "./selecteur-statut";
 import { EtiquettePriorite } from "./etiquettes";
 import { Icone } from "./icones";
 import { formaterDate, formaterDuree, statutDepuisEtapes } from "@/lib/format";
-import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
+import type { CompteChoix, EtudeLiee, MembreAttribution } from "@/lib/attribution";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
 function BoutonAjouterEtape() {
@@ -103,6 +103,7 @@ export default function CarteMission({
   chronoSousTacheId = null,
   etudes,
   afficherEtude = true,
+  etudesLiees = [],
   assigneNom = null,
   membres = [],
   comptes = [],
@@ -118,8 +119,9 @@ export default function CarteMission({
   minutesParEtape?: Record<number, number>;
   chronoEnCours?: boolean;
   chronoSousTacheId?: number | null;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   afficherEtude?: boolean;
+  etudesLiees?: EtudeLiee[];
   assigneNom?: string | null;
   membres?: MembreAttribution[];
   comptes?: CompteChoix[];
@@ -135,13 +137,21 @@ export default function CarteMission({
   const progression = total === 0 ? 0 : Math.round((faites / total) * 100);
   const chronoMission = chronoEnCours && chronoSousTacheId === null;
 
+  const etiquettesEtudes =
+    etudesLiees.length > 0
+      ? etudesLiees
+      : etudeNom
+        ? [{ id: 0, nom: etudeNom, code: etudeCode ?? null, couleur: etudeCouleur ?? "#a8a29e", proprietaireId: null }]
+        : [];
+  const premiereCouleur = etiquettesEtudes[0]?.couleur;
+
   const [ouverte, setOuverte] = useState(total > 0 && faites < total);
 
   return (
     <article
       className={`carte-mission overflow-hidden ${terminee ? "opacity-70" : ""}`}
       style={{
-        borderLeftColor: etudeCouleur ?? "rgb(var(--ligne))",
+        borderLeftColor: premiereCouleur ?? etudeCouleur ?? "rgb(var(--ligne))",
       }}
     >
       <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5">
@@ -171,9 +181,10 @@ export default function CarteMission({
               {tache.titre}
             </h3>
             <EtiquettePriorite priorite={tache.priorite} />
-            {afficherEtude && (
-              <EtiquetteEtude nom={etudeNom} code={etudeCode} couleur={etudeCouleur} />
-            )}
+            {(afficherEtude || etiquettesEtudes.length > 1) &&
+              etiquettesEtudes.map((e) => (
+                <EtiquetteEtude key={e.id || e.nom} nom={e.nom} code={e.code} couleur={e.couleur} />
+              ))}
             {assigneNom && (
               <span className="etiquette bg-accent-voile text-accent-appuye">{assigneNom}</span>
             )}
@@ -239,6 +250,7 @@ export default function CarteMission({
               membres={membres}
               comptes={comptes}
               peutAttribuer={peutGerer}
+              etudeIdsInitiales={etudesLiees.map((e) => e.id)}
             />
           )}
           {peutGerer && (
