@@ -1,10 +1,11 @@
 "use server";
 
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { etudes, sousTaches, taches, tachesEtudes, utilisateurs } from "@/db/schema";
-import { exigerAcces, exigerEcritureMission, exigerGestionMission } from "@/lib/acces";
+import { exigerAcces, exigerEcritureMission, exigerGestionMission, missionVisible } from "@/lib/acces";
+import { dansLaPurge } from "@/lib/archives";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { depuisChampDate, statutDepuisEtapes } from "@/lib/format";
 import { lireCouleur } from "@/lib/couleurs";
@@ -159,6 +160,7 @@ export async function modifierTache(
           notes: String(donnees.get("notes") ?? "").trim() || null,
           statut,
           termineeLe: statut === "terminee" ? maintenant() : null,
+          archiveeLe: statut === "terminee" ? actuelle.archiveeLe : null,
           modifieLe: maintenant(),
         })
         .where(eq(taches.id, id));
@@ -186,6 +188,7 @@ export async function modifierTache(
           ? lireCouleur(String(donnees.get("couleur") ?? ""))
           : actuelle.couleur,
         termineeLe: statut === "terminee" ? maintenant() : null,
+        archiveeLe: statut === "terminee" ? actuelle.archiveeLe : null,
         modifieLe: maintenant(),
       })
       .where(eq(taches.id, id));
@@ -209,7 +212,7 @@ export async function basculerTache(donnees: FormData) {
   await exigerEcritureMission(id, compte.id);
 
   const [tache] = await db
-    .select({ statut: taches.statut })
+    .select({ statut: taches.statut, archiveeLe: taches.archiveeLe })
     .from(taches)
     .where(eq(taches.id, id))
     .limit(1);
@@ -221,6 +224,7 @@ export async function basculerTache(donnees: FormData) {
     .set({
       statut: terminee ? "a_faire" : "terminee",
       termineeLe: terminee ? null : maintenant(),
+      archiveeLe: terminee ? null : tache.archiveeLe,
       modifieLe: maintenant(),
     })
     .where(eq(taches.id, id));
@@ -260,6 +264,7 @@ export async function definirStatutTache(id: number, statut: string) {
     .set({
       statut,
       termineeLe: statut === "terminee" ? maintenant() : null,
+      ...(statut !== "terminee" ? { archiveeLe: null } : {}),
       modifieLe: maintenant(),
     })
     .where(eq(taches.id, id));
@@ -278,6 +283,104 @@ export async function supprimerTache(donnees: FormData) {
   revalidatePath("/", "layout");
 }
 
+/** Range une mission terminée : elle quitte le suivi, les données restent. */
+export async function archiverTache(donnees: FormData) {
+  const compte = await exigerSession();
+  const id = Number(donnees.get("id"));
+  if (!id) throw new Error("Tâche manquante.");
+  await exigerEcritureMission(id, compte.id);
+
+  const [tache] = await db.select().from(taches).where(eq(taches.id, id)).limit(1);
+  if (!tache) throw new Error("Tâche introuvable.");
+  const etapes = await db
+    .select({ faite: sousTaches.faite })
+    .from(sousTaches)
+    .where(eq(sousTaches.tacheId, id));
+  if (statutDepuisEtapes(tache.statut, etapes) !== "terminee") {
+    throw new Error("On n'archive qu'une mission terminée.");
+  }
+
+  await db
+    .update(taches)
+    .set({ archiveeLe: tache.archiveeLe ?? maintenant(), modifieLe: maintenant() })
+    .where(eq(taches.id, id));
+  revalidatePath("/", "layout");
+}
+
+/** Remet une archive dans le suivi. */
+export async function desarchiverTache(donnees: FormData) {
+  const compte = await exigerSession();
+  const id = Number(donnees.get("id"));
+  if (!id) throw new Error("Tâche manquante.");
+  await exigerEcritureMission(id, compte.id);
+
+  await db
+    .update(taches)
+    .set({ archiveeLe: null, modifieLe: maintenant() })
+    .where(eq(taches.id, id));
+  revalidatePath("/", "layout");
+}
+
+export type EtatArchives = { message?: string; erreur?: string };
+
+/**
+ * Retire définitivement des archives. Sans date : tout ce que la personne
+ * peut gérer. Avec une date : les missions terminées ce jour-là ou avant.
+ * Le temps saisi reste, détaché de la mission.
+ */
+export async function viderArchives(
+  _precedent: EtatArchives,
+  donnees: FormData,
+): Promise<EtatArchives> {
+  try {
+    const compte = await exigerSession();
+    if (String(donnees.get("confirmer") ?? "") !== "1") {
+      return { erreur: "Cochez la confirmation pour retirer définitivement." };
+    }
+
+    const tout = String(donnees.get("tout") ?? "") === "1";
+    const avant = depuisChampDate(String(donnees.get("avant") ?? ""));
+    if (!tout && avant == null) {
+      return { erreur: "Indiquez une date, ou videz tout." };
+    }
+
+    const archivees = await db
+      .select({
+        id: taches.id,
+        termineeLe: taches.termineeLe,
+        archiveeLe: taches.archiveeLe,
+      })
+      .from(taches)
+      .where(and(isNotNull(taches.archiveeLe), missionVisible(compte.id)));
+
+    const retenues: number[] = [];
+    for (const t of archivees) {
+      if (!dansLaPurge(t, tout ? null : avant)) continue;
+      try {
+        await exigerGestionMission(t.id, compte.id);
+        retenues.push(t.id);
+      } catch {
+        // Pas le propriétaire : on laisse l'archive telle quelle.
+      }
+    }
+
+    if (retenues.length === 0) {
+      return { message: "Aucune archive à retirer." };
+    }
+
+    await db.delete(taches).where(inArray(taches.id, retenues));
+    revalidatePath("/", "layout");
+    return {
+      message:
+        retenues.length === 1
+          ? "1 mission retirée des archives."
+          : `${retenues.length} missions retirées des archives.`,
+    };
+  } catch (e) {
+    return { erreur: messageErreur(e) };
+  }
+}
+
 /**
  * Aligne le statut de la mission sur ses étapes, s'il y en a.
  * Sans étape, le statut manuel est laissé tel quel.
@@ -288,20 +391,22 @@ async function appliquerStatutDepuisEtapes(tacheId: number) {
     .from(sousTaches)
     .where(eq(sousTaches.tacheId, tacheId));
   const [mission] = await db
-    .select({ statut: taches.statut })
+    .select({ statut: taches.statut, archiveeLe: taches.archiveeLe })
     .from(taches)
     .where(eq(taches.id, tacheId))
     .limit(1);
   if (!mission) return;
 
   const statut = statutDepuisEtapes(mission.statut, etapes);
-  if (statut === mission.statut) return;
+  const archiveeLe = statut === "terminee" ? mission.archiveeLe : null;
+  if (statut === mission.statut && archiveeLe === mission.archiveeLe) return;
 
   await db
     .update(taches)
     .set({
       statut,
       termineeLe: statut === "terminee" ? maintenant() : null,
+      archiveeLe,
       modifieLe: maintenant(),
     })
     .where(eq(taches.id, tacheId));

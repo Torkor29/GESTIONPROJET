@@ -319,19 +319,27 @@ export default async function PageEtude({
       {/* ------------------------------------------------------- Missions */}
       {section === "missions" && (
         <div className="bloc-app space-y-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-titre text-lg font-bold">Missions</h2>
-            {estProprietaire && (
-              <FormulaireTache
-                etudes={toutesEtudes}
-                etudeIdParDefaut={etude.id}
-                libelle="+ Nouvelle mission"
-                variante="discret"
-                membres={membres}
-                comptes={comptes}
-                peutAttribuer
-              />
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`/missions?vue=archives&etude=${etude.id}`}
+                className="text-sm font-medium text-accent transition-opacity hover:opacity-70"
+              >
+                Archives
+              </Link>
+              {estProprietaire && (
+                <FormulaireTache
+                  etudes={toutesEtudes}
+                  etudeIdParDefaut={etude.id}
+                  libelle="+ Nouvelle mission"
+                  variante="discret"
+                  membres={membres}
+                  comptes={comptes}
+                  peutAttribuer
+                />
+              )}
+            </div>
           </div>
           <TableauMissions
             lignes={missions.map((t) => ({

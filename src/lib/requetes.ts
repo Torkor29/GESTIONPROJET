@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { and, asc, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
@@ -227,7 +227,7 @@ export async function tachesDEtude(etudeId: number) {
     .select({ tache: taches, assigneNom: assigne.nom })
     .from(taches)
     .leftJoin(assigne, eq(taches.assigneA, assigne.id))
-    .where(and(missionLieeA(etudeId), missionVisible(id)))
+    .where(and(missionLieeA(etudeId), missionVisible(id), isNull(taches.archiveeLe)))
     .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
 
   const ids = liste.map((l) => l.tache.id);
@@ -248,7 +248,7 @@ export async function tachesDEtude(etudeId: number) {
 }
 
 /** Toutes les missions, avec les études concernées. */
-export async function toutesLesTaches(filtreStatut?: string) {
+export async function toutesLesTaches(filtreStatut?: string, archivees = false) {
   const id = await moi();
   const assigne = alias(utilisateurs, "assigne");
   const lignes = await db
@@ -258,8 +258,17 @@ export async function toutesLesTaches(filtreStatut?: string) {
     })
     .from(taches)
     .leftJoin(assigne, eq(taches.assigneA, assigne.id))
-    .where(missionVisible(id))
-    .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
+    .where(
+      and(
+        missionVisible(id),
+        archivees ? isNotNull(taches.archiveeLe) : isNull(taches.archiveeLe),
+      ),
+    )
+    .orderBy(
+      archivees ? desc(taches.termineeLe) : asc(taches.statut),
+      archivees ? desc(taches.archiveeLe) : asc(taches.echeance),
+      desc(taches.creeLe),
+    );
 
   const ids = lignes.map((l) => l.tache.id);
   const [parMission, cumul, parEtudes] = await Promise.all([
@@ -568,9 +577,14 @@ export async function statistiques() {
   const accessibles = missionVisible(id);
 
   const missions = await db
-    .select({ id: taches.id, statut: taches.statut, echeance: taches.echeance })
+    .select({
+      id: taches.id,
+      statut: taches.statut,
+      echeance: taches.echeance,
+      archiveeLe: taches.archiveeLe,
+    })
     .from(taches)
-    .where(accessibles);
+    .where(and(accessibles, isNull(taches.archiveeLe)));
   const etapesParMission = await sousTachesParMission(missions.map((t) => t.id));
   const effectives = missions.map((t) => ({
     ...t,

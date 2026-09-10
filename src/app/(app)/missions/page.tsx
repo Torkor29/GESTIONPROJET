@@ -2,6 +2,7 @@ import Link from "next/link";
 import FormulaireTache from "@/components/formulaire-tache";
 import MenuExport from "@/components/menu-export";
 import TableauMissions from "@/components/tableau-missions";
+import ViderArchives from "@/components/vider-archives";
 import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 import { utilisateurActuel } from "@/lib/auth";
 import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
@@ -14,6 +15,7 @@ const VUES = [
   { cle: "tableau", libelle: "Tableau" },
   { cle: "groupe", libelle: "Groupé par statut" },
   { cle: "echeances", libelle: "Par échéance" },
+  { cle: "archives", libelle: "Archives" },
 ] as const;
 
 type Params = {
@@ -31,10 +33,11 @@ export default async function PageMissions({
 }) {
   const params = await searchParams;
   const vue = params.vue ?? "tableau";
+  const archives = vue === "archives";
   const maintenant = Math.floor(Date.now() / 1000);
 
   const [toutes, etudes, membres, compte, niveaux] = await Promise.all([
-    toutesLesTaches(),
+    toutesLesTaches(undefined, archives),
     listerEtudes(),
     membresPourAttribution(),
     utilisateurActuel(),
@@ -51,8 +54,8 @@ export default async function PageMissions({
       const ids = (etudesLiees ?? []).map((e) => e.id);
       if (ids.length === 0 ? tache.etudeId !== etudeId : !ids.includes(etudeId)) return false;
     }
-    if (params.statut && tache.statut !== params.statut) return false;
-    if (masquerTerminees && tache.statut === "terminee") return false;
+    if (!archives && params.statut && tache.statut !== params.statut) return false;
+    if (!archives && masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
       const etapes = (sousTaches ?? []).map((s) => s.titre).join(" ");
       const texte = `${tache.titre} ${tache.notes ?? ""} ${etapes}`.toLowerCase();
@@ -71,10 +74,20 @@ export default async function PageMissions({
         <div>
           <h1 className="font-titre text-3xl font-bold">Suivi de missions</h1>
           <p className="mt-1 text-sm text-attenue">
-            {lignes.length} mission{lignes.length > 1 ? "s" : ""} affichée
-            {lignes.length > 1 ? "s" : ""}
-            {enRetard.length > 0 && (
-              <span className="text-alerte"> · {enRetard.length} en retard</span>
+            {archives ? (
+              <>
+                {lignes.length} mission{lignes.length > 1 ? "s" : ""} archivée
+                {lignes.length > 1 ? "s" : ""}. Elles restent pour le point,
+                jusqu&apos;à ce que vous les vidiez.
+              </>
+            ) : (
+              <>
+                {lignes.length} mission{lignes.length > 1 ? "s" : ""} affichée
+                {lignes.length > 1 ? "s" : ""}
+                {enRetard.length > 0 && (
+                  <span className="text-alerte"> · {enRetard.length} en retard</span>
+                )}
+              </>
             )}
           </p>
         </div>
@@ -83,10 +96,14 @@ export default async function PageMissions({
             base="/api/export-missions"
             parametres={
               Object.fromEntries(
-                Object.entries(params).filter(([, v]) => v),
+                Object.entries({
+                  ...params,
+                  ...(archives ? { archives: "1" } : {}),
+                }).filter(([, v]) => v),
               ) as Record<string, string>
             }
           />
+          {!archives && (
           <FormulaireTache
             etudes={etudes}
             libelle="Nouvelle mission"
@@ -94,6 +111,7 @@ export default async function PageMissions({
             comptes={comptes}
             peutAttribuer
           />
+          )}
         </div>
       </header>
 
@@ -101,7 +119,11 @@ export default async function PageMissions({
       <nav className="anime-bloc flex flex-wrap gap-2">
         {VUES.map((v) => {
           const q = new URLSearchParams(
-            Object.entries(params).filter(([k, val]) => val && k !== "vue") as [string, string][],
+            Object.entries(params).filter(([k, val]) => {
+              if (!val || k === "vue") return false;
+              if (v.cle === "archives" && (k === "masquerTerminees" || k === "statut")) return false;
+              return true;
+            }) as [string, string][],
           );
           q.set("vue", v.cle);
           return (
@@ -153,6 +175,7 @@ export default async function PageMissions({
           </select>
         </div>
 
+        {!archives && (
         <div className="min-w-40">
           <label htmlFor="statut" className="mb-1.5 block text-xs text-attenue">
             Statut
@@ -166,7 +189,9 @@ export default async function PageMissions({
             ))}
           </select>
         </div>
+        )}
 
+        {!archives && (
         <label className="flex items-center gap-2 pb-2 text-sm">
           <input
             type="checkbox"
@@ -177,6 +202,7 @@ export default async function PageMissions({
           />
           Masquer les terminées
         </label>
+        )}
 
         <button type="submit" className="bouton-discret">
           Filtrer
@@ -188,7 +214,23 @@ export default async function PageMissions({
         )}
       </form>
 
-      {vue === "groupe" ? (
+      {archives && <ViderArchives />}
+
+      {archives || vue === "tableau" ? (
+        <TableauMissions
+          lignes={lignes}
+          etudes={etudes}
+          message={
+            archives
+              ? "Aucune mission archivée."
+              : "Aucune mission ne correspond à ces filtres."
+          }
+          membres={membres}
+          comptes={comptes}
+          utilisateurId={compte?.id}
+          niveauxPartage={niveaux}
+        />
+      ) : vue === "groupe" ? (
         <div className="space-y-5">
           {Object.entries(LIBELLES_STATUT_MISSION).map(([statut, libelle]) => {
             const duGroupe = lignes.filter((l) => l.tache.statut === statut);
@@ -221,17 +263,7 @@ export default async function PageMissions({
           utilisateurId={compte?.id}
           niveauxPartage={niveaux}
         />
-      ) : (
-        <TableauMissions
-          lignes={lignes}
-          etudes={etudes}
-          message="Aucune mission ne correspond à ces filtres."
-          membres={membres}
-          comptes={comptes}
-          utilisateurId={compte?.id}
-          niveauxPartage={niveaux}
-        />
-      )}
+      ) : null}
     </div>
   );
 }

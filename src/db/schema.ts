@@ -145,6 +145,11 @@ export const taches = sqliteTable(
     }),
     ordre: integer("ordre").notNull().default(0),
     termineeLe: integer("terminee_le"),
+    /**
+     * Instant d'archivage. Null = encore dans le suivi.
+     * Les archives restent consultables pour les points ; on les vide ensuite.
+     */
+    archiveeLe: integer("archivee_le"),
     creeLe: integer("cree_le").notNull().default(maintenant),
     modifieLe: integer("modifie_le").notNull().default(maintenant),
   },

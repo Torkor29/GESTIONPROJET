@@ -19,15 +19,16 @@ export async function GET(requete: Request) {
   const statut = params.get("statut");
   const recherche = (params.get("q") ?? "").trim().toLowerCase();
   const masquerTerminees = params.get("masquerTerminees") === "1";
+  const archives = params.get("archives") === "1";
 
-  const toutes = await toutesLesTaches();
+  const toutes = await toutesLesTaches(undefined, archives);
   const lignes = toutes.filter(({ tache, sousTaches: etapes, etudesLiees }) => {
     if (etudeId) {
       const ids = (etudesLiees ?? []).map((e) => e.id);
       if (ids.length === 0 ? tache.etudeId !== etudeId : !ids.includes(etudeId)) return false;
     }
-    if (statut && tache.statut !== statut) return false;
-    if (masquerTerminees && tache.statut === "terminee") return false;
+    if (!archives && statut && tache.statut !== statut) return false;
+    if (!archives && masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
       const texte = `${tache.titre} ${tache.notes ?? ""} ${etapes.map((s) => s.titre).join(" ")}`.toLowerCase();
       if (!texte.includes(recherche)) return false;

@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   ajouterSousTache,
+  archiverTache,
   basculerSousTache,
+  desarchiverTache,
   supprimerSousTache,
   supprimerTache,
 } from "@/actions/taches";
@@ -131,6 +133,8 @@ export default function CarteMission({
 }) {
   const statut = statutDepuisEtapes(tache.statut, sousTaches);
   const terminee = statut === "terminee";
+  const archivee = Boolean(tache.archiveeLe);
+  const ecrire = peutEcrire && !archivee;
   const maintenant = Math.floor(Date.now() / 1000);
   const enRetard = !terminee && Boolean(tache.echeance && tache.echeance < maintenant);
   const faites = sousTaches.filter((s) => s.faite).length;
@@ -198,7 +202,7 @@ export default function CarteMission({
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-            <SelecteurStatut id={tache.id} statut={statut} verrouille={total > 0 || !peutEcrire} />
+            <SelecteurStatut id={tache.id} statut={statut} verrouille={total > 0 || !ecrire} />
             {tache.echeance ? (
               <span className={`chiffres ${enRetard ? "font-semibold text-alerte" : "text-attenue"}`}>
                 {enRetard ? "⚠ " : ""}
@@ -206,6 +210,14 @@ export default function CarteMission({
               </span>
             ) : (
               <span className="text-xs text-efface">Sans échéance</span>
+            )}
+            {terminee && tache.termineeLe ? (
+              <span className="text-xs text-attenue">Terminée le {formaterDate(tache.termineeLe)}</span>
+            ) : null}
+            {archivee && tache.archiveeLe && (
+              <span className="text-xs text-attenue">
+                Archivée le {formaterDate(tache.archiveeLe)}
+              </span>
             )}
             {total > 0 && (
               <span className="chiffres text-xs text-attenue">
@@ -231,8 +243,8 @@ export default function CarteMission({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-          {peutEcrire && <SaisieDureeRapide tacheId={tache.id} />}
-          {peutEcrire && (
+          {peutEcrire && !archivee && <SaisieDureeRapide tacheId={tache.id} />}
+          {peutEcrire && !archivee && (
           <form action={demarrerChrono}>
             <input type="hidden" name="etudeId" value={tache.etudeId ?? ""} />
             <input type="hidden" name="tacheId" value={tache.id} />
@@ -260,7 +272,42 @@ export default function CarteMission({
               etudeIdsInitiales={etudesLiees.map((e) => e.id)}
             />
           )}
-          {peutGerer && (
+          {peutEcrire && terminee && !archivee && (
+            <form action={archiverTache}>
+              <input type="hidden" name="id" value={tache.id} />
+              <button
+                type="submit"
+                title="Archiver — la mission reste consultable"
+                aria-label="Archiver la mission"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-attenue transition hover:bg-creux hover:text-accent active:scale-95"
+              >
+                <Icone nom="archive" className="h-4 w-4" />
+              </button>
+            </form>
+          )}
+          {peutEcrire && archivee && (
+            <form action={desarchiverTache}>
+              <input type="hidden" name="id" value={tache.id} />
+              <button
+                type="submit"
+                title="Remettre dans le suivi"
+                aria-label="Remettre la mission dans le suivi"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-attenue transition hover:bg-creux hover:text-accent active:scale-95"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  className="h-4 w-4"
+                  aria-hidden
+                >
+                  <path d="M9 14l-4-4 4-4M5 10h11.5a4.5 4.5 0 1 1 0 9H12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </form>
+          )}
+          {peutGerer && !terminee && !archivee && (
             <form action={supprimerTache}>
             <input type="hidden" name="id" value={tache.id} />
             <button
@@ -294,7 +341,7 @@ export default function CarteMission({
           <div className="border-t border-ligne/80 bg-creux/35 px-4 py-4 sm:px-5">
             {total === 0 ? (
               <p className="mb-3 text-sm text-attenue">
-                {peutEcrire
+                {ecrire
                   ? "Découpez cette mission : relancer quelqu'un, attendre un retour, déposer un document…"
                   : "Aucune étape sur cette mission."}
               </p>
@@ -305,7 +352,7 @@ export default function CarteMission({
                   const chronoIci = chronoSousTacheId === s.id;
                   return (
                     <li key={s.id} className="group/etape flex flex-wrap items-center gap-2">
-                      {peutEcrire ? (
+                      {ecrire ? (
                       <form action={basculerSousTache}>
                         <input type="hidden" name="id" value={s.id} />
                         <button
@@ -347,7 +394,7 @@ export default function CarteMission({
                           {formaterDuree(minutesEtape)}
                         </span>
                       )}
-                      {peutEcrire && (
+                      {ecrire && (
                       <div className="flex items-center gap-0.5">
                         <SaisieDureeRapide tacheId={tache.id} sousTacheId={s.id} compact />
                         <form action={demarrerChrono}>
@@ -383,7 +430,7 @@ export default function CarteMission({
               </ul>
             )}
 
-            {peutEcrire && (
+            {ecrire && (
             <form action={ajouterSousTache} className="flex items-center gap-2">
               <input type="hidden" name="tacheId" value={tache.id} />
               <input
