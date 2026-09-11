@@ -22,6 +22,9 @@ export async function envoyerCourrier(opts: {
       port: compte.port,
       secure: compte.port === 465,
       auth: { user: compte.utilisateur, pass: compte.motDePasse },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
     });
     await transport.sendMail({
       from: `"${NOM_PRODUIT}" <${compte.de}>`,
