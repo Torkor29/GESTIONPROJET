@@ -55,9 +55,10 @@ export default function FormulaireTache({
     const s = etat.succes ?? 0;
     if (s > succesVu.current) {
       succesVu.current = s;
-      setOuverte(false);
+      // Un avertissement (courrier non parti) mérite d'être lu : la modale reste ouverte.
+      if (!etat.avertissement) setOuverte(false);
     }
-  }, [etat.succes]);
+  }, [etat.succes, etat.avertissement]);
 
   const [idsChoisis, setIdsChoisis] = useState<number[]>(() => {
     if (etudeIdsInitiales && etudeIdsInitiales.length > 0) return etudeIdsInitiales;
@@ -221,7 +222,8 @@ export default function FormulaireTache({
               </select>
               <p className="mt-1 text-xs text-attenue">
                 La personne verra les informations de chaque étude concernée, et uniquement
-                les missions qui lui sont attribuées.
+                les missions qui lui sont attribuées. Si une messagerie est configurée sur
+                le serveur, elle reçoit aussi un courrier avec le détail de la mission.
               </p>
             </div>
           )}
@@ -341,10 +343,18 @@ export default function FormulaireTache({
               {etat.erreur}
             </p>
           )}
+          {etat.avertissement && (
+            <p
+              role="status"
+              className="rounded-lg bg-attention-voile/50 p-3 text-sm text-attenue"
+            >
+              {etat.avertissement}
+            </p>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={() => setOuverte(false)} className="bouton-discret">
-              Annuler
+              {etat.avertissement ? "Fermer" : "Annuler"}
             </button>
             <BoutonEnvoyer libelle={edition ? "Enregistrer" : "Ajouter"} />
           </div>

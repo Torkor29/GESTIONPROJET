@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
   // Génère un serveur autonome dans .next/standalone : l'image Docker finale
   // n'a alors pas besoin des node_modules complets.
   output: "standalone",
-  serverExternalPackages: ["better-sqlite3", "exceljs"],
+  serverExternalPackages: ["better-sqlite3", "exceljs", "nodemailer"],
   // En local, le navigateur tape parfois 127.0.0.1 alors que Next écoute sur
   // localhost : sans cette liste, les actions de formulaire et le rendu RSC
   // d'une page comme /parametres peuvent échouer après hydratation.

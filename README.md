@@ -121,6 +121,20 @@ marqué `secure` que lorsqu'un domaine est configuré).
 > dizaine d'euros par an et suffit à ce que Caddy active le chiffrement tout
 > seul. En attendant, évitez les réseaux Wi-Fi publics.
 
+Pour qu'attribuer une mission prévienne la personne par courrier, ajoutez
+votre boîte — Gmail suffit, sans service payant. Il faut un mot de passe
+d'application (validation en deux étapes activée), pas le mot de passe
+habituel du compte. Les étapes sont dans [INSTALLATION.md](INSTALLATION.md)
+§ 6.4.
+
+```bash
+SMTP_USER=votre.adresse@gmail.com
+SMTP_MOT_DE_PASSE=xxxx xxxx xxxx xxxx
+```
+
+Sans ces lignes, l'attribution s'enregistre simplement : aucun courrier ne
+part, et aucun message d'erreur n'apparaît.
+
 ### 4. Démarrer
 
 ```bash
@@ -130,8 +144,8 @@ docker compose up -d --build
 C'est tout. Ouvrez `https://votre-domaine` : l'écran de création de compte
 s'affiche. Renseignez votre nom, votre adresse et un mot de passe. Les comptes
 suivants se créent de la même façon, ou par invitation depuis Paramètres →
-Équipe. Un mot de passe oublié se réinitialise avec l'adresse du compte, sans
-envoi de courrier.
+Équipe (le lien se copie, il n'est pas envoyé par courrier). Un mot de passe
+oublié se réinitialise avec l'adresse du compte, sans envoi de courrier.
 
 La base de données est créée automatiquement au premier démarrage ; il n'y a
 aucune commande de migration à lancer.
@@ -282,9 +296,11 @@ src/
   annoncées dans `sitemap.xml`. La page des référentiels est rendue depuis
   `src/lib/referentiels.ts` : le contenu public et celui des checklists ne
   peuvent pas diverger.
-- **Invitations remises de la main à la main** : pas de serveur de courrier à
-  configurer, et aucune adresse confiée à un tiers. Le lien se copie et
-  s'envoie par ses propres moyens ; il vaut sept jours et ne sert qu'une fois.
+- **Invitations remises de la main à la main** : le lien se copie et s'envoie
+  par ses propres moyens ; il vaut sept jours et ne sert qu'une fois. Un
+  courrier d'attribution, lui, peut partir si une boîte SMTP est configurée
+  (Gmail avec un mot de passe d'application). Sans cette configuration,
+  l'attribution s'enregistre et personne n'est prévenu.
 
 **Deux pièges contournés, à connaître si vous reprenez le code :**
 

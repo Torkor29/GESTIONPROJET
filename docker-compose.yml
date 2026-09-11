@@ -19,6 +19,13 @@ services:
       # session, lui, se fie au protocole réel de la requête (en-tête
       # X-Forwarded-Proto), pas seulement à la présence de cette variable.
       DOMAINE: ${DOMAINE:-}
+      # Messagerie facultative : sans ces variables, l'attribution d'une
+      # mission s'enregistre sans envoyer de courrier.
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_MOT_DE_PASSE: ${SMTP_MOT_DE_PASSE:-}
+      SMTP_HOTE: ${SMTP_HOTE:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_DE: ${SMTP_DE:-}
     volumes:
       # Toutes vos données vivent ici : base SQLite et fichiers téléversés.
       # C'est le seul dossier à sauvegarder.

@@ -52,9 +52,8 @@ export default async function PageEquipe() {
         <h1 className="mt-1.5 font-titre text-3xl font-bold">Équipe</h1>
         <p className="mt-2 max-w-2xl text-attenue">
           Invitez vos collègues à créer un compte sur cette installation. Le lien
-          d&apos;invitation se copie et se transmet par vos propres moyens —
-          l&apos;application n&apos;envoie aucun courrier, et ne confie donc
-          aucune adresse à un tiers.
+          d&apos;invitation se copie et se transmet par vos propres moyens — il
+          n&apos;est pas envoyé par courrier.
         </p>
       </header>
 

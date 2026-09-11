@@ -11,6 +11,11 @@ import { depuisChampDate, statutDepuisEtapes } from "@/lib/format";
 import { lireCouleur } from "@/lib/couleurs";
 import { assurerPartageEtude } from "./partages";
 import { type EtatFormulaire, messageErreur } from "./etat";
+import { redigerCourrierAttribution } from "@/lib/courrier-attribution";
+import { doitPrevenirAttribution } from "@/lib/courrier";
+import { envoyerCourrier } from "@/lib/envoyer-courrier";
+import { lienTimeline } from "@/lib/timeline";
+import { SITE_URL } from "@/lib/site";
 
 const maintenant = () => Math.floor(Date.now() / 1000);
 
@@ -69,6 +74,54 @@ async function lireAssigneA(
   return { assigneA };
 }
 
+const AVERTISSEMENT_COURRIER =
+  "La mission est enregistrée, mais le courrier n'est pas parti. Vérifiez la messagerie du serveur.";
+
+async function prevenirAttribution(opts: {
+  assigneA: number | null;
+  precedent?: number | null;
+  auteurId: number;
+  auteurNom: string;
+  titre: string;
+  notes: string | null;
+  priorite: string;
+  echeance: number | null;
+  etudeIds: number[];
+}): Promise<string | undefined> {
+  if (!doitPrevenirAttribution(opts.assigneA, opts.precedent, opts.auteurId)) return;
+
+  const dest = db
+    .select({ nom: utilisateurs.nom, email: utilisateurs.email })
+    .from(utilisateurs)
+    .where(eq(utilisateurs.id, opts.assigneA))
+    .get();
+  if (!dest) return;
+
+  const etudesLiees =
+    opts.etudeIds.length > 0
+      ? db
+          .select({ nom: etudes.nom, code: etudes.code })
+          .from(etudes)
+          .where(inArray(etudes.id, opts.etudeIds))
+          .all()
+      : [];
+
+  const { sujet, texte } = redigerCourrierAttribution({
+    destinataireNom: dest.nom,
+    parNom: opts.auteurNom,
+    titre: opts.titre,
+    notes: opts.notes,
+    priorite: opts.priorite,
+    echeance: opts.echeance,
+    etudes: etudesLiees,
+    href: `${SITE_URL}${lienTimeline(opts.etudeIds)}`,
+  });
+
+  const envoi = await envoyerCourrier({ a: dest.email, sujet, texte });
+  if (!envoi.ok && envoi.raison === "echec") return AVERTISSEMENT_COURRIER;
+  return;
+}
+
 export async function creerTache(
   precedent: EtatFormulaire,
   donnees: FormData,
@@ -120,7 +173,20 @@ export async function creerTache(
     }
 
     revalidatePath("/", "layout");
-    return { succes: (precedent.succes ?? 0) + 1 };
+    const avertissement = await prevenirAttribution({
+      assigneA: attribution.assigneA,
+      auteurId: compte.id,
+      auteurNom: compte.nom,
+      titre,
+      notes: String(donnees.get("notes") ?? "").trim() || null,
+      priorite: String(donnees.get("priorite") ?? "normale"),
+      echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+      etudeIds,
+    });
+    return {
+      succes: (precedent.succes ?? 0) + 1,
+      ...(avertissement ? { avertissement } : {}),
+    };
   } catch (e) {
     return { erreur: messageErreur(e) };
   }
@@ -197,7 +263,21 @@ export async function modifierTache(
     await appliquerStatutDepuisEtapes(id);
 
     revalidatePath("/", "layout");
-    return { succes: (precedent.succes ?? 0) + 1 };
+    const avertissement = await prevenirAttribution({
+      assigneA: attribution.assigneA,
+      precedent: actuelle.assigneA,
+      auteurId: compte.id,
+      auteurNom: compte.nom,
+      titre,
+      notes: String(donnees.get("notes") ?? "").trim() || null,
+      priorite: String(donnees.get("priorite") ?? "normale"),
+      echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+      etudeIds,
+    });
+    return {
+      succes: (precedent.succes ?? 0) + 1,
+      ...(avertissement ? { avertissement } : {}),
+    };
   } catch (e) {
     return { erreur: messageErreur(e) };
   }

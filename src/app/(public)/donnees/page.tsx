@@ -130,8 +130,9 @@ export default function PageDonnees() {
           <ul className="mt-5 space-y-2.5">
             {[
               "Le partage est explicite : rien n'est visible par défaut à l'échelle de l'établissement.",
-              "Les invitations se remettent de la main à la main : aucune adresse n'est confiée à un service tiers, et aucun serveur de courrier n'est nécessaire. Un lien vaut sept jours et ne sert qu'une fois.",
+              "Les invitations se remettent de la main à la main : un lien vaut sept jours et ne sert qu'une fois. Aucun courrier d'invitation n'est envoyé.",
               "Un mot de passe oublié se réinitialise sur le site, à partir de l'adresse du compte : aucun courrier n'est envoyé.",
+              "Si une messagerie est configurée sur le serveur (une boîte Gmail, par exemple), attribuer une mission envoie un courrier à la personne concernée. Le message transite par cette boîte — ce n'est pas un service de courrier opéré par Vigie. Sans configuration, l'attribution s'enregistre simplement.",
               "Un compte désactivé perd l'accès immédiatement, sans attendre l'expiration de son cookie de session.",
               "Le téléchargement d'un document vérifie l'accès à l'étude dont il dépend, et pas seulement le fait d'être connecté.",
               "Les indicateurs d'équipe ne portent que sur les études dont on est propriétaire, et se limitent à des totaux.",

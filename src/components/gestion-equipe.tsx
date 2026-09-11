@@ -31,9 +31,9 @@ function BoutonInviter() {
 }
 
 /**
- * Le lien n'est pas envoyé par courrier — l'application n'a pas de serveur
- * SMTP, et en ajouter un signifierait confier des adresses à un tiers. On le
- * copie et on le transmet par ses propres moyens.
+ * Le lien n'est pas envoyé par courrier : on le copie et on le transmet
+ * par ses propres moyens. (Une messagerie SMTP, si elle est configurée,
+ * ne sert qu'à prévenir d'une mission attribuée.)
  */
 function LienACopier({ jeton }: { jeton: string }) {
   const [copie, setCopie] = useState(false);
