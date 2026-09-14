@@ -231,7 +231,7 @@ export default function FormulaireTache({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor={`${uid}-priorite`} className="mb-1.5 block text-sm font-medium">
-                Priorité
+                Importance
               </label>
               <select
                 id={`${uid}-priorite`}
@@ -245,6 +245,10 @@ export default function FormulaireTache({
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-attenue">
+                Peu importante : absente du bloc « À traiter ». Importante : y figure même sans
+                échéance proche.
+              </p>
             </div>
 
             <div>

@@ -114,7 +114,7 @@ describe("redigerCourrierAttribution", () => {
     assert.match(texte, /Mission : Déclaration de fin d'étude à l'ANSM/);
     assert.match(texte, /Étude : ALP-01 — Étude Alpha/);
     assert.match(texte, new RegExp(`Échéance : ${formaterDate(echeance)}`));
-    assert.match(texte, /Priorité : Haute/);
+    assert.match(texte, /Importance : Importante/);
     assert.match(texte, /Commentaire :\nPenser au CERFA\./);
     assert.match(texte, /https:\/\/projets\.example\.fr\/etudes\/4\?section=missions/);
     assert.match(texte, /Vigie Clinique/);

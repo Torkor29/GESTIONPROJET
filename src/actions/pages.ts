@@ -28,6 +28,7 @@ export async function creerPage(donnees: FormData) {
     .returning({ id: pages.id });
 
   revalidatePath("/", "layout");
+  revalidatePath("/notes");
   redirect(`/pages/${creee.id}`);
 }
 
@@ -57,6 +58,7 @@ export async function enregistrerPage(entree: {
 
   await db.update(pages).set(modifs).where(eq(pages.id, entree.id));
   revalidatePath("/", "layout");
+  revalidatePath("/notes");
 }
 
 export async function supprimerPage(donnees: FormData) {
@@ -77,5 +79,6 @@ export async function supprimerPage(donnees: FormData) {
   await db.delete(pages).where(eq(pages.id, id));
 
   revalidatePath("/", "layout");
-  redirect(page?.etudeId ? `/etudes/${page.etudeId}` : "/etudes");
+  revalidatePath("/notes");
+  redirect(page?.etudeId ? `/etudes/${page.etudeId}?section=pages` : "/notes");
 }

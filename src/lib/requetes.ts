@@ -145,8 +145,8 @@ export async function pagesDEtude(etudeId: number) {
 
 export async function pagesLibres() {
   const id = await moi();
-  // Une page sans étude n'appartient qu'à son auteur : rien ne la rattache à
-  // un partage.
+  // Une page sans étude n'appartient qu'à son auteur : c'est une note
+  // personnelle, visible dans l'onglet Notes.
   return db
     .select()
     .from(pages)

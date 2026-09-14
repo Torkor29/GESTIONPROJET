@@ -30,7 +30,7 @@ export const WIDGETS_ACCUEIL: WidgetAccueil[] = [
   {
     cle: "priorite",
     nom: "À traiter",
-    description: "Les missions les plus urgentes, en cartes.",
+    description: "Missions importantes ou à échéance proche — pas les peu importantes.",
   },
   {
     cle: "projets",

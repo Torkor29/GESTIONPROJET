@@ -30,8 +30,8 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
               </Link>
             </>
           ) : (
-            <Link href="/etudes" className="hover:text-encre">
-              Pages libres
+            <Link href="/notes" className="hover:text-encre">
+              Notes
             </Link>
           )}
         </div>

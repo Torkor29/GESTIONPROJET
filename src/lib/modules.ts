@@ -61,6 +61,16 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
+    cle: "notes",
+    nom: "Notes",
+    description: "Pense-bête et pages personnelles, hors dossier d'étude.",
+    icone: "page",
+    domaine: "Suivi de projet",
+    href: "/notes",
+    socle: true,
+    roles: TOUS,
+  },
+  {
     cle: "calendrier",
     nom: "Calendrier",
     description: "Vue mois et semaine de toutes les échéances, tous modules confondus.",

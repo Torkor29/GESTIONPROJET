@@ -12,6 +12,7 @@ import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { Icone, type NomIcone } from "@/components/icones";
 import { lireWidgetsAccueil, widgetVisible } from "@/lib/accueil";
 import { debutDeSemaine, formaterDuree } from "@/lib/format";
+import { missionsATraiter } from "@/lib/priorite";
 import { lignesRappelInclusion } from "@/lib/inclusion";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
 import { missionsPourTimeline } from "@/lib/timeline";
@@ -91,18 +92,7 @@ export default async function TableauDeBord() {
     niveauxPartage(),
   ]);
 
-  const dansUneSemaine = maintenant + 7 * 86400;
-  const ouvertes = missions.filter(({ tache }) => tache.statut !== "terminee");
-  const rangPriorite: Record<string, number> = { haute: 0, normale: 1, basse: 2 };
-  const urgentes = ouvertes
-    .filter(({ tache }) => tache.echeance && tache.echeance <= dansUneSemaine)
-    .sort((a, b) => (a.tache.echeance ?? 0) - (b.tache.echeance ?? 0));
-  const aTraiter =
-    urgentes.length > 0
-      ? urgentes
-      : [...ouvertes].sort(
-          (a, b) => (rangPriorite[a.tache.priorite] ?? 1) - (rangPriorite[b.tache.priorite] ?? 1),
-        );
+  const aTraiter = missionsATraiter(missions, maintenant);
 
   // Moyenne de conformité sur les seules études qui ont une checklist.
   const avecChecklist = [...progressions.values()].filter((p) => p.total > 0);
@@ -157,8 +147,10 @@ export default async function TableauDeBord() {
             <FormulaireDocument etudes={etudes} libelle="Nouveau document" variante="discret" />
             <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
             <form action={creerPage}>
+              <input type="hidden" name="titre" value="Nouvelle note" />
+              <input type="hidden" name="icone" value="📝" />
               <button type="submit" className="bouton-discret">
-                Nouvelle page
+                Nouvelle note
               </button>
             </form>
             <FormulaireEtude libelle="Nouvelle étude" variante="discret" />
@@ -221,9 +213,9 @@ export default async function TableauDeBord() {
             </Link>
           </div>
           <TableauMissions
-            lignes={aTraiter.slice(0, 10)}
+            lignes={aTraiter}
             etudes={etudes}
-            message="Aucune mission ouverte. Vous êtes à jour."
+            message="Rien d'urgent : pas de mission importante, ni d'échéance dans les trois semaines. Les missions peu importantes n'apparaissent pas ici."
             membres={membres}
             comptes={comptes}
             utilisateurId={compte?.id}

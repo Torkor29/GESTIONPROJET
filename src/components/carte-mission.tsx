@@ -17,6 +17,7 @@ import { EtiquettePriorite } from "./etiquettes";
 import { Icone } from "./icones";
 import { formaterDate, formaterDuree, statutDepuisEtapes } from "@/lib/format";
 import { couleurAffichee } from "@/lib/couleurs";
+import { couleurBarreDelai, niveauDelai } from "@/lib/priorite";
 import type { CompteChoix, EtudeLiee, MembreAttribution } from "@/lib/attribution";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
@@ -137,6 +138,8 @@ export default function CarteMission({
   const ecrire = peutEcrire && !archivee;
   const maintenant = Math.floor(Date.now() / 1000);
   const enRetard = !terminee && Boolean(tache.echeance && tache.echeance < maintenant);
+  const delai = terminee ? null : niveauDelai(tache.echeance, maintenant);
+  const barreDelai = couleurBarreDelai(delai);
   const faites = sousTaches.filter((s) => s.faite).length;
   const total = sousTaches.length;
   const progression = total === 0 ? 0 : Math.round((faites / total) * 100);
@@ -157,7 +160,7 @@ export default function CarteMission({
     <article
       className={`carte-mission overflow-hidden ${terminee ? "opacity-70" : ""}`}
       style={{
-        borderLeftColor: teinte,
+        borderLeftColor: barreDelai ?? teinte,
       }}
     >
       <div className="flex flex-wrap items-start gap-3 p-4 sm:p-5">
@@ -204,7 +207,22 @@ export default function CarteMission({
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
             <SelecteurStatut id={tache.id} statut={statut} verrouille={total > 0 || !ecrire} />
             {tache.echeance ? (
-              <span className={`chiffres ${enRetard ? "font-semibold text-alerte" : "text-attenue"}`}>
+              <span
+                className={`chiffres ${
+                  delai === "retard"
+                    ? "font-semibold text-alerte"
+                    : delai === "court"
+                      ? "font-semibold text-encre"
+                      : "text-attenue"
+                }`}
+                title={
+                  delai === "retard"
+                    ? "Échéance dépassée"
+                    : delai === "court"
+                      ? "Échéance dans les sept jours"
+                      : undefined
+                }
+              >
                 {enRetard ? "⚠ " : ""}
                 {formaterDate(tache.echeance)}
               </span>

@@ -32,7 +32,7 @@ export function redigerCourrierAttribution(m: MissionPourCourrier): {
     `Mission : ${m.titre}`,
     m.etudes.length > 1 ? `Études :\n  ${etudes}` : `Étude : ${etudes}`,
     `Échéance : ${formaterDate(m.echeance)}`,
-    `Priorité : ${priorite}`,
+    `Importance : ${priorite}`,
   ];
   if (commentaire) {
     lignes.push("", "Commentaire :", commentaire);

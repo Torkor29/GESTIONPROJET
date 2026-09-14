@@ -60,7 +60,7 @@ export async function GET(requete: Request) {
           valeur: (l) => LIBELLES_STATUT_MISSION[l.tache.statut] ?? l.tache.statut,
         },
         {
-          entete: "Priorité",
+          entete: "Importance",
           valeur: (l) => LIBELLES_PRIORITE[l.tache.priorite] ?? l.tache.priorite,
         },
         { entete: "Échéance", valeur: (l) => (l.tache.echeance ? formaterDate(l.tache.echeance) : "") },
@@ -104,7 +104,7 @@ export async function GET(requete: Request) {
     { header: "Étude", key: "etude", width: 24 },
     { header: "Attribuée à", key: "assignee", width: 22 },
     { header: "Statut", key: "statut", width: 14 },
-    { header: "Priorité", key: "priorite", width: 10 },
+    { header: "Importance", key: "priorite", width: 14 },
     { header: "Échéance", key: "echeance", width: 12 },
     { header: "En retard", key: "retard", width: 10 },
     { header: "Commentaire", key: "commentaire", width: 46 },

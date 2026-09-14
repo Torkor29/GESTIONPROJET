@@ -116,9 +116,9 @@ export const LIBELLES_STATUT_TACHE: Record<string, string> = {
 };
 
 export const LIBELLES_PRIORITE: Record<string, string> = {
-  basse: "Basse",
+  basse: "Peu importante",
   normale: "Normale",
-  haute: "Haute",
+  haute: "Importante",
 };
 
 /**

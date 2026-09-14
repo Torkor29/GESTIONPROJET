@@ -85,7 +85,7 @@ export const etudes = sqliteTable("etudes", {
 /**
  * Une page de contenu riche, façon Notion. Le contenu est le document
  * BlockNote sérialisé en JSON.
- * - etudeId nul = page libre, rangée à la racine.
+ * - etudeId nul = note personnelle, rangée dans l'onglet Notes.
  * - parentId permet d'imbriquer les pages entre elles.
  */
 export const pages = sqliteTable(
