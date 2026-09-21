@@ -121,6 +121,12 @@ export const LIBELLES_PRIORITE: Record<string, string> = {
   haute: "Importante",
 };
 
+/** Acronyme s'il existe, sinon le nom — pour les listes serrées. */
+export function sigleEtude(etude: { nom: string; code?: string | null }): string {
+  const code = (etude.code ?? "").trim();
+  return code || etude.nom;
+}
+
 /**
  * Statut affiché d'une mission.
  *

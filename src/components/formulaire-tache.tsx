@@ -9,6 +9,7 @@ import type { Etude, Tache } from "@/db/schema";
 import { LIBELLES_PRIORITE, LIBELLES_STATUT_TACHE, versChampDate } from "@/lib/format";
 import { PALETTE_COULEURS } from "@/lib/couleurs";
 import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
+import SelecteurEtudes from "./selecteur-etudes";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -75,10 +76,6 @@ export default function FormulaireTache({
   const idsDeja = new Set(dejaSurLEtude.map((m) => m.utilisateurId));
   const autresComptes = comptes.filter((c) => !idsDeja.has(c.id));
   const editionRestreinte = edition && !peutAttribuer;
-
-  function basculerEtude(id: number, cochee: boolean) {
-    setIdsChoisis((deja) => (cochee ? [...deja, id] : deja.filter((x) => x !== id)));
-  }
 
   const classes = {
     principal: "bouton",
@@ -157,34 +154,23 @@ export default function FormulaireTache({
           )}
 
           <div>
-            <p className="mb-1.5 text-sm font-medium">Études concernées</p>
+            <p className="mb-1.5 text-sm font-medium" id={`${uid}-etudes`}>
+              Études
+            </p>
             {etudesPossedees.length === 0 ? (
               <p className="text-sm text-attenue">Sans étude — visible seulement dans le suivi.</p>
             ) : (
-              <fieldset className="max-h-44 space-y-1 overflow-y-auto rounded-xl border border-ligne bg-creux/30 p-2.5">
-                <legend className="sr-only">Études concernées</legend>
-                {etudesPossedees.map((e) => (
-                  <label
-                    key={e.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-relief"
-                  >
-                    <input
-                      type="checkbox"
-                      name="etudeIds"
-                      value={e.id}
-                      checked={idsChoisis.includes(e.id)}
-                      onChange={(ev) => basculerEtude(e.id, ev.target.checked)}
-                      className="h-4 w-4 accent-indigo-600"
-                    />
-                    <span className="min-w-0 truncate">
-                      {e.code ? `${e.code} — ${e.nom}` : e.nom}
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
+              <SelecteurEtudes
+                etudes={etudesPossedees}
+                ids={idsChoisis}
+                onChange={setIdsChoisis}
+                etiquette="Études"
+                libelleId={`${uid}-etudes`}
+              />
             )}
             <p className="mt-1 text-xs text-attenue">
-              Une ou plusieurs. La mission apparaît dans le suivi et dans chaque dossier.
+              Une ou plusieurs, par acronyme. La mission apparaît dans le suivi et dans chaque
+              dossier.
             </p>
           </div>
 
