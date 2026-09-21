@@ -49,13 +49,17 @@ export default function SelecteurEtudes({
       if (!racine.current?.contains(e.target as Node)) setOuverte(false);
     };
     const clavier = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOuverte(false);
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOuverte(false);
     };
     document.addEventListener("mousedown", fermer);
-    document.addEventListener("keydown", clavier);
+    // Capture : sinon Échap ferme aussi la modale native <dialog>.
+    document.addEventListener("keydown", clavier, true);
     return () => {
       document.removeEventListener("mousedown", fermer);
-      document.removeEventListener("keydown", clavier);
+      document.removeEventListener("keydown", clavier, true);
     };
   }, [ouverte]);
 
