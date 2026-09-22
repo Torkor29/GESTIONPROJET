@@ -61,12 +61,12 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
-    cle: "notes",
-    nom: "Notes",
-    description: "Pense-bête et pages personnelles, hors dossier d'étude.",
+    cle: "documents",
+    nom: "Pense-bête",
+    description: "Pages classées par catégorie : texte, images, listes.",
     icone: "page",
     domaine: "Suivi de projet",
-    href: "/notes",
+    href: "/pense-bete",
     socle: true,
     roles: TOUS,
   },
@@ -232,15 +232,6 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
-    cle: "documents",
-    nom: "Documents",
-    description: "Dépôt et classement selon les catégories d'un Trial Master File.",
-    icone: "document",
-    domaine: "Réglementaire et documentaire",
-    href: "/documents",
-    roles: TOUS,
-  },
-  {
     cle: "faq",
     nom: "Base de connaissance",
     description: "Les questions qui reviennent, répondues une fois pour toutes.",
@@ -379,5 +370,7 @@ export function lireModules(brut: string | null | undefined, role: string): stri
 /** Modules actifs **et** construits, dans l'ordre du catalogue : la navigation. */
 export function navigation(actifs: string[]): Module[] {
   const choisis = new Set(actifs);
-  return MODULES.filter((m) => construit(m) && choisis.has(m.cle) && m.cle !== "checklists");
+  return MODULES.filter(
+    (m) => construit(m) && choisis.has(m.cle) && m.cle !== "checklists",
+  );
 }

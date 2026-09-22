@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
         "/missions",
         "/checklists",
         "/documents",
+        "/notes",
+        "/pense-bete",
         "/faq",
         "/pages",
         "/temps",

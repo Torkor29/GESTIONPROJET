@@ -35,6 +35,8 @@ const nextConfig: NextConfig = {
       // robots reportent alors la page d'accueil sur l'ancienne adresse au
       // lieu de la traiter comme disparue.
       { source: "/presentation", destination: "/", permanent: true },
+      { source: "/documents", destination: "/pense-bete", permanent: false },
+      { source: "/notes", destination: "/pense-bete", permanent: false },
     ];
   },
 };

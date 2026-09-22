@@ -4,7 +4,7 @@ import { supprimerPage } from "@/actions/pages";
 import EditeurCharge from "@/components/editeur-charge";
 import TitrePage from "@/components/titre-page";
 import { formaterDateHeure } from "@/lib/format";
-import { etudeParId, pageParId } from "@/lib/requetes";
+import { etudeParId, pageParId, pagesPenseBete } from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,8 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
   if (!page) notFound();
 
   const etude = page.etudeId ? await etudeParId(page.etudeId) : null;
+  const autres = await pagesPenseBete(page.etudeId ? { etudeId: page.etudeId } : {});
+  const categories = [...new Set(autres.map((p) => p.categorie).filter(Boolean))];
 
   return (
     <article className="mx-auto max-w-3xl">
@@ -25,13 +27,15 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
                 Études
               </Link>
               <span aria-hidden>/</span>
-              <Link href={`/etudes/${etude.id}`} className="truncate hover:text-encre">
+              <Link href={`/etudes/${etude.id}?section=pense-bete`} className="truncate hover:text-encre">
                 {etude.nom}
               </Link>
+              <span aria-hidden>/</span>
+              <span className="truncate">Pense-bête</span>
             </>
           ) : (
-            <Link href="/notes" className="hover:text-encre">
-              Notes
+            <Link href="/pense-bete" className="hover:text-encre">
+              Pense-bête
             </Link>
           )}
         </div>
@@ -47,7 +51,13 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
         </form>
       </nav>
 
-      <TitrePage pageId={page.id} titreInitial={page.titre} iconeInitiale={page.icone} />
+      <TitrePage
+        pageId={page.id}
+        titreInitial={page.titre}
+        iconeInitiale={page.icone}
+        categorieInitiale={page.categorie}
+        categories={categories}
+      />
 
       <p className="mt-1 text-xs text-attenue">
         Modifiée le {formaterDateHeure(page.modifieLe)}

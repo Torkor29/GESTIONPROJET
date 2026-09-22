@@ -85,7 +85,8 @@ export const etudes = sqliteTable("etudes", {
 /**
  * Une page de contenu riche, façon Notion. Le contenu est le document
  * BlockNote sérialisé en JSON.
- * - etudeId nul = note personnelle, rangée dans l'onglet Notes.
+ * - etudeId nul = page personnelle, rangée dans le pense-bête général.
+ * - categorie range les pages (réunions, à retenir…) ; vide = sans catégorie.
  * - parentId permet d'imbriquer les pages entre elles.
  */
 export const pages = sqliteTable(
@@ -100,6 +101,8 @@ export const pages = sqliteTable(
     parentId: integer("parent_id"),
     titre: text("titre").notNull().default("Sans titre"),
     icone: text("icone").notNull().default("📄"),
+    /** Libellé libre pour grouper les pages dans le pense-bête. */
+    categorie: text("categorie").notNull().default(""),
     // Document BlockNote sérialisé. Tableau JSON de blocs.
     contenu: text("contenu").notNull().default("[]"),
     ordre: integer("ordre").notNull().default(0),

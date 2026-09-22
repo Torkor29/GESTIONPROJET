@@ -140,18 +140,30 @@ export async function pagesDEtude(etudeId: number) {
         objetAccessible(pages.proprietaireId, pages.etudeId, id),
       ),
     )
-    .orderBy(asc(pages.ordre), asc(pages.id));
+    .orderBy(asc(pages.categorie), asc(pages.ordre), asc(pages.id));
 }
 
 export async function pagesLibres() {
   const id = await moi();
   // Une page sans étude n'appartient qu'à son auteur : c'est une note
-  // personnelle, visible dans l'onglet Notes.
+  // personnelle, visible dans le pense-bête général.
   return db
     .select()
     .from(pages)
     .where(and(isNull(pages.etudeId), eq(pages.proprietaireId, id)))
-    .orderBy(asc(pages.ordre), asc(pages.id));
+    .orderBy(asc(pages.categorie), asc(pages.ordre), asc(pages.id));
+}
+
+/** Pages du pense-bête, éventuellement filtrées par étude. */
+export async function pagesPenseBete(filtres: { etudeId?: number | null } = {}) {
+  const id = await moi();
+  const conditions = [objetAccessible(pages.proprietaireId, pages.etudeId, id)];
+  if (filtres.etudeId) conditions.push(eq(pages.etudeId, filtres.etudeId));
+  return db
+    .select()
+    .from(pages)
+    .where(and(...conditions))
+    .orderBy(asc(pages.categorie), asc(pages.ordre), asc(pages.id));
 }
 
 export async function pageParId(id: number) {
@@ -750,17 +762,17 @@ export type SyntheseEtude = {
   missionsEnRetard: number;
   conformite: number | null;
   minutes: number;
-  documents: number;
+  pages: number;
 };
 
 export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
   const maintenant = Math.floor(Date.now() / 1000);
 
-  const [etudesLues, missions, progressions, docs, tempsLu] = await Promise.all([
+  const [etudesLues, missions, progressions, pagesLues, tempsLu] = await Promise.all([
     listerEtudes({ avecArchivees: true }),
     toutesLesTaches(),
     progressionParEtude(),
-    tousLesDocuments({}),
+    pagesPenseBete(),
     entreesTemps(),
   ]);
 
@@ -792,7 +804,7 @@ export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
         tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant,
     ),
   );
-  const nbDocs = compter(docs, (d) => d.document.etudeId);
+  const nbPages = compter(pagesLues, (p) => p.etudeId);
 
   const minutes = new Map<number, number>();
   for (const l of tempsLu) {
@@ -812,7 +824,7 @@ export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
       missionsEnRetard: enRetard.get(e.id) ?? 0,
       conformite: p && p.total > 0 ? p.pourcentage : null,
       minutes: minutes.get(e.id) ?? 0,
-      documents: nbDocs.get(e.id) ?? 0,
+      pages: nbPages.get(e.id) ?? 0,
     };
   });
 }

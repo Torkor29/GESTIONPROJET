@@ -223,7 +223,7 @@ export default async function PageIndicateurs() {
                 <th scope="col" className="sur-titre px-3 py-3">En retard</th>
                 <th scope="col" className="sur-titre px-3 py-3">Conformité</th>
                 <th scope="col" className="sur-titre px-3 py-3">Temps</th>
-                <th scope="col" className="sur-titre px-3 py-3">Documents</th>
+                <th scope="col" className="sur-titre px-3 py-3">Pense-bête</th>
               </tr>
             </thead>
             <tbody>
@@ -264,7 +264,7 @@ export default async function PageIndicateurs() {
                     {s.minutes > 0 ? formaterDuree(s.minutes) : <span className="text-efface">—</span>}
                   </td>
                   <td className="chiffres px-3 py-3">
-                    {s.documents > 0 ? s.documents : <span className="text-efface">—</span>}
+                    {s.pages > 0 ? s.pages : <span className="text-efface">—</span>}
                   </td>
                 </tr>
               ))}

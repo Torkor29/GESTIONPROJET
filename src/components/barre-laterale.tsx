@@ -56,8 +56,12 @@ export default function BarreLaterale({
     setOuvert(false);
   }, [chemin]);
 
-  const actif = (href: string) =>
-    href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(`${href}/`);
+  const actif = (href: string) => {
+    if (href === "/pense-bete" && (chemin.startsWith("/pages/") || chemin === "/notes")) {
+      return true;
+    }
+    return href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(`${href}/`);
+  };
 
   return (
     <>

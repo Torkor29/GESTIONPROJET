@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { creerPage } from "@/actions/pages";
-import FormulaireDocument from "@/components/formulaire-document";
 import FormulaireEtude from "@/components/formulaire-etude";
 import FormulaireFaq from "@/components/formulaire-faq";
+import FormulairePenseBete from "@/components/formulaire-pense-bete";
 import FormulaireTache from "@/components/formulaire-tache";
 import PersonnaliserAccueil from "@/components/personnaliser-accueil";
 import RappelInclusion from "@/components/rappel-inclusion";
@@ -144,15 +143,8 @@ export default async function TableauDeBord() {
               comptes={comptes}
               peutAttribuer
             />
-            <FormulaireDocument etudes={etudes} libelle="Nouveau document" variante="discret" />
+            <FormulairePenseBete etudes={etudes} libelle="Nouvelle page" variante="discret" />
             <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
-            <form action={creerPage}>
-              <input type="hidden" name="titre" value="Nouvelle note" />
-              <input type="hidden" name="icone" value="📝" />
-              <button type="submit" className="bouton-discret">
-                Nouvelle note
-              </button>
-            </form>
             <FormulaireEtude libelle="Nouvelle étude" variante="discret" />
           </div>
         </section>
