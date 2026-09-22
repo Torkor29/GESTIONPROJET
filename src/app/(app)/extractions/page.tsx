@@ -59,7 +59,7 @@ export default async function PageExtractions({
     <div className="space-y-5">
       <style>{`@media print { @page { size: A4 landscape; margin: 12mm; } }`}</style>
 
-      <header className="anime-bloc flex flex-wrap items-start justify-between gap-3">
+      <header className="anime-bloc relative z-20 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="sur-titre">Extractions</p>
           <h1 className="mt-1.5 font-titre text-3xl font-bold">Suivi des missions</h1>
@@ -76,7 +76,7 @@ export default async function PageExtractions({
       </header>
 
       <form method="get" className="sans-impression bloc-app anime-bloc flex flex-wrap items-end gap-3">
-        <div className="min-w-44">
+        <div className="w-44">
           <label htmlFor="etude" className="mb-1.5 block text-xs text-attenue">
             Étude
           </label>
@@ -84,13 +84,13 @@ export default async function PageExtractions({
             <option value="">Toutes</option>
             {etudes.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.code ? `${e.code} — ${e.nom}` : e.nom}
+                {e.code || e.nom}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="min-w-40">
+        <div className="w-40">
           <label htmlFor="statut" className="mb-1.5 block text-xs text-attenue">
             Statut
           </label>
@@ -104,7 +104,7 @@ export default async function PageExtractions({
           </select>
         </div>
 
-        <div className="min-w-44">
+        <div className="w-44">
           <label htmlFor="assigne" className="mb-1.5 block text-xs text-attenue">
             Attribuée à
           </label>
@@ -119,14 +119,14 @@ export default async function PageExtractions({
           </select>
         </div>
 
-        <div className="min-w-36">
+        <div className="w-40">
           <label htmlFor="du" className="mb-1.5 block text-xs text-attenue">
             Échéance du
           </label>
           <input id="du" name="du" type="date" defaultValue={params.du ?? ""} className="champ" />
         </div>
 
-        <div className="min-w-36">
+        <div className="w-40">
           <label htmlFor="au" className="mb-1.5 block text-xs text-attenue">
             au
           </label>
