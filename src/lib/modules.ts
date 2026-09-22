@@ -61,6 +61,17 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
+    cle: "extractions",
+    nom: "Extractions",
+    description:
+      "Tableau de suivi des missions, à extraire pour un point avec la hiérarchie.",
+    icone: "document",
+    domaine: "Suivi de projet",
+    href: "/extractions",
+    socle: true,
+    roles: TOUS,
+  },
+  {
     cle: "documents",
     nom: "Pense-bête",
     description: "Pages classées par catégorie : texte, images, listes.",
