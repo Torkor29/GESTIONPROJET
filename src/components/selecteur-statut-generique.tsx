@@ -94,23 +94,21 @@ export default function SelecteurStatutGenerique({
     });
   }
 
-  function basculer() {
+  function basculer(e: React.MouseEvent<HTMLButtonElement>) {
     if (verrouille || enCours) return;
     if (ouvert) {
       setOuvert(false);
       return;
     }
-    const r = declencheur.current?.getBoundingClientRect();
-    if (r) {
-      const largeur = 188;
-      const n = Object.keys(libelles).length;
-      const hauteur = n * 40 + 10;
-      const bas = window.innerHeight - r.bottom;
-      const top = bas < hauteur && r.top > hauteur ? r.top - hauteur - 6 : r.bottom + 6;
-      let left = r.left;
-      if (left + largeur > window.innerWidth - 8) left = Math.max(8, window.innerWidth - largeur - 8);
-      setPos({ top, left });
-    }
+    const r = e.currentTarget.getBoundingClientRect();
+    const largeur = 188;
+    const n = Object.keys(libelles).length;
+    const hauteur = n * 40 + 10;
+    const bas = window.innerHeight - r.bottom;
+    const top = bas < hauteur && r.top > hauteur ? r.top - hauteur - 6 : r.bottom + 6;
+    let left = r.left;
+    if (left + largeur > window.innerWidth - 8) left = Math.max(8, window.innerWidth - largeur - 8);
+    setPos({ top, left });
     setOuvert(true);
   }
 
