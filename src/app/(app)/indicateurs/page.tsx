@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { utilisateurActuel } from "@/lib/auth";
-import { formaterDuree } from "@/lib/format";
+import { formaterDuree, sigleEtude } from "@/lib/format";
 import { REFERENTIELS_PAR_CLE } from "@/lib/referentiels";
 import {
   fluxMissionsParMois,
@@ -284,7 +284,7 @@ export default async function PageIndicateurs() {
               .sort((a, b) => b.minutes - a.minutes)
               .map((s) => ({
                 cle: String(s.id),
-                libelle: s.nom,
+                libelle: sigleEtude(s),
                 valeur: s.minutes,
                 couleur: s.couleur,
                 affichage: `${formaterDuree(s.minutes)} · ${Math.round((s.minutes / minutesTotales) * 100)} %`,

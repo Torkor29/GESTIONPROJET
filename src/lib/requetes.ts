@@ -545,6 +545,7 @@ export async function entreesTemps(filtres: FiltresTemps = {}) {
     .select({
       entree: temps,
       etudeNom: etudes.nom,
+      etudeCode: etudes.code,
       etudeCouleur: etudes.couleur,
       etudeClient: etudes.client,
       etudeTarif: etudes.tarifHoraire,
@@ -616,13 +617,14 @@ export async function totauxParEtude(filtres: FiltresTemps = {}) {
   const lignes = await entreesTemps(filtres);
   const parEtude = new Map<
     number,
-    { nom: string; couleur: string; tarif: number | null; minutes: number }
+    { nom: string; code: string | null; couleur: string; tarif: number | null; minutes: number }
   >();
 
   for (const l of lignes) {
     const id = l.entree.etudeId ?? 0;
     const courant = parEtude.get(id) ?? {
       nom: l.etudeNom ?? "Sans étude",
+      code: l.etudeCode ?? null,
       couleur: l.etudeCouleur ?? "#a8a29e",
       tarif: l.etudeTarif ?? null,
       minutes: 0,

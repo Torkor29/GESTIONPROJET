@@ -10,7 +10,7 @@ import TimelineEcheances from "@/components/timeline-echeances";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { Icone, type NomIcone } from "@/components/icones";
 import { lireWidgetsAccueil, widgetVisible } from "@/lib/accueil";
-import { debutDeSemaine, formaterDuree } from "@/lib/format";
+import { debutDeSemaine, formaterDuree, sigleEtude } from "@/lib/format";
 import { missionsATraiter } from "@/lib/priorite";
 import { lignesRappelInclusion } from "@/lib/inclusion";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
@@ -330,7 +330,9 @@ export default async function TableauDeBord() {
                         className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
                         style={{ backgroundColor: r.couleur }}
                       />
-                      <span className="truncate">{r.nom}</span>
+                      <span className="truncate" title={r.nom !== sigleEtude(r) ? r.nom : undefined}>
+                        {sigleEtude(r)}
+                      </span>
                     </span>
                     <span className="chiffres shrink-0 text-sm font-medium">
                       {formaterDuree(r.minutes)}

@@ -1,4 +1,4 @@
-import { LIBELLES_PRIORITE, LIBELLES_STATUT_ETUDE, LIBELLES_STATUT_TACHE } from "@/lib/format";
+import { LIBELLES_PRIORITE, LIBELLES_STATUT_ETUDE, LIBELLES_STATUT_TACHE, sigleEtude } from "@/lib/format";
 
 /**
  * Les étiquettes puisent dans les quatre couleurs de statut de la charte
@@ -51,15 +51,24 @@ export function EtiquetteStatutEtude({ statut }: { statut: string }) {
   );
 }
 
-export function PastilleEtude({ couleur, nom }: { couleur: string; nom?: string }) {
+export function PastilleEtude({
+  couleur,
+  nom,
+  code,
+}: {
+  couleur: string;
+  nom?: string;
+  code?: string | null;
+}) {
+  const sigle = nom ? sigleEtude({ nom, code }) : undefined;
   return (
-    <span className="inline-flex items-center gap-2 text-sm">
+    <span className="inline-flex min-w-0 items-center gap-2 text-sm" title={nom && nom !== sigle ? nom : undefined}>
       <span
         aria-hidden
         className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
         style={{ backgroundColor: couleur }}
       />
-      {nom && <span className="truncate">{nom}</span>}
+      {sigle && <span className="truncate font-medium">{sigle}</span>}
     </span>
   );
 }

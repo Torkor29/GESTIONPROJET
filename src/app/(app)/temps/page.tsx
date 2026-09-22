@@ -8,6 +8,7 @@ import {
   formaterHeure,
   formaterMontant,
   heuresDecimales,
+  sigleEtude,
 } from "@/lib/format";
 import { CHOIX_PERIODE, resoudrePeriode } from "@/lib/periode";
 import { dureeMinutes, entreesTemps, listerEtudes, totauxParEtude } from "@/lib/requetes";
@@ -175,7 +176,7 @@ export default async function PageTemps({
           <ul className="space-y-2">
             {totaux.map((r) => (
               <li key={r.etudeId} className="flex items-center justify-between gap-3">
-                <PastilleEtude couleur={r.couleur} nom={r.nom} />
+                <PastilleEtude couleur={r.couleur} nom={r.nom} code={r.code} />
                 <span className="chiffres shrink-0 text-sm">
                   {formaterDuree(r.minutes)}
                   <span className="ml-2 text-attenue">
@@ -208,7 +209,7 @@ export default async function PageTemps({
                   </div>
 
                   <ul className="carte divide-y divide-ligne">
-                    {entrees.map(({ entree, etudeNom, etudeCouleur, tacheTitre, etapeTitre }) => (
+                    {entrees.map(({ entree, etudeNom, etudeCode, etudeCouleur, tacheTitre, etapeTitre }) => (
                       <li
                         key={entree.id}
                         className="group flex items-center gap-3 px-4 py-2.5"
@@ -223,8 +224,8 @@ export default async function PageTemps({
                           <p className="truncate text-sm">
                             {entree.description ?? etapeTitre ?? tacheTitre ?? "Sans description"}
                           </p>
-                          <p className="truncate text-xs text-attenue">
-                            {etudeNom ?? "Sans étude"}
+                          <p className="truncate text-xs text-attenue" title={etudeNom ?? undefined}>
+                            {etudeNom ? sigleEtude({ nom: etudeNom, code: etudeCode }) : "Sans étude"}
                             {tacheTitre && (entree.description || etapeTitre) ? ` · ${tacheTitre}` : ""}
                             {etapeTitre && entree.description && entree.description !== etapeTitre
                               ? ` · ${etapeTitre}`
