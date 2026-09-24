@@ -2,19 +2,24 @@ import Link from "next/link";
 import FormulaireTache from "@/components/formulaire-tache";
 import MenuExport from "@/components/menu-export";
 import TableauMissions from "@/components/tableau-missions";
-import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
-import { listerEtudes, toutesLesTaches } from "@/lib/requetes";
+import { VueParEtude, VueParType } from "@/components/vues-missions";
+import { LIBELLES_STATUT_LIGNE_MISSION, LIBELLES_STATUT_MISSION } from "@/lib/constantes";
+import { cleType } from "@/lib/missions";
+import { listerEtudes, toutesLesTaches, typesDeMission } from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
 
 const VUES = [
   { cle: "tableau", libelle: "Tableau" },
+  { cle: "etude", libelle: "Par étude" },
+  { cle: "type", libelle: "Par type" },
   { cle: "groupe", libelle: "Groupé par statut" },
   { cle: "echeances", libelle: "Par échéance" },
 ] as const;
 
 type Params = {
   etude?: string;
+  type?: string;
   statut?: string;
   q?: string;
   vue?: string;
@@ -31,15 +36,26 @@ export default async function PageMissions({
   const maintenant = Math.floor(Date.now() / 1000);
 
   const [toutes, etudes] = await Promise.all([toutesLesTaches(), listerEtudes()]);
+  const typesConnus = typesDeMission(toutes);
 
   const etudeId = params.etude ? Number(params.etude) : null;
   const recherche = (params.q ?? "").trim().toLowerCase();
   const masquerTerminees = params.masquerTerminees === "1";
+  // La vue par étude filtre le statut étude par étude, pas mission par mission :
+  // une mission « en cours » peut n'avoir pas démarré pour l'une de ses études.
+  const statutParEtude = vue === "etude";
 
-  const lignes = toutes.filter(({ tache }) => {
-    if (etudeId && tache.etudeId !== etudeId) return false;
-    if (params.statut && tache.statut !== params.statut) return false;
-    if (masquerTerminees && tache.statut === "terminee") return false;
+  const lignes = toutes.filter(({ tache, lignesEtudes }) => {
+    if (
+      etudeId &&
+      tache.etudeId !== etudeId &&
+      !lignesEtudes.some((l) => l.etudeId === etudeId)
+    ) {
+      return false;
+    }
+    if (params.type && cleType(tache.type) !== cleType(params.type)) return false;
+    if (!statutParEtude && params.statut && tache.statut !== params.statut) return false;
+    if (!statutParEtude && masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
       const texte = `${tache.titre} ${tache.notes ?? ""}`.toLowerCase();
       if (!texte.includes(recherche)) return false;
@@ -73,7 +89,12 @@ export default async function PageMissions({
               ) as Record<string, string>
             }
           />
-          <FormulaireTache etudes={etudes} libelle="Nouvelle mission" />
+          <FormulaireTache
+            etudes={etudes}
+            etudeIdParDefaut={etudeId ?? undefined}
+            typesConnus={typesConnus}
+            libelle="Nouvelle mission"
+          />
         </div>
       </header>
 
@@ -134,12 +155,28 @@ export default async function PageMissions({
         </div>
 
         <div className="min-w-40">
+          <label htmlFor="type" className="mb-1.5 block text-xs text-attenue">
+            Type
+          </label>
+          <select id="type" name="type" defaultValue={params.type ?? ""} className="champ">
+            <option value="">Tous</option>
+            {typesConnus.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="min-w-40">
           <label htmlFor="statut" className="mb-1.5 block text-xs text-attenue">
             Statut
           </label>
           <select id="statut" name="statut" defaultValue={params.statut ?? ""} className="champ">
             <option value="">Tous</option>
-            {Object.entries(LIBELLES_STATUT_MISSION).map(([v, l]) => (
+            {Object.entries(
+              statutParEtude ? LIBELLES_STATUT_LIGNE_MISSION : LIBELLES_STATUT_MISSION,
+            ).map(([v, l]) => (
               <option key={v} value={v}>
                 {l}
               </option>
@@ -161,14 +198,31 @@ export default async function PageMissions({
         <button type="submit" className="bouton-discret">
           Filtrer
         </button>
-        {(params.q || params.etude || params.statut || masquerTerminees) && (
+        {(params.q || params.etude || params.type || params.statut || masquerTerminees) && (
           <Link href={`/missions?vue=${vue}`} className="pb-2 text-sm text-attenue hover:text-encre">
             Réinitialiser
           </Link>
         )}
       </form>
 
-      {vue === "groupe" ? (
+      {vue === "etude" ? (
+        <VueParEtude
+          missions={lignes}
+          etudes={etudes}
+          typesConnus={typesConnus}
+          etudeId={etudeId}
+          statut={params.statut}
+          masquerTerminees={masquerTerminees}
+          message="Aucune mission ne correspond à ces filtres."
+        />
+      ) : vue === "type" ? (
+        <VueParType
+          missions={lignes}
+          etudes={etudes}
+          typesConnus={typesConnus}
+          message="Aucune mission ne correspond à ces filtres."
+        />
+      ) : vue === "groupe" ? (
         <div className="space-y-5">
           {Object.entries(LIBELLES_STATUT_MISSION).map(([statut, libelle]) => {
             const duGroupe = lignes.filter((l) => l.tache.statut === statut);
@@ -179,17 +233,23 @@ export default async function PageMissions({
                   {libelle}
                   <span className="chiffres ml-2 text-xs text-attenue">{duGroupe.length}</span>
                 </h2>
-                <TableauMissions lignes={duGroupe} etudes={etudes} />
+                <TableauMissions lignes={duGroupe} etudes={etudes} typesConnus={typesConnus} />
               </section>
             );
           })}
         </div>
       ) : vue === "echeances" ? (
-        <VueEcheances lignes={lignes} etudes={etudes} maintenant={maintenant} />
+        <VueEcheances
+          lignes={lignes}
+          etudes={etudes}
+          typesConnus={typesConnus}
+          maintenant={maintenant}
+        />
       ) : (
         <TableauMissions
           lignes={lignes}
           etudes={etudes}
+          typesConnus={typesConnus}
           message="Aucune mission ne correspond à ces filtres."
         />
       )}
@@ -201,10 +261,12 @@ export default async function PageMissions({
 function VueEcheances({
   lignes,
   etudes,
+  typesConnus,
   maintenant,
 }: {
   lignes: Awaited<ReturnType<typeof toutesLesTaches>>;
   etudes: Awaited<ReturnType<typeof listerEtudes>>;
+  typesConnus: string[];
   maintenant: number;
 }) {
   const dansUneSemaine = maintenant + 7 * 86400;
@@ -241,7 +303,7 @@ function VueEcheances({
             {g.titre}
             <span className="chiffres ml-2 text-xs text-attenue">{g.lignes.length}</span>
           </h2>
-          <TableauMissions lignes={g.lignes} etudes={etudes} />
+          <TableauMissions lignes={g.lignes} etudes={etudes} typesConnus={typesConnus} />
         </section>
       ))}
     </div>

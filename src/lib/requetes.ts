@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
@@ -14,11 +14,19 @@ import {
   etudes,
   faq,
   pages,
+  tacheEtudes,
   taches,
   temps,
   visites,
 } from "@/db/schema";
-import { etudeAccessible, idsEtudesAccessibles, objetAccessible } from "./acces";
+import {
+  etudeAccessible,
+  idsEtudesAccessibles,
+  ligneMissionAccessible,
+  missionVisibleParSesEtudes,
+  objetAccessible,
+} from "./acces";
+import { cleType, type LigneEtudeMission } from "./missions";
 import { utilisateurActuel } from "./auth";
 import { debutDeMois, debutDeSemaine } from "./format";
 
@@ -120,25 +128,79 @@ export async function tachesDEtude(etudeId: number) {
     .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
 }
 
-/** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
+/**
+ * Toutes les missions, avec le nom, le code et la couleur de leur étude — et,
+ * pour une mission multi-études, la ligne de chacune de ses études.
+ *
+ * Une mission multi-études est aussi rendue à qui n'a accès qu'à l'une de ses
+ * études : il n'en voit alors que les lignes de ses études, et ne peut pas la
+ * modifier (`modifiable` à faux).
+ */
 export async function toutesLesTaches(filtreStatut?: string) {
   const id = await moi();
-  return db
+  const accessible = objetAccessible(taches.proprietaireId, taches.etudeId, id);
+  const missions = await db
     .select({
       tache: taches,
       etudeNom: etudes.nom,
       etudeCode: etudes.code,
       etudeCouleur: etudes.couleur,
+      modifiable: sql<number>`${accessible}`,
     })
     .from(taches)
     .leftJoin(etudes, eq(taches.etudeId, etudes.id))
     .where(
       and(
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
+        or(accessible, missionVisibleParSesEtudes(taches.id, id)),
         filtreStatut ? eq(taches.statut, filtreStatut) : undefined,
       ),
     )
     .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
+
+  const lignes = await lignesDesMissions(missions.map((m) => m.tache.id));
+  return missions.map((m) => ({
+    ...m,
+    modifiable: Boolean(m.modifiable),
+    lignesEtudes: lignes.get(m.tache.id) ?? [],
+  }));
+}
+
+/** Les lignes « mission × étude » visibles, regroupées par mission. */
+async function lignesDesMissions(tacheIds: number[]): Promise<Map<number, LigneEtudeMission[]>> {
+  const parMission = new Map<number, LigneEtudeMission[]>();
+  if (tacheIds.length === 0) return parMission;
+
+  const id = await moi();
+  const lignes = await db
+    .select({
+      id: tacheEtudes.id,
+      tacheId: tacheEtudes.tacheId,
+      etudeId: tacheEtudes.etudeId,
+      statut: tacheEtudes.statut,
+      notes: tacheEtudes.notes,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+    })
+    .from(tacheEtudes)
+    .innerJoin(etudes, eq(tacheEtudes.etudeId, etudes.id))
+    .where(and(inArray(tacheEtudes.tacheId, tacheIds), ligneMissionAccessible(id)))
+    .orderBy(sql`coalesce(${etudes.code}, ${etudes.nom}) collate nocase`);
+
+  for (const l of lignes) {
+    parMission.set(l.tacheId, [...(parMission.get(l.tacheId) ?? []), l]);
+  }
+  return parMission;
+}
+
+/** Types de mission employés, sans doublon de casse, par ordre alphabétique. */
+export function typesDeMission(missions: { tache: { type: string | null } }[]): string[] {
+  const parCle = new Map<string, string>();
+  for (const { tache } of missions) {
+    const t = tache.type?.trim();
+    if (t && !parCle.has(cleType(t))) parCle.set(cleType(t), t);
+  }
+  return [...parCle.values()].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
 }
 
 // ------------------------------------------------------------- Documents
@@ -554,6 +616,16 @@ export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
     ),
     ({ tache }) => tache.etudeId,
   );
+  // Une mission multi-études pèse sur chacune de ses études encore ouvertes.
+  for (const { tache, lignesEtudes } of missions) {
+    for (const l of lignesEtudes) {
+      if (l.statut === "terminee" || l.statut === "sans_objet") continue;
+      ouvertes.set(l.etudeId, (ouvertes.get(l.etudeId) ?? 0) + 1);
+      if (tache.echeance && tache.echeance < maintenant) {
+        enRetard.set(l.etudeId, (enRetard.get(l.etudeId) ?? 0) + 1);
+      }
+    }
+  }
   const nbDocs = compter(docs, (d) => d.document.etudeId);
 
   const minutes = new Map<number, number>();

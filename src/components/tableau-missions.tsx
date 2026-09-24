@@ -1,20 +1,33 @@
 import { supprimerTache } from "@/actions/taches";
 import { demarrerChrono } from "@/actions/temps";
+import type { EtudeChoisissable } from "./choix-etudes";
+import EtudesMission, { AvancementMission } from "./etudes-mission";
 import FormulaireTache from "./formulaire-tache";
 import SelecteurStatut from "./selecteur-statut";
-import { EtiquettePriorite } from "./etiquettes";
+import { EtiquettePriorite, EtiquetteStatutTache } from "./etiquettes";
 import { Icone } from "./icones";
 import { formaterDate } from "@/lib/format";
-import type { Etude, Tache } from "@/db/schema";
+import type { LigneEtudeMission } from "@/lib/missions";
+import type { Tache } from "@/db/schema";
 
 export type LigneMission = {
   tache: Tache;
   etudeNom?: string | null;
   etudeCode?: string | null;
   etudeCouleur?: string | null;
+  /** Faux quand on ne voit la mission que par l'une de ses études. */
+  modifiable?: boolean;
+  /** Études d'une mission multi-études, telles que la personne les voit. */
+  lignesEtudes?: LigneEtudeMission[];
 };
 
-function EtiquetteEtude({
+/** Type de mission, en étiquette discrète à côté du titre. */
+export function EtiquetteType({ type }: { type: string | null }) {
+  if (!type) return null;
+  return <span className="etiquette bg-creux text-attenue">{type}</span>;
+}
+
+export function EtiquetteEtude({
   nom,
   code,
   couleur,
@@ -42,11 +55,13 @@ export default function TableauMissions({
   lignes,
   etudes,
   afficherEtude = true,
+  typesConnus,
   message = "Aucune mission.",
 }: {
   lignes: LigneMission[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: EtudeChoisissable[];
   afficherEtude?: boolean;
+  typesConnus?: string[];
   message?: string;
 }) {
   if (lignes.length === 0) {
@@ -89,8 +104,9 @@ export default function TableauMissions({
         </thead>
 
         <tbody>
-          {lignes.map(({ tache, etudeNom, etudeCode, etudeCouleur }) => {
+          {lignes.map(({ tache, etudeNom, etudeCode, etudeCouleur, modifiable = true, lignesEtudes = [] }) => {
             const terminee = tache.statut === "terminee";
+            const multi = lignesEtudes.length > 0;
             const enRetard = !terminee && tache.echeance && tache.echeance < maintenant;
 
             return (
@@ -104,17 +120,31 @@ export default function TableauMissions({
                       {tache.titre}
                     </span>
                     <EtiquettePriorite priorite={tache.priorite} />
+                    <EtiquetteType type={tache.type} />
                   </span>
+                  {multi && (
+                    <EtudesMission tacheId={tache.id} lignes={lignesEtudes} terminee={terminee} />
+                  )}
                 </td>
 
                 {afficherEtude && (
                   <td className="px-3 py-3">
-                    <EtiquetteEtude nom={etudeNom} code={etudeCode} couleur={etudeCouleur} />
+                    {multi ? (
+                      <AvancementMission lignes={lignesEtudes} />
+                    ) : (
+                      <EtiquetteEtude nom={etudeNom} code={etudeCode} couleur={etudeCouleur} />
+                    )}
                   </td>
                 )}
 
                 <td className="px-3 py-3">
-                  <SelecteurStatut id={tache.id} statut={tache.statut} />
+                  {multi ? (
+                    <span title="Suit le statut de ses études">
+                      <EtiquetteStatutTache statut={tache.statut} />
+                    </span>
+                  ) : (
+                    <SelecteurStatut id={tache.id} statut={tache.statut} />
+                  )}
                 </td>
 
                 <td className="chiffres px-3 py-3">
@@ -138,7 +168,7 @@ export default function TableauMissions({
 
                 <td className="px-3 py-3">
                   <span className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100">
-                    {!terminee && (
+                    {!terminee && !multi && (
                       <form action={demarrerChrono}>
                         <input type="hidden" name="etudeId" value={tache.etudeId ?? ""} />
                         <input type="hidden" name="tacheId" value={tache.id} />
@@ -152,28 +182,39 @@ export default function TableauMissions({
                         </button>
                       </form>
                     )}
-                    <FormulaireTache tache={tache} etudes={etudes} libelle="✎" variante="icone" />
-                    <form action={supprimerTache}>
-                      <input type="hidden" name="id" value={tache.id} />
-                      <button
-                        type="submit"
-                        title="Supprimer la mission"
-                        aria-label="Supprimer la mission"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-attenue transition-all duration-200 hover:bg-relief hover:text-alerte active:scale-95"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.75}
-                          strokeLinecap="round"
-                          className="h-4 w-4"
-                          aria-hidden
-                        >
-                          <path d="M6 6l12 12M18 6L6 18" />
-                        </svg>
-                      </button>
-                    </form>
+                    {modifiable && (
+                      <>
+                        <FormulaireTache
+                          tache={tache}
+                          etudesLiees={lignesEtudes.map((l) => l.etudeId)}
+                          etudes={etudes}
+                          typesConnus={typesConnus}
+                          libelle="✎"
+                          variante="icone"
+                        />
+                        <form action={supprimerTache}>
+                          <input type="hidden" name="id" value={tache.id} />
+                          <button
+                            type="submit"
+                            title="Supprimer la mission"
+                            aria-label="Supprimer la mission"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-attenue transition-all duration-200 hover:bg-relief hover:text-alerte active:scale-95"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={1.75}
+                              strokeLinecap="round"
+                              className="h-4 w-4"
+                              aria-hidden
+                            >
+                              <path d="M6 6l12 12M18 6L6 18" />
+                            </svg>
+                          </button>
+                        </form>
+                      </>
+                    )}
                   </span>
                 </td>
               </tr>

@@ -5,6 +5,8 @@ import FormulaireEtude from "@/components/formulaire-etude";
 import FormulaireFaq from "@/components/formulaire-faq";
 import FormulaireTache from "@/components/formulaire-tache";
 import TableauMissions from "@/components/tableau-missions";
+import { VueParEtude, VueParType } from "@/components/vues-missions";
+import { utilisateurActuel } from "@/lib/auth";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { Icone, type NomIcone } from "@/components/icones";
 import { debutDeSemaine, formaterDuree } from "@/lib/format";
@@ -15,6 +17,7 @@ import {
   statistiques,
   totauxParEtude,
   toutesLesTaches,
+  typesDeMission,
 } from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
@@ -64,16 +67,34 @@ function Chiffre({
   );
 }
 
-export default async function TableauDeBord() {
+const ORGANISATIONS = [
+  { cle: "etude", libelle: "Par étude" },
+  { cle: "mission", libelle: "Par mission" },
+  { cle: "type", libelle: "Par type" },
+] as const;
+
+export default async function TableauDeBord({
+  searchParams,
+}: {
+  searchParams: Promise<{ organisation?: string }>;
+}) {
+  const { organisation = "etude" } = await searchParams;
   const maintenant = Math.floor(Date.now() / 1000);
 
-  const [stats, etudes, missions, repartition, progressions] = await Promise.all([
+  const [stats, etudes, missions, repartition, progressions, compte] = await Promise.all([
     statistiques(),
     listerEtudes(),
     toutesLesTaches(),
     totauxParEtude({ du: debutDeSemaine(maintenant) }),
     progressionParEtude(),
+    utilisateurActuel(),
   ]);
+  const typesConnus = typesDeMission(missions);
+
+  // Le suivi organisable ne s'affiche que pour qui porte des missions
+  // transverses : pour les autres, il doublerait « À traiter en priorité ».
+  const suiviTransverse =
+    Boolean(compte?.accesToutesEtudes) || missions.some((m) => m.lignesEtudes.length > 0);
 
   const dansUneSemaine = maintenant + 7 * 86400;
   const ouvertes = missions.filter(({ tache }) => tache.statut !== "terminee");
@@ -110,7 +131,12 @@ export default async function TableauDeBord() {
       <section>
         <h2 className="sur-titre mb-3">Ajouts rapides</h2>
         <div className="flex flex-wrap gap-2">
-          <FormulaireTache etudes={etudes} libelle="Nouvelle mission" variante="discret" />
+          <FormulaireTache
+            etudes={etudes}
+            typesConnus={typesConnus}
+            libelle="Nouvelle mission"
+            variante="discret"
+          />
           <FormulaireDocument etudes={etudes} libelle="Nouveau document" variante="discret" />
           <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
           <form action={creerPage}>
@@ -172,9 +198,60 @@ export default async function TableauDeBord() {
         <TableauMissions
           lignes={urgentes.slice(0, 10)}
           etudes={etudes}
+          typesConnus={typesConnus}
           message="Aucune échéance dans les 7 jours. Rien ne brûle."
         />
       </section>
+
+      {/* ------------------------------------------- Suivi des missions */}
+      {suiviTransverse && (
+        <section>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-titre text-lg font-bold">Suivi des missions en cours</h2>
+            <nav className="flex flex-wrap gap-1.5" aria-label="Organisation du suivi">
+              {ORGANISATIONS.map((o) => (
+                <Link
+                  key={o.cle}
+                  href={`/bord?organisation=${o.cle}`}
+                  scroll={false}
+                  aria-current={organisation === o.cle ? "page" : undefined}
+                  className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                    organisation === o.cle
+                      ? "border-accent bg-accent/10 font-medium text-accent"
+                      : "border-ligne text-attenue hover:text-encre"
+                  }`}
+                >
+                  {o.libelle}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {organisation === "mission" ? (
+            <TableauMissions
+              lignes={ouvertes}
+              etudes={etudes}
+              typesConnus={typesConnus}
+              message="Aucune mission en cours."
+            />
+          ) : organisation === "type" ? (
+            <VueParType
+              missions={ouvertes}
+              etudes={etudes}
+              typesConnus={typesConnus}
+              message="Aucune mission en cours."
+            />
+          ) : (
+            <VueParEtude
+              missions={ouvertes}
+              etudes={etudes}
+              typesConnus={typesConnus}
+              masquerTerminees
+              message="Aucune mission en cours."
+            />
+          )}
+        </section>
+      )}
 
       {/* ---------------------------------------------------------- Projets */}
       <section>

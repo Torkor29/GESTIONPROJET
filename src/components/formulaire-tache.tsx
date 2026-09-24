@@ -2,10 +2,12 @@
 
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import ChoixEtudes, { type EtudeChoisissable } from "./choix-etudes";
 import Modale from "./modale";
 import { creerTache, modifierTache } from "@/actions/taches";
 import { VIDE } from "@/actions/etat";
-import type { Etude, Tache } from "@/db/schema";
+import type { Tache } from "@/db/schema";
+import { TYPES_MISSION_SUGGERES } from "@/lib/constantes";
 import { LIBELLES_PRIORITE, LIBELLES_STATUT_TACHE, versChampDate } from "@/lib/format";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
@@ -19,14 +21,20 @@ function BoutonEnvoyer({ libelle }: { libelle: string }) {
 
 export default function FormulaireTache({
   tache,
+  etudesLiees = [],
   etudes,
   etudeIdParDefaut,
+  typesConnus = [],
   libelle,
   variante = "principal",
 }: {
   tache?: Tache;
-  etudes: Pick<Etude, "id" | "nom">[];
+  /** Études d'une mission multi-études, en édition. */
+  etudesLiees?: number[];
+  etudes: EtudeChoisissable[];
   etudeIdParDefaut?: number;
+  /** Types déjà employés, proposés en plus des suggestions. */
+  typesConnus?: string[];
   libelle: string;
   variante?: "principal" | "discret" | "icone";
 }) {
@@ -35,6 +43,17 @@ export default function FormulaireTache({
   const uid = useId();
   const [ouverte, setOuverte] = useState(false);
   const edition = Boolean(tache);
+  const multi = etudesLiees.length > 0;
+  const selectionInitiale = multi
+    ? etudesLiees
+    : tache
+      ? tache.etudeId
+        ? [tache.etudeId]
+        : []
+      : etudeIdParDefaut
+        ? [etudeIdParDefaut]
+        : [];
+  const types = [...new Set([...TYPES_MISSION_SUGGERES, ...typesConnus])];
   const [etat, action] = useActionState(edition ? modifierTache : creerTache, VIDE);
 
   const succesVu = useRef(0);
@@ -68,13 +87,16 @@ export default function FormulaireTache({
         ouverte={ouverte}
         onFermer={() => setOuverte(false)}
         titre={edition ? "Modifier la mission" : "Nouvelle mission"}
+        large
       >
         {/* La clé suit la date de modification de l'enregistrement.
             Sans elle, les champs gardent la valeur qu'ils avaient au montage :
             changer le statut depuis le tableau puis modifier la mission
             réécrirait l'ancien statut, annulant silencieusement le changement.
-            `defaultValue` ne se relit qu'au montage — la clé force ce montage. */}
-        <form key={tache?.modifieLe ?? "nouvelle"} action={action} className="space-y-4">
+            `defaultValue` ne se relit qu'au montage — la clé force ce montage.
+            Le compteur de succès la complète : le choix des études vit dans
+            un état React, qu'il faut repartir de zéro après chaque ajout. */}
+        <form key={`${tache?.modifieLe ?? "nouvelle"}-${etat.succes ?? 0}`} action={action} className="space-y-4">
           {edition && <input type="hidden" name="id" value={tache!.id} />}
 
           <div>
@@ -93,22 +115,34 @@ export default function FormulaireTache({
           </div>
 
           <div>
-            <label htmlFor={`${uid}-etudeId`} className="mb-1.5 block text-sm font-medium">
-              Étude
+            <label htmlFor={`${uid}-type`} className="mb-1.5 block text-sm font-medium">
+              Type <span className="font-normal text-attenue">(facultatif)</span>
             </label>
-            <select
-              id={`${uid}-etudeId`}
-              name="etudeId"
-              defaultValue={tache?.etudeId ?? etudeIdParDefaut ?? ""}
+            <input
+              id={`${uid}-type`}
+              name="type"
+              list={`${uid}-types`}
+              defaultValue={tache?.type ?? ""}
+              placeholder="Archivage, Soumission, Clôture…"
+              autoComplete="off"
               className="champ"
-            >
-              <option value="">Sans étude</option>
-              {etudes.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nom}
-                </option>
+            />
+            <datalist id={`${uid}-types`}>
+              {types.map((t) => (
+                <option key={t} value={t} />
               ))}
-            </select>
+            </datalist>
+          </div>
+
+          <div>
+            <label htmlFor={`${uid}-etudes`} className="mb-1.5 block text-sm font-medium">
+              Études
+            </label>
+            <ChoixEtudes
+              id={`${uid}-etudes`}
+              etudes={etudes}
+              selectionInitiale={selectionInitiale}
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -144,7 +178,14 @@ export default function FormulaireTache({
             </div>
           </div>
 
-          {edition && (
+          {edition && multi && (
+            <p className="text-xs text-attenue">
+              Le statut de cette mission suit celui de ses études : il se change
+              étude par étude, depuis le tableau des missions.
+            </p>
+          )}
+
+          {edition && !multi && (
             <div>
               <label htmlFor={`${uid}-statut`} className="mb-1.5 block text-sm font-medium">
                 Statut

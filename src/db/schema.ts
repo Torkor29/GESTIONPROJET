@@ -24,6 +24,16 @@ export const utilisateurs = sqliteTable("utilisateurs", {
   modules: text("modules"),
   /** Un compte désactivé conserve ses données mais ne peut plus se connecter. */
   actif: integer("actif", { mode: "boolean" }).notNull().default(true),
+  /**
+   * Droit « accès à toutes les études » : la personne voit, et peut rattacher
+   * des missions à, toutes les études de l'installation — y compris celles
+   * créées après coup par d'autres. Pensé pour une assistante de projet qui
+   * porte des missions transverses (archivage, soumissions…) sur tout le parc.
+   * Seul l'administrateur de l'installation l'accorde.
+   */
+  accesToutesEtudes: integer("acces_toutes_etudes", { mode: "boolean" })
+    .notNull()
+    .default(false),
   creeLe: integer("cree_le").notNull().default(maintenant),
   derniereConnexion: integer("derniere_connexion"),
 });
@@ -112,8 +122,15 @@ export const taches = sqliteTable(
     }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     titre: text("titre").notNull(),
+    /**
+     * Type de mission, en texte libre : Archivage, Soumission, Clôture…
+     * Sert à regrouper les missions de même nature.
+     */
+    type: text("type"),
     notes: text("notes"),
     // "a_faire" | "en_cours" | "terminee"
+    // Pour une mission sur plusieurs études, le statut se déduit de celui de
+    // chaque étude (voir `tacheEtudes`) et n'est jamais saisi directement.
     statut: text("statut").notNull().default("a_faire"),
     // "basse" | "normale" | "haute"
     priorite: text("priorite").notNull().default("normale"),
@@ -125,6 +142,36 @@ export const taches = sqliteTable(
     modifieLe: integer("modifie_le").notNull().default(maintenant),
   },
   (t) => [index("idx_taches_etude").on(t.etudeId), index("idx_taches_statut").on(t.statut)],
+);
+
+/**
+ * Une mission portée sur plusieurs études : l'archivage de vingt études, une
+ * même soumission pour tout un lot… Chaque ligne est la sous-tâche « cette
+ * mission, pour cette étude », avec son propre statut et son commentaire.
+ *
+ * Une mission qui a des lignes ici a `taches.etudeId` à nul : ses études sont
+ * celles de ses lignes.
+ */
+export const tacheEtudes = sqliteTable(
+  "tache_etudes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    tacheId: integer("tache_id")
+      .notNull()
+      .references(() => taches.id, { onDelete: "cascade" }),
+    etudeId: integer("etude_id")
+      .notNull()
+      .references(() => etudes.id, { onDelete: "cascade" }),
+    // "a_faire" | "en_cours" | "terminee" | "sans_objet"
+    statut: text("statut").notNull().default("a_faire"),
+    notes: text("notes"),
+    termineeLe: integer("terminee_le"),
+    modifieLe: integer("modifie_le").notNull().default(maintenant),
+  },
+  (t) => [
+    uniqueIndex("idx_tache_etudes_unicite").on(t.tacheId, t.etudeId),
+    index("idx_tache_etudes_etude").on(t.etudeId),
+  ],
 );
 
 /**
@@ -468,6 +515,7 @@ export type Invitation = typeof invitations.$inferSelect;
 export type Etude = typeof etudes.$inferSelect;
 export type Page = typeof pages.$inferSelect;
 export type Tache = typeof taches.$inferSelect;
+export type TacheEtude = typeof tacheEtudes.$inferSelect;
 export type Temps = typeof temps.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type ChecklistItem = typeof checklistItems.$inferSelect;

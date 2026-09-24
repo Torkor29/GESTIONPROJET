@@ -60,6 +60,31 @@ export const LIBELLES_STATUT_MISSION: Record<string, string> = {
   terminee: "Terminée",
 };
 
+/**
+ * Statut d'une étude au sein d'une mission multi-études. « Sans objet » sort
+ * l'étude du calcul d'avancement sans la retirer de la mission.
+ */
+export const LIBELLES_STATUT_LIGNE_MISSION: Record<string, string> = {
+  ...LIBELLES_STATUT_MISSION,
+  sans_objet: "Sans objet",
+};
+
+/**
+ * Types de mission proposés à la saisie. Le champ reste libre : ce ne sont
+ * que des suggestions, complétées par les types déjà employés.
+ */
+export const TYPES_MISSION_SUGGERES = [
+  "Archivage",
+  "Soumission réglementaire",
+  "Mise en place",
+  "Clôture",
+  "Contrats et budget",
+  "Vigilance",
+  "Gestion des données",
+  "Monitoring",
+  "Logistique",
+];
+
 export function octetsLisibles(octets: number): string {
   if (octets < 1024) return `${octets} o`;
   if (octets < 1024 * 1024) return `${(octets / 1024).toFixed(0)} Ko`;

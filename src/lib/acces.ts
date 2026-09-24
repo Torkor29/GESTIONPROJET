@@ -2,13 +2,23 @@ import "server-only";
 import { and, eq, sql, type SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
-import { checklistItems, documents, etudes, faq, pages, taches, temps } from "@/db/schema";
+import {
+  checklistItems,
+  documents,
+  etudes,
+  faq,
+  pages,
+  tacheEtudes,
+  taches,
+  temps,
+} from "@/db/schema";
 
 /**
  * Cloisonnement des données entre comptes.
  *
  * La règle tient en deux lignes :
- *   — une étude est accessible à son propriétaire et aux personnes conviées ;
+ *   — une étude est accessible à son propriétaire, aux personnes conviées, et
+ *     aux comptes qui détiennent le droit « accès à toutes les études » ;
  *   — tout ce qui pend d'une étude suit l'accès de cette étude, et un objet
  *     sans étude n'est visible que de son propriétaire.
  *
@@ -24,8 +34,15 @@ import { checklistItems, documents, etudes, faq, pages, taches, temps } from "@/
  * typée y réintroduirait l'alias de la table englobante.
  */
 export function idsEtudesAccessibles(utilisateurId: number): SQL {
+  // Le droit est relu en base à chaque requête, pas mis en cache : le retirer
+  // prend effet immédiatement, sans attendre une reconnexion.
   return sql`(
-    select id from etudes where proprietaire_id = ${utilisateurId}
+    select id from etudes
+      where proprietaire_id = ${utilisateurId}
+        or exists (
+          select 1 from utilisateurs
+            where utilisateurs.id = ${utilisateurId} and utilisateurs.acces_toutes_etudes = 1
+        )
     union
     select ressource_id from partages
       where type = 'etude' and utilisateur_id = ${utilisateurId}
@@ -114,6 +131,42 @@ export async function exigerAccesChecklist(id: number, utilisateurId: number): P
         sql`${checklistItems.etudeId} in ${idsEtudesAccessibles(utilisateurId)}`,
       ),
     )
+    .limit(1);
+  if (!ligne) throw new Error(REFUS);
+}
+
+/**
+ * Mission portée sur plusieurs études : elle est aussi visible de qui a accès
+ * à l'une de ses études, pour que l'équipe d'une étude voie ce qui la concerne.
+ * Cette personne n'en voit alors que les lignes de ses propres études.
+ */
+export function missionVisibleParSesEtudes(colonneTacheId: SQLiteColumn, utilisateurId: number): SQL {
+  return sql`${colonneTacheId} in (
+    select tache_id from tache_etudes where etude_id in ${idsEtudesAccessibles(utilisateurId)}
+  )`;
+}
+
+/**
+ * Une ligne « mission × étude » se lit et se met à jour par qui a accès à la
+ * mission, ou à l'étude de la ligne : l'équipe d'une étude peut ainsi faire
+ * avancer sa part d'une mission transverse sans pouvoir toucher au reste.
+ */
+export function ligneMissionAccessible(utilisateurId: number): SQL {
+  return sql`(
+    ${tacheEtudes.etudeId} in ${idsEtudesAccessibles(utilisateurId)}
+    or ${tacheEtudes.tacheId} in (
+      select id from taches
+        where proprietaire_id = ${utilisateurId}
+          or etude_id in ${idsEtudesAccessibles(utilisateurId)}
+    )
+  )`;
+}
+
+export async function exigerAccesLigneMission(id: number, utilisateurId: number): Promise<void> {
+  const [ligne] = await db
+    .select({ id: tacheEtudes.id })
+    .from(tacheEtudes)
+    .where(and(eq(tacheEtudes.id, id), ligneMissionAccessible(utilisateurId)))
     .limit(1);
   if (!ligne) throw new Error(REFUS);
 }

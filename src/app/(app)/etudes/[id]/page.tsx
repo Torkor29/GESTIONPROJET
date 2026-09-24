@@ -15,6 +15,7 @@ import FormulaireTache from "@/components/formulaire-tache";
 import ListeDocuments from "@/components/liste-documents";
 import ListeFaq from "@/components/liste-faq";
 import TableauMissions from "@/components/tableau-missions";
+import { VueParEtude } from "@/components/vues-missions";
 import { formaterDate, formaterDuree, formaterMontant, heuresDecimales } from "@/lib/format";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
 import {
@@ -28,6 +29,8 @@ import {
   pagesDEtude,
   progression,
   tachesDEtude,
+  toutesLesTaches,
+  typesDeMission,
 } from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
@@ -56,15 +59,22 @@ export default async function PageEtude({
   const etude = await etudeParId(etudeId);
   if (!etude) notFound();
 
-  const [pages, missions, temps, documents, checklist, faq, toutesEtudes] = await Promise.all([
-    pagesDEtude(etudeId),
-    tachesDEtude(etudeId),
-    entreesTemps({ etudeId }),
-    documentsDEtude(etudeId),
-    checklistDEtude(etudeId),
-    faqDEtude(etudeId),
-    listerEtudes({ avecArchivees: true }),
-  ]);
+  const [pages, missions, temps, documents, checklist, faq, toutesEtudes, toutesMissions] =
+    await Promise.all([
+      pagesDEtude(etudeId),
+      tachesDEtude(etudeId),
+      entreesTemps({ etudeId }),
+      documentsDEtude(etudeId),
+      checklistDEtude(etudeId),
+      faqDEtude(etudeId),
+      listerEtudes({ avecArchivees: true }),
+      toutesLesTaches(),
+    ]);
+  // Missions multi-études qui comptent cette étude parmi les leurs.
+  const transverses = toutesMissions.filter((m) =>
+    m.lignesEtudes.some((l) => l.etudeId === etudeId),
+  );
+  const typesConnus = typesDeMission(toutesMissions);
 
   // Le partage n'est proposé qu'au propriétaire ; les personnes conviées
   // voient l'étude sans pouvoir en élargir l'accès.
@@ -87,7 +97,13 @@ export default async function PageEtude({
 
   const lien = (cle: string) => `/etudes/${etudeId}?section=${cle}`;
   const compteurs: Record<string, number> = {
-    missions: ouvertes.length,
+    missions:
+      ouvertes.length +
+      transverses.filter((m) =>
+        m.lignesEtudes.some(
+          (l) => l.etudeId === etudeId && l.statut !== "terminee" && l.statut !== "sans_objet",
+        ),
+      ).length,
     checklist: prog.total - prog.faits,
     documents: documents.length,
     pages: pages.length,
@@ -297,6 +313,7 @@ export default async function PageEtude({
             <FormulaireTache
               etudes={toutesEtudes}
               etudeIdParDefaut={etude.id}
+              typesConnus={typesConnus}
               libelle="+ Nouvelle mission"
               variante="discret"
             />
@@ -304,9 +321,26 @@ export default async function PageEtude({
           <TableauMissions
             lignes={missions.map((t) => ({ tache: t }))}
             etudes={toutesEtudes}
+            typesConnus={typesConnus}
             afficherEtude={false}
-            message="Aucune mission sur cette étude."
+            message="Aucune mission propre à cette étude."
           />
+
+          {transverses.length > 0 && (
+            <section className="space-y-2 pt-2">
+              <h3 className="font-titre font-bold">Missions sur plusieurs études</h3>
+              <p className="text-sm text-attenue">
+                Missions portées sur un lot d&apos;études, dont celle-ci. Le statut
+                et le commentaire se règlent ici pour cette étude seulement.
+              </p>
+              <VueParEtude
+                missions={transverses}
+                etudes={toutesEtudes}
+                typesConnus={typesConnus}
+                etudeId={etudeId}
+              />
+            </section>
+          )}
         </div>
       )}
 

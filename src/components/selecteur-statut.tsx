@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { definirStatutTache } from "@/actions/taches";
-import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
+import { definirStatutLigneMission, definirStatutTache } from "@/actions/taches";
+import { LIBELLES_STATUT_LIGNE_MISSION, LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 
 const COULEURS: Record<string, string> = {
   a_faire: "text-alerte",
   en_cours: "text-info",
   terminee: "text-reussite",
+  sans_objet: "text-attenue",
 };
 
 const PASTILLES: Record<string, string> = {
   a_faire: "bg-alerte",
   en_cours: "bg-info",
   terminee: "bg-reussite",
+  sans_objet: "bg-efface",
 };
 
 /**
@@ -23,7 +25,17 @@ const PASTILLES: Record<string, string> = {
  * React 19 réinitialise un formulaire après son action, ce qui faisait
  * réapparaître l'ancien statut à l'écran juste après l'enregistrement.
  */
-export default function SelecteurStatut({ id, statut }: { id: number; statut: string }) {
+function Selecteur({
+  statut,
+  libelles,
+  libelleAccessible,
+  enregistrer,
+}: {
+  statut: string;
+  libelles: Record<string, string>;
+  libelleAccessible: string;
+  enregistrer: (choix: string) => Promise<void>;
+}) {
   const [valeur, setValeur] = useState(statut);
   const [enCours, demarrer] = useTransition();
 
@@ -39,13 +51,13 @@ export default function SelecteurStatut({ id, statut }: { id: number; statut: st
       <select
         value={valeur}
         disabled={enCours}
-        aria-label="Statut de la mission"
+        aria-label={libelleAccessible}
         onChange={(e) => {
           const choix = e.target.value;
           setValeur(choix);
           demarrer(async () => {
             try {
-              await definirStatutTache(id, choix);
+              await enregistrer(choix);
             } catch {
               // L'enregistrement a échoué : on revient à l'état du serveur
               // plutôt que d'afficher un statut qui n'existe pas en base.
@@ -56,12 +68,43 @@ export default function SelecteurStatut({ id, statut }: { id: number; statut: st
         className={`cursor-pointer appearance-none bg-transparent text-xs font-medium outline-none
                     disabled:opacity-60 ${COULEURS[valeur] ?? "text-attenue"}`}
       >
-        {Object.entries(LIBELLES_STATUT_MISSION).map(([v, l]) => (
+        {Object.entries(libelles).map(([v, l]) => (
           <option key={v} value={v} className="text-encre">
             {l}
           </option>
         ))}
       </select>
     </span>
+  );
+}
+
+export default function SelecteurStatut({ id, statut }: { id: number; statut: string }) {
+  return (
+    <Selecteur
+      statut={statut}
+      libelles={LIBELLES_STATUT_MISSION}
+      libelleAccessible="Statut de la mission"
+      enregistrer={(choix) => definirStatutTache(id, choix)}
+    />
+  );
+}
+
+/** Statut d'une étude au sein d'une mission multi-études. */
+export function SelecteurStatutLigne({
+  id,
+  statut,
+  etude,
+}: {
+  id: number;
+  statut: string;
+  etude: string;
+}) {
+  return (
+    <Selecteur
+      statut={statut}
+      libelles={LIBELLES_STATUT_LIGNE_MISSION}
+      libelleAccessible={`Statut pour ${etude}`}
+      enregistrer={(choix) => definirStatutLigneMission(id, choix)}
+    />
   );
 }

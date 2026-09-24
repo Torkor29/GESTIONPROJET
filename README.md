@@ -14,7 +14,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 |---|---|
 | **Études** | Un dossier par étude : acronyme, promoteur, investigateur, ID-RCB, n° CTIS, référence CPP, image de couverture |
 | **Checklists réglementaires** | Générées automatiquement selon le cadre coché : RIPH 1/2/3, règlement 536/2014, MDR, IVDR, ICH E6(R3), CNIL, archivage |
-| **Missions** | Vue tableau, groupée par statut ou par échéance, filtres par étude, statut et texte, commentaire, export Excel |
+| **Missions** | Vue tableau, par étude, par type, groupée par statut ou par échéance ; filtres par étude, type, statut et texte ; une mission peut porter sur plusieurs études, avec un statut et un commentaire propres à chacune ; un acronyme d'étude inconnu se crée depuis le formulaire ; export Excel |
 | **Documents** | Dépôt de fichiers classés selon les catégories d'un TMF, versions, dates, recherche |
 | **Base de connaissance** | FAQ générale ou propre à une étude, classée par thème |
 | **Pages** | Éditeur riche façon Notion (titres, listes, tableaux, images), sauvegarde automatique |
@@ -24,7 +24,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 | **Portefeuille** | L'état de chaque étude en une ligne — missions, visites, écarts, actions, conformité — et la charge de chacun sur les études que vous portez |
 | **Indicateurs** | Charge, retards, respect des échéances, conformité par référentiel, tendances du temps et des missions |
 | **Exports** | Chaque tableau s'exporte en Excel, en CSV ou en PDF (via l'impression du navigateur) |
-| **Comptes et partage** | Chacun sa session et ses modules ; une étude se partage en lecture ou en écriture, et n'est visible que de son propriétaire et des personnes conviées |
+| **Comptes et partage** | Chacun sa session et ses modules ; une étude se partage en lecture ou en écriture, et n'est visible que de son propriétaire et des personnes conviées — sauf pour les comptes auxquels l'administrateur (le premier compte créé) accorde le droit « accès à toutes les études » |
 
 L'application est en français, s'adapte au thème clair ou sombre du système, et
 fonctionne sur téléphone.
