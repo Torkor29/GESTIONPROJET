@@ -1,5 +1,5 @@
 import CarteMission from "./carte-mission";
-import { droitsSurMission } from "@/lib/attribution";
+import { droitsSurMission, etudesModifiables } from "@/lib/attribution";
 import type { CompteChoix, EtudeLiee, MembreAttribution } from "@/lib/attribution";
 import type { Etude, SousTache, Tache } from "@/db/schema";
 
@@ -28,6 +28,7 @@ export default function TableauMissions({
   membres = [],
   comptes = [],
   utilisateurId,
+  pilote = false,
   niveauxPartage = {},
 }: {
   lignes: LigneMission[];
@@ -37,6 +38,8 @@ export default function TableauMissions({
   membres?: MembreAttribution[];
   comptes?: CompteChoix[];
   utilisateurId?: number;
+  /** Droit « accès à toutes les études » de la personne connectée. */
+  pilote?: boolean;
   niveauxPartage?: Record<number, string>;
 }) {
   if (lignes.length === 0) {
@@ -51,6 +54,7 @@ export default function TableauMissions({
           utilisateurId != null
             ? droitsSurMission({
                 utilisateurId,
+                pilote,
                 proprietaireId: ligne.tache.proprietaireId,
                 etudeIds: etudesLiees.map((e) => e.id),
                 etudesLiees,
@@ -78,6 +82,18 @@ export default function TableauMissions({
           comptes={comptes}
           peutGerer={ligne.peutGerer ?? calcules.peutGerer}
           peutEcrire={ligne.peutEcrire ?? calcules.peutEcrire}
+          etudesModifiables={
+            utilisateurId != null
+              ? etudesModifiables({
+                  utilisateurId,
+                  pilote,
+                  peutEcrire: ligne.peutEcrire ?? calcules.peutEcrire,
+                  proprietaireId: ligne.tache.proprietaireId,
+                  assigneA: ligne.tache.assigneA,
+                  etudesLiees,
+                })
+              : etudesLiees.map((e) => e.id)
+          }
         />
         );
       })}

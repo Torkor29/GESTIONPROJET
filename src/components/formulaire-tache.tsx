@@ -7,6 +7,7 @@ import { creerTache, modifierTache } from "@/actions/taches";
 import { VIDE } from "@/actions/etat";
 import type { Etude, Tache } from "@/db/schema";
 import { LIBELLES_PRIORITE, LIBELLES_STATUT_TACHE, versChampDate } from "@/lib/format";
+import { TYPES_MISSION_SUGGERES } from "@/lib/constantes";
 import { PALETTE_COULEURS } from "@/lib/couleurs";
 import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
 import SelecteurEtudes from "./selecteur-etudes";
@@ -31,6 +32,7 @@ export default function FormulaireTache({
   membres = [],
   comptes = [],
   peutAttribuer = false,
+  typesConnus = [],
 }: {
   tache?: Tache;
   etudes: Pick<Etude, "id" | "nom" | "code">[];
@@ -43,6 +45,8 @@ export default function FormulaireTache({
   membres?: MembreAttribution[];
   comptes?: CompteChoix[];
   peutAttribuer?: boolean;
+  /** Types déjà employés, proposés en plus des suggestions. */
+  typesConnus?: string[];
 }) {
   // Plusieurs de ces formulaires cohabitent sur une même page : les identifiants
   // doivent être uniques, sinon les libellés pointent vers le mauvais champ.
@@ -76,6 +80,7 @@ export default function FormulaireTache({
   const idsDeja = new Set(dejaSurLEtude.map((m) => m.utilisateurId));
   const autresComptes = comptes.filter((c) => !idsDeja.has(c.id));
   const editionRestreinte = edition && !peutAttribuer;
+  const types = [...new Set([...TYPES_MISSION_SUGGERES, ...typesConnus])];
 
   const classes = {
     principal: "bouton",
@@ -105,8 +110,10 @@ export default function FormulaireTache({
             Sans elle, les champs gardent la valeur qu'ils avaient au montage :
             changer le statut depuis le tableau puis modifier la mission
             réécrirait l'ancien statut, annulant silencieusement le changement.
-            `defaultValue` ne se relit qu'au montage — la clé force ce montage. */}
-        <form key={tache?.modifieLe ?? "nouvelle"} action={action} className="space-y-4">
+            `defaultValue` ne se relit qu'au montage — la clé force ce montage.
+            Le compteur de succès vide aussi les acronymes nouveaux, gardés
+            dans un état React, après chaque ajout. */}
+        <form key={`${tache?.modifieLe ?? "nouvelle"}-${etat.succes ?? 0}`} action={action} className="space-y-4">
           {edition && <input type="hidden" name="id" value={tache!.id} />}
 
           {editionRestreinte ? (
@@ -138,6 +145,26 @@ export default function FormulaireTache({
             />
           </div>
 
+          <div>
+            <label htmlFor={`${uid}-type`} className="mb-1.5 block text-sm font-medium">
+              Type <span className="font-normal text-attenue">(facultatif)</span>
+            </label>
+            <input
+              id={`${uid}-type`}
+              name="type"
+              list={`${uid}-types`}
+              defaultValue={tache?.type ?? ""}
+              placeholder="Archivage, Soumission, Clôture…"
+              autoComplete="off"
+              className="champ"
+            />
+            <datalist id={`${uid}-types`}>
+              {types.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+          </div>
+
           {!edition && (
             <div>
               <label htmlFor={`${uid}-etapes`} className="mb-1.5 block text-sm font-medium">
@@ -157,20 +184,20 @@ export default function FormulaireTache({
             <p className="mb-1.5 text-sm font-medium" id={`${uid}-etudes`}>
               Études
             </p>
-            {etudesPossedees.length === 0 ? (
-              <p className="text-sm text-attenue">Sans étude — visible seulement dans le suivi.</p>
-            ) : (
-              <SelecteurEtudes
-                etudes={etudesPossedees}
-                ids={idsChoisis}
-                onChange={setIdsChoisis}
-                etiquette="Études"
-                libelleId={`${uid}-etudes`}
-              />
-            )}
+            {/* Toujours proposé : même sans étude à soi, on peut en créer une
+                en tapant son acronyme. */}
+            <SelecteurEtudes
+              etudes={etudesPossedees}
+              ids={idsChoisis}
+              onChange={setIdsChoisis}
+              etiquette="Études"
+              libelleId={`${uid}-etudes`}
+              creation
+            />
             <p className="mt-1 text-xs text-attenue">
-              Une ou plusieurs, par acronyme. La mission apparaît dans le suivi et dans chaque
-              dossier.
+              Une ou plusieurs, par acronyme — un acronyme inconnu se crée à la volée. La
+              mission apparaît dans le suivi et dans chaque dossier ; à plusieurs études,
+              chacune a son propre avancement.
             </p>
           </div>
 

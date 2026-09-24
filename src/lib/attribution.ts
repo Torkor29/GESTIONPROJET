@@ -19,6 +19,9 @@ export type EtudeLiee = {
   code: string | null;
   couleur: string;
   proprietaireId: number | null;
+  /** Avancement propre à cette étude, sur une mission à plusieurs études. */
+  statut?: string;
+  notes?: string | null;
 };
 
 type VisibiliteMission = {
@@ -51,6 +54,8 @@ export function missionEstVisiblePour({
 
 export function droitsSurMission(opts: {
   utilisateurId: number;
+  /** Droit « accès à toutes les études » : vaut propriété de chaque étude. */
+  pilote?: boolean;
   proprietaireId: number | null;
   etudeIds: readonly number[];
   etudesLiees?: readonly Pick<EtudeLiee, "id" | "proprietaireId">[];
@@ -58,10 +63,35 @@ export function droitsSurMission(opts: {
   niveauxPartage?: Record<number, string>;
 }): { peutGerer: boolean; peutEcrire: boolean } {
   const etudes = opts.etudesLiees ?? opts.etudeIds.map((id) => ({ id, proprietaireId: null }));
-  const possedeEtude = etudes.some((e) => e.proprietaireId === opts.utilisateurId);
+  const possedeEtude =
+    (opts.pilote === true && etudes.length > 0) ||
+    etudes.some((e) => e.proprietaireId === opts.utilisateurId);
   const estMissionPerso = etudes.length === 0 && opts.proprietaireId === opts.utilisateurId;
   const peutGerer = possedeEtude || estMissionPerso;
   const ecriture = etudes.some((e) => opts.niveauxPartage?.[e.id] === "ecriture");
   const peutEcrire = peutGerer || (opts.assigneA === opts.utilisateurId && ecriture);
   return { peutGerer, peutEcrire };
+}
+
+/**
+ * Études dont la personne peut changer l'avancement, sur une mission à
+ * plusieurs études. Même règle que côté serveur : qui porte la mission les
+ * avance toutes ; sinon, chacun avance les études qu'il pilote.
+ */
+export function etudesModifiables(opts: {
+  utilisateurId: number;
+  pilote?: boolean;
+  peutEcrire: boolean;
+  proprietaireId: number | null;
+  assigneA: number | null;
+  etudesLiees: readonly Pick<EtudeLiee, "id" | "proprietaireId">[];
+}): number[] {
+  if (!opts.peutEcrire) return [];
+  const porte =
+    opts.pilote === true ||
+    opts.proprietaireId === opts.utilisateurId ||
+    opts.assigneA === opts.utilisateurId;
+  return opts.etudesLiees
+    .filter((e) => porte || e.proprietaireId === opts.utilisateurId)
+    .map((e) => e.id);
 }

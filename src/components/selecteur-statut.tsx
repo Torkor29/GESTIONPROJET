@@ -23,11 +23,13 @@ export default function SelecteurStatut({
   id,
   statut,
   verrouille = false,
+  titreVerrou = "Le statut suit les étapes : en cours tant qu'il en reste, terminée quand toutes sont cochées.",
 }: {
   id: number;
   statut: string;
   /** Le statut suit les étapes : on l'affiche, on ne le change plus à la main. */
   verrouille?: boolean;
+  titreVerrou?: string;
 }) {
   return (
     <SelecteurStatutGenerique
@@ -39,7 +41,7 @@ export default function SelecteurStatut({
       enregistrer={definirStatutTache}
       etiquette="Statut de la mission"
       verrouille={verrouille}
-      titreVerrou="Le statut suit les étapes : en cours tant qu'il en reste, terminée quand toutes sont cochées."
+      titreVerrou={titreVerrou}
     />
   );
 }

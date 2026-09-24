@@ -33,6 +33,12 @@ export const WIDGETS_ACCUEIL: WidgetAccueil[] = [
     description: "Missions importantes ou à échéance proche — pas les peu importantes.",
   },
   {
+    cle: "suivi",
+    nom: "Suivi des missions",
+    description:
+      "Missions en cours, organisées par étude, par mission ou par type — pour qui porte des missions sur plusieurs études.",
+  },
+  {
     cle: "projets",
     nom: "Projets",
     description: "Les études en cours, avec leur avancement.",

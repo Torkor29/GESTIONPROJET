@@ -11,6 +11,7 @@ import {
   supprimerTache,
 } from "@/actions/taches";
 import { ajouterTempsRapide, demarrerChrono } from "@/actions/temps";
+import EtudesMission, { AvancementMission } from "./etudes-mission";
 import FormulaireTache from "./formulaire-tache";
 import SelecteurStatut from "./selecteur-statut";
 import { EtiquettePriorite } from "./etiquettes";
@@ -113,6 +114,7 @@ export default function CarteMission({
   comptes = [],
   peutGerer = true,
   peutEcrire = true,
+  etudesModifiables,
 }: {
   tache: Tache;
   etudeNom?: string | null;
@@ -131,6 +133,8 @@ export default function CarteMission({
   comptes?: CompteChoix[];
   peutGerer?: boolean;
   peutEcrire?: boolean;
+  /** Études dont on peut changer l'avancement ; par défaut, toutes si on écrit. */
+  etudesModifiables?: number[];
 }) {
   const statut = statutDepuisEtapes(tache.statut, sousTaches);
   const terminee = statut === "terminee";
@@ -154,7 +158,25 @@ export default function CarteMission({
   const premiereCouleur = etiquettesEtudes[0]?.couleur;
   const teinte = couleurAffichee(tache.couleur, premiereCouleur ?? etudeCouleur);
 
-  const [ouverte, setOuverte] = useState(total > 0 && faites < total);
+  // Mission à plusieurs études : chacune a son avancement, et le statut de la
+  // mission s'en déduit (sauf si des étapes le pilotent déjà).
+  const multi = etudesLiees.length > 1;
+  const etudesOuvertes = etudesLiees.filter(
+    (e) => e.statut !== "terminee" && e.statut !== "sans_objet",
+  ).length;
+  const statutSuitEtudes = multi && total === 0;
+  // Sur vingt études, vingt pastilles noieraient le titre : on en montre
+  // quelques-unes, le détail est dans le volet.
+  const MAX_PASTILLES = 4;
+  const pastillesEtudes =
+    etiquettesEtudes.length > MAX_PASTILLES
+      ? etiquettesEtudes.slice(0, MAX_PASTILLES - 1)
+      : etiquettesEtudes;
+  const pastillesMasquees = etiquettesEtudes.length - pastillesEtudes.length;
+
+  const [ouverte, setOuverte] = useState(
+    (total > 0 && faites < total) || (multi && etudesOuvertes > 0 && !terminee),
+  );
 
   return (
     <article
@@ -169,7 +191,13 @@ export default function CarteMission({
           onClick={() => setOuverte((o) => !o)}
           aria-expanded={ouverte}
           aria-controls={`etapes-${tache.id}`}
-          title={ouverte ? "Replier les étapes" : "Voir les étapes"}
+          title={
+            ouverte
+              ? "Replier le détail"
+              : multi
+                ? "Voir l'avancement par étude et les étapes"
+                : "Voir les étapes"
+          }
           className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-attenue transition hover:bg-creux hover:text-encre"
         >
           <svg
@@ -195,17 +223,32 @@ export default function CarteMission({
               {tache.titre}
             </h3>
             <EtiquettePriorite priorite={tache.priorite} />
+            {tache.type && <span className="etiquette bg-creux text-attenue">{tache.type}</span>}
             {(afficherEtude || etiquettesEtudes.length > 1) &&
-              etiquettesEtudes.map((e) => (
+              pastillesEtudes.map((e) => (
                 <EtiquetteEtude key={e.id || e.nom} nom={e.nom} code={e.code} couleur={e.couleur} />
               ))}
+            {(afficherEtude || etiquettesEtudes.length > 1) && pastillesMasquees > 0 && (
+              <span className="etiquette bg-creux text-attenue">+{pastillesMasquees}</span>
+            )}
             {assigneNom && (
               <span className="etiquette bg-accent-voile text-accent-appuye">{assigneNom}</span>
             )}
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-            <SelecteurStatut id={tache.id} statut={statut} verrouille={total > 0 || !ecrire} />
+            <SelecteurStatut
+              id={tache.id}
+              statut={statut}
+              verrouille={total > 0 || statutSuitEtudes || !ecrire}
+              {...(statutSuitEtudes
+                ? {
+                    titreVerrou:
+                      "Le statut suit celui de chaque étude : changez-le étude par étude, dans le volet.",
+                  }
+                : {})}
+            />
+            {multi && <AvancementMission lignes={etudesLiees} />}
             {tache.echeance ? (
               <span
                 className={`chiffres ${
@@ -357,6 +400,13 @@ export default function CarteMission({
       >
         <div>
           <div className="border-t border-ligne/80 bg-creux/35 px-4 py-4 sm:px-5">
+            {multi && (
+              <EtudesMission
+                tacheId={tache.id}
+                etudes={etudesLiees}
+                modifiables={ecrire ? (etudesModifiables ?? etudesLiees.map((e) => e.id)) : []}
+              />
+            )}
             {total === 0 ? (
               <p className="mb-3 text-sm text-attenue">
                 {ecrire

@@ -3,16 +3,26 @@ import FormulaireTache from "@/components/formulaire-tache";
 import MenuExport from "@/components/menu-export";
 import TableauMissions from "@/components/tableau-missions";
 import ViderArchives from "@/components/vider-archives";
-import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
+import { VueParEtude, VueParType } from "@/components/vues-missions";
+import { LIBELLES_STATUT_LIGNE_MISSION, LIBELLES_STATUT_MISSION } from "@/lib/constantes";
+import { cleType } from "@/lib/missions";
 import { utilisateurActuel } from "@/lib/auth";
 import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
 import { comptesDisponibles } from "@/actions/partages";
-import { listerEtudes, membresPourAttribution, niveauxPartage, toutesLesTaches } from "@/lib/requetes";
+import {
+  listerEtudes,
+  membresPourAttribution,
+  niveauxPartage,
+  toutesLesTaches,
+  typesDeMission,
+} from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
 
 const VUES = [
   { cle: "tableau", libelle: "Tableau" },
+  { cle: "etude", libelle: "Par étude" },
+  { cle: "type", libelle: "Par type" },
   { cle: "groupe", libelle: "Groupé par statut" },
   { cle: "echeances", libelle: "Par échéance" },
   { cle: "archives", libelle: "Archives" },
@@ -20,6 +30,7 @@ const VUES = [
 
 type Params = {
   etude?: string;
+  type?: string;
   statut?: string;
   q?: string;
   vue?: string;
@@ -44,6 +55,10 @@ export default async function PageMissions({
     niveauxPartage(),
   ]);
   const comptes = compte ? await comptesDisponibles(compte.id) : [];
+  const typesConnus = typesDeMission(toutes);
+  // La vue par étude filtre le statut étude par étude, pas mission par mission :
+  // une mission « en cours » peut n'avoir pas démarré pour l'une de ses études.
+  const statutParEtude = vue === "etude";
 
   const etudeId = params.etude ? Number(params.etude) : null;
   const recherche = (params.q ?? "").trim().toLowerCase();
@@ -54,8 +69,9 @@ export default async function PageMissions({
       const ids = (etudesLiees ?? []).map((e) => e.id);
       if (ids.length === 0 ? tache.etudeId !== etudeId : !ids.includes(etudeId)) return false;
     }
-    if (!archives && params.statut && tache.statut !== params.statut) return false;
-    if (!archives && masquerTerminees && tache.statut === "terminee") return false;
+    if (params.type && cleType(tache.type) !== cleType(params.type)) return false;
+    if (!archives && !statutParEtude && params.statut && tache.statut !== params.statut) return false;
+    if (!archives && !statutParEtude && masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
       const etapes = (sousTaches ?? []).map((s) => s.titre).join(" ");
       const texte = `${tache.titre} ${tache.notes ?? ""} ${etapes}`.toLowerCase();
@@ -110,6 +126,8 @@ export default async function PageMissions({
             membres={membres}
             comptes={comptes}
             peutAttribuer
+            typesConnus={typesConnus}
+            etudeIdParDefaut={etudeId ?? undefined}
           />
           )}
         </div>
@@ -175,6 +193,22 @@ export default async function PageMissions({
           </select>
         </div>
 
+        {typesConnus.length > 0 && (
+        <div className="min-w-40">
+          <label htmlFor="type" className="mb-1.5 block text-xs text-attenue">
+            Type
+          </label>
+          <select id="type" name="type" defaultValue={params.type ?? ""} className="champ">
+            <option value="">Tous</option>
+            {typesConnus.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        )}
+
         {!archives && (
         <div className="min-w-40">
           <label htmlFor="statut" className="mb-1.5 block text-xs text-attenue">
@@ -182,7 +216,9 @@ export default async function PageMissions({
           </label>
           <select id="statut" name="statut" defaultValue={params.statut ?? ""} className="champ">
             <option value="">Tous</option>
-            {Object.entries(LIBELLES_STATUT_MISSION).map(([v, l]) => (
+            {Object.entries(
+              statutParEtude ? LIBELLES_STATUT_LIGNE_MISSION : LIBELLES_STATUT_MISSION,
+            ).map(([v, l]) => (
               <option key={v} value={v}>
                 {l}
               </option>
@@ -207,7 +243,7 @@ export default async function PageMissions({
         <button type="submit" className="bouton-discret">
           Filtrer
         </button>
-        {(params.q || params.etude || params.statut || masquerTerminees) && (
+        {(params.q || params.etude || params.type || params.statut || masquerTerminees) && (
           <Link href={`/missions?vue=${vue}`} className="pb-2 text-sm text-attenue hover:text-encre">
             Réinitialiser
           </Link>
@@ -228,6 +264,29 @@ export default async function PageMissions({
           membres={membres}
           comptes={comptes}
           utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
+          niveauxPartage={niveaux}
+        />
+      ) : vue === "etude" ? (
+        <VueParEtude
+          missions={lignes}
+          etudeId={etudeId}
+          statut={params.statut}
+          masquerTerminees={masquerTerminees}
+          message="Aucune mission ne correspond à ces filtres."
+          utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
+          niveauxPartage={niveaux}
+        />
+      ) : vue === "type" ? (
+        <VueParType
+          missions={lignes}
+          etudes={etudes}
+          membres={membres}
+          comptes={comptes}
+          message="Aucune mission ne correspond à ces filtres."
+          utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
           niveauxPartage={niveaux}
         />
       ) : vue === "groupe" ? (
@@ -247,6 +306,7 @@ export default async function PageMissions({
                   membres={membres}
                   comptes={comptes}
                   utilisateurId={compte?.id}
+                  pilote={compte?.accesToutesEtudes}
                   niveauxPartage={niveaux}
                 />
               </section>
@@ -261,6 +321,7 @@ export default async function PageMissions({
           membres={membres}
           comptes={comptes}
           utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
           niveauxPartage={niveaux}
         />
       ) : null}
@@ -276,6 +337,7 @@ function VueEcheances({
   membres,
   comptes,
   utilisateurId,
+  pilote,
   niveauxPartage,
 }: {
   lignes: Awaited<ReturnType<typeof toutesLesTaches>>;
@@ -284,6 +346,7 @@ function VueEcheances({
   membres: MembreAttribution[];
   comptes: CompteChoix[];
   utilisateurId?: number;
+  pilote?: boolean;
   niveauxPartage: Record<number, string>;
 }) {
   const dansUneSemaine = maintenant + 7 * 86400;
@@ -326,6 +389,7 @@ function VueEcheances({
             membres={membres}
             comptes={comptes}
             utilisateurId={utilisateurId}
+            pilote={pilote}
             niveauxPartage={niveauxPartage}
           />
         </section>

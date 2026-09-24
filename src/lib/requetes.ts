@@ -21,10 +21,18 @@ import {
   visites,
   type SousTache,
 } from "@/db/schema";
-import { etudeAccessible, idsEtudesAccessibles, missionLieeA, missionVisible, objetAccessible } from "./acces";
+import {
+  etudeAccessible,
+  idsEtudesAccessibles,
+  idsEtudesPossedees,
+  missionLieeA,
+  missionVisible,
+  objetAccessible,
+} from "./acces";
 import { utilisateurActuel } from "./auth";
 import { debutDeMois, debutDeSemaine, statutDepuisEtapes } from "./format";
 import type { EtudeLiee, MembreAttribution } from "./attribution";
+import { cleType } from "./missions";
 
 /** Une semaine en jours : évite un 7 magique au milieu des calculs de fenêtre. */
 const SECONDES_SEMAINE_JOURS = 86400;
@@ -75,6 +83,16 @@ export async function etudeParId(id: number) {
 
 export type { EtudeLiee, MembreAttribution };
 
+/** Types de mission employés, sans doublon de casse, par ordre alphabétique. */
+export function typesDeMission(missions: { tache: { type: string | null } }[]): string[] {
+  const parCle = new Map<string, string>();
+  for (const { tache } of missions) {
+    const t = tache.type?.trim();
+    if (t && !parCle.has(cleType(t))) parCle.set(cleType(t), t);
+  }
+  return [...parCle.values()].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+}
+
 /** Personnes à qui le propriétaire peut attribuer une mission sur ses études. */
 export async function membresPourAttribution(): Promise<MembreAttribution[]> {
   const id = await moi();
@@ -86,7 +104,8 @@ export async function membresPourAttribution(): Promise<MembreAttribution[]> {
     })
     .from(etudes)
     .innerJoin(utilisateurs, eq(etudes.proprietaireId, utilisateurs.id))
-    .where(eq(etudes.proprietaireId, id));
+    // Études qu'on pilote : les siennes, ou toutes avec le droit étendu.
+    .where(sql`${etudes.id} in ${idsEtudesPossedees(id)}`);
 
   const membres: MembreAttribution[] = possedees
     .filter((e) => e.utilisateurId != null)
@@ -210,6 +229,8 @@ async function etudesDesMissions(tacheIds: number[]): Promise<Map<number, EtudeL
       code: etudes.code,
       couleur: etudes.couleur,
       proprietaireId: etudes.proprietaireId,
+      statut: tachesEtudes.statut,
+      notes: tachesEtudes.notes,
     })
     .from(tachesEtudes)
     .innerJoin(etudes, eq(tachesEtudes.etudeId, etudes.id))
@@ -223,6 +244,8 @@ async function etudesDesMissions(tacheIds: number[]): Promise<Map<number, EtudeL
       code: l.code,
       couleur: l.couleur,
       proprietaireId: l.proprietaireId,
+      statut: l.statut,
+      notes: l.notes,
     };
     const deja = parTache.get(l.tacheId);
     if (deja) {

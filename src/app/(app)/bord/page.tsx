@@ -7,6 +7,7 @@ import PersonnaliserAccueil from "@/components/personnaliser-accueil";
 import RappelInclusion from "@/components/rappel-inclusion";
 import TableauMissions from "@/components/tableau-missions";
 import TimelineEcheances from "@/components/timeline-echeances";
+import { VueParEtude, VueParType } from "@/components/vues-missions";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { Icone, type NomIcone } from "@/components/icones";
 import { lireWidgetsAccueil, widgetVisible } from "@/lib/accueil";
@@ -74,7 +75,18 @@ function Chiffre({
   );
 }
 
-export default async function TableauDeBord() {
+const ORGANISATIONS = [
+  { cle: "etude", libelle: "Par étude" },
+  { cle: "mission", libelle: "Par mission" },
+  { cle: "type", libelle: "Par type" },
+] as const;
+
+export default async function TableauDeBord({
+  searchParams,
+}: {
+  searchParams: Promise<{ organisation?: string }>;
+}) {
+  const { organisation = "etude" } = await searchParams;
   const maintenant = Math.floor(Date.now() / 1000);
   const compte = await utilisateurActuel();
   const widgets = lireWidgetsAccueil(compte?.accueil);
@@ -92,6 +104,17 @@ export default async function TableauDeBord() {
   ]);
 
   const aTraiter = missionsATraiter(missions, maintenant);
+
+  // Le suivi organisable ne sert qu'à qui porte des missions transverses :
+  // pour les autres, il doublerait « À traiter ».
+  const enCours = missions.filter((m) => m.tache.statut !== "terminee");
+  const suiviUtile =
+    Boolean(compte?.accesToutesEtudes) || missions.some((m) => m.etudesLiees.length > 1);
+  const droits = {
+    utilisateurId: compte?.id,
+    pilote: compte?.accesToutesEtudes,
+    niveauxPartage: niveaux,
+  };
 
   // Moyenne de conformité sur les seules études qui ont une checklist.
   const avecChecklist = [...progressions.values()].filter((p) => p.total > 0);
@@ -211,8 +234,61 @@ export default async function TableauDeBord() {
             membres={membres}
             comptes={comptes}
             utilisateurId={compte?.id}
+            pilote={compte?.accesToutesEtudes}
             niveauxPartage={niveaux}
           />
+        </section>
+      )}
+
+      {voir("suivi") && suiviUtile && (
+        <section className="bloc-app anime-bloc">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-titre text-xl font-bold">Suivi des missions en cours</h2>
+            <nav className="flex flex-wrap gap-1.5" aria-label="Organisation du suivi">
+              {ORGANISATIONS.map((o) => (
+                <Link
+                  key={o.cle}
+                  href={`/bord?organisation=${o.cle}`}
+                  scroll={false}
+                  aria-current={organisation === o.cle ? "page" : undefined}
+                  className={`rounded-full border px-3.5 py-1 text-sm transition ${
+                    organisation === o.cle
+                      ? "border-accent bg-accent-voile font-medium text-accent-appuye"
+                      : "border-ligne text-attenue hover:border-encre/30 hover:text-encre"
+                  }`}
+                >
+                  {o.libelle}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {organisation === "mission" ? (
+            <TableauMissions
+              lignes={enCours}
+              etudes={etudes}
+              message="Aucune mission en cours."
+              membres={membres}
+              comptes={comptes}
+              {...droits}
+            />
+          ) : organisation === "type" ? (
+            <VueParType
+              missions={enCours}
+              etudes={etudes}
+              membres={membres}
+              comptes={comptes}
+              message="Aucune mission en cours."
+              {...droits}
+            />
+          ) : (
+            <VueParEtude
+              missions={enCours}
+              masquerTerminees
+              message="Aucune mission en cours."
+              {...droits}
+            />
+          )}
         </section>
       )}
 

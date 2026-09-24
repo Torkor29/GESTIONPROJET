@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { sigleEtude } from "@/lib/format";
+import { normaliserAcronyme } from "@/lib/missions";
 
 export type EtudeChoix = {
   id: number;
@@ -15,6 +16,10 @@ export type EtudeChoix = {
  *
  * Un <select multiple> natif est illisible ; on compose une liste qui tient
  * dans un champ, avec les sigles en pastilles.
+ *
+ * Avec `creation`, un acronyme encore inconnu se crée depuis la recherche.
+ * L'étude n'est réellement créée qu'à l'enregistrement du formulaire :
+ * l'abandonner ne laisse rien derrière soi.
  */
 export default function SelecteurEtudes({
   etudes,
@@ -23,6 +28,7 @@ export default function SelecteurEtudes({
   nom = "etudeIds",
   etiquette = "Études",
   libelleId,
+  creation = false,
 }: {
   etudes: EtudeChoix[];
   ids: number[];
@@ -30,10 +36,14 @@ export default function SelecteurEtudes({
   nom?: string;
   etiquette?: string;
   libelleId?: string;
+  /** Propose de créer l'étude quand l'acronyme cherché n'existe pas. */
+  creation?: boolean;
 }) {
   const uid = useId();
   const racine = useRef<HTMLDivElement>(null);
   const [ouverte, setOuverte] = useState(false);
+  const [recherche, setRecherche] = useState("");
+  const [nouvelles, setNouvelles] = useState<string[]>([]);
   const triees = useMemo(
     () =>
       [...etudes].sort((a, b) =>
@@ -42,6 +52,22 @@ export default function SelecteurEtudes({
     [etudes],
   );
   const choisies = triees.filter((e) => ids.includes(e.id));
+  const q = recherche.trim().toLocaleLowerCase("fr");
+  const filtrees = q
+    ? triees.filter((e) => `${sigleEtude(e)} ${e.nom}`.toLocaleLowerCase("fr").includes(q))
+    : triees;
+  const saisie = normaliserAcronyme(recherche);
+  const existeDeja =
+    triees.some(
+      (e) => normaliserAcronyme(e.code ?? "") === saisie || normaliserAcronyme(e.nom) === saisie,
+    ) || nouvelles.includes(saisie);
+  const peutCreer = creation && saisie !== "" && !existeDeja;
+
+  function creer() {
+    if (!peutCreer) return;
+    setNouvelles((n) => [...n, saisie]);
+    setRecherche("");
+  }
 
   useEffect(() => {
     if (!ouverte) return;
@@ -77,12 +103,36 @@ export default function SelecteurEtudes({
       {ids.map((id) => (
         <input key={id} type="hidden" name={nom} value={id} />
       ))}
+      {nouvelles.map((n) => (
+        <input key={n} type="hidden" name="nouvellesEtudes" value={n} />
+      ))}
 
       <div
         className={`champ flex min-h-12 flex-wrap items-center gap-1.5 focus-within:border-encre
                     ${ouverte ? "border-encre" : ""}`}
         onClick={() => setOuverte(true)}
       >
+        {nouvelles.map((n) => (
+          <span
+            key={n}
+            className="inline-flex max-w-full items-center gap-1 rounded-full border border-dashed border-accent py-0.5 pl-2 pr-0.5 text-xs font-medium uppercase tracking-wide text-accent-appuye"
+            title="Nouvelle étude, créée à l'enregistrement"
+          >
+            <span className="truncate">{n}</span>
+            <span className="normal-case opacity-70">nouvelle</span>
+            <button
+              type="button"
+              aria-label={`Retirer ${n}`}
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-attenue hover:bg-relief hover:text-encre"
+              onClick={(ev) => {
+                ev.stopPropagation();
+                setNouvelles((x) => x.filter((y) => y !== n));
+              }}
+            >
+              ×
+            </button>
+          </span>
+        ))}
         {choisies.map((e) => (
           <span
             key={e.id}
@@ -122,7 +172,7 @@ export default function SelecteurEtudes({
           className="flex min-h-8 min-w-0 flex-1 items-center justify-between gap-2 py-0.5 text-left text-sm"
         >
           <span className="truncate text-efface">
-            {choisies.length === 0 ? "Choisir une ou plusieurs études" : "Ajouter"}
+            {choisies.length + nouvelles.length === 0 ? "Choisir une ou plusieurs études" : "Ajouter"}
           </span>
           <span aria-hidden className="ml-auto shrink-0 text-efface">
             {ouverte ? "▴" : "▾"}
@@ -131,16 +181,47 @@ export default function SelecteurEtudes({
       </div>
 
       {ouverte && (
+        <div className="absolute z-20 mt-1 w-full rounded-2xl border border-ligne bg-relief p-1 shadow-elevee">
+          <input
+            autoFocus
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+            onKeyDown={(e) => {
+              // Entrée ne doit pas envoyer toute la mission : elle coche
+              // l'unique résultat, ou crée l'acronyme tapé.
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              if (filtrees.length === 1 && !ids.includes(filtrees[0].id)) {
+                ajouter(filtrees[0].id);
+                setRecherche("");
+              } else creer();
+            }}
+            placeholder={creation ? "Rechercher ou créer un acronyme…" : "Rechercher…"}
+            aria-label="Rechercher une étude"
+            autoComplete="off"
+            className="mb-1 w-full rounded-xl border border-ligne bg-surface px-3 py-2 text-sm outline-none focus:border-encre"
+          />
+          {peutCreer && (
+            <button
+              type="button"
+              onClick={creer}
+              className="mb-1 flex w-full items-center gap-2 rounded-xl border border-dashed border-accent/60 px-3 py-2 text-left text-sm text-accent-appuye transition hover:bg-accent-voile"
+            >
+              + Créer l&apos;étude « <strong>{saisie}</strong> »
+            </button>
+          )}
         <ul
           role="listbox"
           aria-multiselectable
           aria-labelledby={libelleId ?? uid}
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-ligne bg-relief p-1 shadow-elevee"
+          className="max-h-56 overflow-y-auto"
         >
-          {triees.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-attenue">Aucune étude.</li>
+          {filtrees.length === 0 ? (
+            <li className="px-3 py-2 text-sm text-attenue">
+              {triees.length === 0 ? "Aucune étude." : "Aucune étude ne correspond."}
+            </li>
           ) : (
-            triees.map((e) => {
+            filtrees.map((e) => {
               const choisie = ids.includes(e.id);
               const sigle = sigleEtude(e);
               return (
@@ -175,6 +256,7 @@ export default function SelecteurEtudes({
             })
           )}
         </ul>
+        </div>
       )}
     </div>
   );

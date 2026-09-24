@@ -29,6 +29,16 @@ export const utilisateurs = sqliteTable("utilisateurs", {
   accueil: text("accueil"),
   /** Un compte désactivé conserve ses données mais ne peut plus se connecter. */
   actif: integer("actif", { mode: "boolean" }).notNull().default(true),
+  /**
+   * Droit « accès à toutes les études » : la personne pilote les missions de
+   * toutes les études de l'installation — y compris celles créées après coup
+   * par d'autres — comme si elle en était propriétaire. Pensé pour une
+   * assistante de projet qui porte des missions transverses (archivage,
+   * soumissions…). Seul l'administrateur de l'installation l'accorde.
+   */
+  accesToutesEtudes: integer("acces_toutes_etudes", { mode: "boolean" })
+    .notNull()
+    .default(false),
   creeLe: integer("cree_le").notNull().default(maintenant),
   derniereConnexion: integer("derniere_connexion"),
 });
@@ -126,6 +136,11 @@ export const taches = sqliteTable(
     }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     titre: text("titre").notNull(),
+    /**
+     * Type de mission, en texte libre : Archivage, Soumission, Clôture…
+     * Sert à regrouper les missions de même nature.
+     */
+    type: text("type"),
     notes: text("notes"),
     // "a_faire" | "en_cours" | "terminee"
     statut: text("statut").notNull().default("a_faire"),
@@ -167,6 +182,9 @@ export const taches = sqliteTable(
  * Une mission peut concerner plusieurs études (archivage, envoi CSTS…).
  * Elle apparaît alors dans le suivi et dans chaque dossier. `taches.etude_id`
  * reste la première étude, pour le temps et les anciens écrans.
+ *
+ * Sur une mission à plusieurs études, chaque ligne a son propre avancement :
+ * « l'archivage de cette mission, pour cette étude-ci ».
  */
 export const tachesEtudes = sqliteTable(
   "taches_etudes",
@@ -177,6 +195,11 @@ export const tachesEtudes = sqliteTable(
     etudeId: integer("etude_id")
       .notNull()
       .references(() => etudes.id, { onDelete: "cascade" }),
+    // "a_faire" | "en_cours" | "terminee" | "sans_objet"
+    statut: text("statut").notNull().default("a_faire"),
+    /** Commentaire propre à cette étude : « cartons partis le 12 »… */
+    notes: text("notes"),
+    termineeLe: integer("terminee_le"),
   },
   (t) => [
     primaryKey({ columns: [t.tacheId, t.etudeId] }),

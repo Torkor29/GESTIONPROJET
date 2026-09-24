@@ -280,6 +280,7 @@ export default async function PageEtude({
                 membres={membres}
                 comptes={comptes}
                 utilisateurId={compte?.id}
+                pilote={compte?.accesToutesEtudes}
                 niveauxPartage={niveaux}
               />
             </section>
@@ -363,6 +364,7 @@ export default async function PageEtude({
             membres={membres}
             comptes={comptes}
             utilisateurId={compte?.id}
+            pilote={compte?.accesToutesEtudes}
             niveauxPartage={niveaux}
           />
         </div>

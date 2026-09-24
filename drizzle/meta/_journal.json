@@ -113,6 +113,20 @@
       "when": 1789360000000,
       "tag": "0015_pense_bete",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1790235596073,
+      "tag": "0016_missions_multi_etudes",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1790251636782,
+      "tag": "0017_statut_par_etude",
+      "breakpoints": true
     }
   ]
 }

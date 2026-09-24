@@ -1,13 +1,22 @@
 "use server";
 
-import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { etudes, sousTaches, taches, tachesEtudes, utilisateurs } from "@/db/schema";
-import { exigerAcces, exigerEcritureMission, exigerGestionMission, missionVisible } from "@/lib/acces";
+import {
+  etudeAccessible,
+  exigerAcces,
+  exigerEcritureMission,
+  exigerGestionMission,
+  missionVisible,
+  piloteLesEtudes,
+} from "@/lib/acces";
 import { dansLaPurge } from "@/lib/archives";
 import { exigerSession, utilisateurActuel } from "@/lib/auth";
 import { depuisChampDate, statutDepuisEtapes } from "@/lib/format";
+import { LIBELLES_STATUT_LIGNE_MISSION } from "@/lib/constantes";
+import { normaliserAcronyme, statutDeduit } from "@/lib/missions";
 import { lireCouleur } from "@/lib/couleurs";
 import { assurerPartageEtude } from "./partages";
 import { type EtatFormulaire, messageErreur } from "./etat";
@@ -34,18 +43,98 @@ async function exigerProprietaireDesEtudes(
   if (etudeIds.length === 0) return { etudes: [] };
   const lignes = db.select().from(etudes).where(inArray(etudes.id, etudeIds)).all();
   if (lignes.length !== etudeIds.length) return { erreur: "Étude introuvable." };
-  if (lignes.some((e) => e.proprietaireId !== compteId)) {
+  // Le droit « accès à toutes les études » vaut propriété, pour les missions.
+  if (!(await piloteLesEtudes(etudeIds, compteId))) {
     return { erreur: "Seul le propriétaire peut rattacher une mission à ces études." };
   }
   return { etudes: lignes };
 }
 
+/** Un acronyme n'est qu'une étiquette : au-delà, c'est une faute de frappe. */
+const LONGUEUR_MAX_ACRONYME = 40;
+
+/**
+ * Études désignées par un acronyme saisi à la volée : retrouvées parmi les
+ * études accessibles — sans quoi deux personnes tapant « PAPAYE » créeraient
+ * deux dossiers —, sinon créées au nom de qui les a saisies. On les complète
+ * ensuite depuis leur fiche.
+ */
+async function etudesDepuisAcronymes(
+  donnees: FormData,
+  compteId: number,
+): Promise<{ ids: number[] } | { erreur: string }> {
+  const acronymes = new Set(
+    donnees
+      .getAll("nouvellesEtudes")
+      .map((v) => normaliserAcronyme(String(v)))
+      .filter(Boolean),
+  );
+  const ids: number[] = [];
+  for (const acronyme of acronymes) {
+    if (acronyme.length > LONGUEUR_MAX_ACRONYME) {
+      return { erreur: `L'acronyme « ${acronyme.slice(0, 20)}… » est trop long.` };
+    }
+    const [existante] = await db
+      .select({ id: etudes.id })
+      .from(etudes)
+      .where(
+        and(
+          sql`(upper(${etudes.code}) = ${acronyme} or upper(${etudes.nom}) = ${acronyme})`,
+          etudeAccessible(etudes.id, compteId),
+        ),
+      )
+      .limit(1);
+    if (existante) {
+      ids.push(existante.id);
+      continue;
+    }
+    const [creee] = await db
+      .insert(etudes)
+      .values({ proprietaireId: compteId, nom: acronyme, code: acronyme })
+      .returning({ id: etudes.id });
+    ids.push(creee.id);
+  }
+  return { ids };
+}
+
+/** Études cochées et acronymes nouveaux, créés à la volée. */
+async function lireEtudesChoisies(
+  donnees: FormData,
+  compteId: number,
+): Promise<{ ids: number[] } | { erreur: string }> {
+  const nouvelles = await etudesDepuisAcronymes(donnees, compteId);
+  if ("erreur" in nouvelles) return nouvelles;
+  return { ids: [...new Set([...lireEtudeIds(donnees), ...nouvelles.ids])] };
+}
+
+function lireType(donnees: FormData): string | null {
+  return String(donnees.get("type") ?? "").trim().slice(0, 60) || null;
+}
+
+/**
+ * Rattache la mission à ses études. Les études déjà liées gardent leur
+ * avancement propre : on n'ajoute et on ne retire que la différence.
+ */
 async function enregistrerLiens(tacheId: number, etudeIds: number[]): Promise<void> {
-  db.delete(tachesEtudes).where(eq(tachesEtudes.tacheId, tacheId)).run();
-  if (etudeIds.length === 0) return;
-  db.insert(tachesEtudes)
-    .values(etudeIds.map((etudeId) => ({ tacheId, etudeId })))
-    .run();
+  const avant = db
+    .select({ etudeId: tachesEtudes.etudeId })
+    .from(tachesEtudes)
+    .where(eq(tachesEtudes.tacheId, tacheId))
+    .all()
+    .map((l) => l.etudeId);
+
+  const aRetirer = avant.filter((e) => !etudeIds.includes(e));
+  if (aRetirer.length > 0) {
+    db.delete(tachesEtudes)
+      .where(and(eq(tachesEtudes.tacheId, tacheId), inArray(tachesEtudes.etudeId, aRetirer)))
+      .run();
+  }
+  const aAjouter = etudeIds.filter((e) => !avant.includes(e));
+  if (aAjouter.length > 0) {
+    db.insert(tachesEtudes)
+      .values(aAjouter.map((etudeId) => ({ tacheId, etudeId })))
+      .run();
+  }
 }
 
 async function lireAssigneA(
@@ -133,7 +222,9 @@ export async function creerTache(
     const titre = String(donnees.get("titre") ?? "").trim();
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
-    const etudeIds = lireEtudeIds(donnees);
+    const choix = await lireEtudesChoisies(donnees, compte.id);
+    if ("erreur" in choix) return { erreur: choix.erreur };
+    const etudeIds = choix.ids;
     const possession = await exigerProprietaireDesEtudes(etudeIds, compte.id);
     if ("erreur" in possession) return { erreur: possession.erreur };
 
@@ -151,6 +242,7 @@ export async function creerTache(
         proprietaireId: compte.id,
         etudeId: etudeIds[0] ?? null,
         titre,
+        type: lireType(donnees),
         notes: String(donnees.get("notes") ?? "").trim() || null,
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
@@ -208,10 +300,17 @@ export async function modifierTache(
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
 
     const statut = String(donnees.get("statut") ?? "a_faire");
-    const etudeIds = lireEtudeIds(donnees);
 
     const actuelle = db.select().from(taches).where(eq(taches.id, id)).get();
     if (!actuelle) return { erreur: "Tâche introuvable." };
+
+    // Les acronymes nouveaux ne se créent que pour qui peut rattacher des
+    // études : l'édition restreinte ne les propose pas.
+    const choix = donnees.getAll("nouvellesEtudes").length > 0
+      ? await lireEtudesChoisies(donnees, compte.id)
+      : { ids: lireEtudeIds(donnees) };
+    if ("erreur" in choix) return { erreur: choix.erreur };
+    const etudeIds = choix.ids;
 
     const possession = await exigerProprietaireDesEtudes(etudeIds, compte.id);
     const estProprietaireEtude = !("erreur" in possession) && etudeIds.length > 0;
@@ -245,6 +344,7 @@ export async function modifierTache(
       .set({
         etudeId: etudeIds[0] ?? null,
         titre,
+        type: donnees.has("type") ? lireType(donnees) : actuelle.type,
         notes: String(donnees.get("notes") ?? "").trim() || null,
         statut,
         priorite: String(donnees.get("priorite") ?? "normale"),
@@ -333,7 +433,7 @@ export async function definirStatutTache(id: number, statut: string) {
     .from(sousTaches)
     .where(eq(sousTaches.tacheId, id))
     .limit(1);
-  if (etapes.length > 0) {
+  if (etapes.length > 0 || (await statutsParEtude(id)).length > 0) {
     await appliquerStatutDepuisEtapes(id);
     revalidatePath("/", "layout");
     return;
@@ -461,9 +561,19 @@ export async function viderArchives(
   }
 }
 
+/** Avancement par étude, pour une mission rattachée à plusieurs études. */
+async function statutsParEtude(tacheId: number): Promise<string[]> {
+  const lignes = await db
+    .select({ statut: tachesEtudes.statut })
+    .from(tachesEtudes)
+    .where(eq(tachesEtudes.tacheId, tacheId));
+  return lignes.length > 1 ? lignes.map((l) => l.statut) : [];
+}
+
 /**
- * Aligne le statut de la mission sur ses étapes, s'il y en a.
- * Sans étape, le statut manuel est laissé tel quel.
+ * Aligne le statut de la mission sur ses étapes, s'il y en a ; sinon, pour
+ * une mission à plusieurs études, sur l'avancement de chacune. Sans l'un ni
+ * l'autre, le statut manuel est laissé tel quel.
  */
 async function appliquerStatutDepuisEtapes(tacheId: number) {
   const etapes = await db
@@ -471,13 +581,15 @@ async function appliquerStatutDepuisEtapes(tacheId: number) {
     .from(sousTaches)
     .where(eq(sousTaches.tacheId, tacheId));
   const [mission] = await db
-    .select({ statut: taches.statut, archiveeLe: taches.archiveeLe })
+    .select({ statut: taches.statut, archiveeLe: taches.archiveeLe, termineeLe: taches.termineeLe })
     .from(taches)
     .where(eq(taches.id, tacheId))
     .limit(1);
   if (!mission) return;
 
-  const statut = statutDepuisEtapes(mission.statut, etapes);
+  const parEtude = etapes.length === 0 ? await statutsParEtude(tacheId) : [];
+  const statut =
+    parEtude.length > 0 ? statutDeduit(parEtude) : statutDepuisEtapes(mission.statut, etapes);
   const archiveeLe = statut === "terminee" ? mission.archiveeLe : null;
   if (statut === mission.statut && archiveeLe === mission.archiveeLe) return;
 
@@ -485,11 +597,60 @@ async function appliquerStatutDepuisEtapes(tacheId: number) {
     .update(taches)
     .set({
       statut,
-      termineeLe: statut === "terminee" ? maintenant() : null,
+      termineeLe: statut === "terminee" ? (mission.termineeLe ?? maintenant()) : null,
       archiveeLe,
       modifieLe: maintenant(),
     })
     .where(eq(taches.id, tacheId));
+}
+
+/**
+ * Une étude d'une mission s'avance par qui porte la mission (son auteur, la
+ * personne à qui elle est attribuée) ou par qui pilote cette étude-là : le
+ * propriétaire d'une autre étude du lot n'y touche pas.
+ */
+async function exigerEcritureEtudeMission(tacheId: number, etudeId: number, utilisateurId: number) {
+  await exigerEcritureMission(tacheId, utilisateurId);
+  const [tache] = await db
+    .select({ proprietaireId: taches.proprietaireId, assigneA: taches.assigneA })
+    .from(taches)
+    .where(eq(taches.id, tacheId))
+    .limit(1);
+  if (tache?.proprietaireId === utilisateurId || tache?.assigneA === utilisateurId) return;
+  if (await piloteLesEtudes([etudeId], utilisateurId)) return;
+  throw new Error("Seule l'équipe de cette étude peut en changer l'avancement.");
+}
+
+/** Avancement d'une mission pour l'une de ses études. */
+export async function definirStatutEtudeMission(tacheId: number, etudeId: number, statut: string) {
+  const compte = await exigerSession();
+  if (!tacheId || !etudeId || !(statut in LIBELLES_STATUT_LIGNE_MISSION)) {
+    throw new Error("Statut invalide.");
+  }
+  await exigerEcritureEtudeMission(tacheId, etudeId, compte.id);
+
+  const faite = await db
+    .update(tachesEtudes)
+    .set({ statut, termineeLe: statut === "terminee" ? maintenant() : null })
+    .where(and(eq(tachesEtudes.tacheId, tacheId), eq(tachesEtudes.etudeId, etudeId)))
+    .returning({ etudeId: tachesEtudes.etudeId });
+  if (faite.length === 0) throw new Error("Cette étude n'est pas rattachée à la mission.");
+
+  await appliquerStatutDepuisEtapes(tacheId);
+  revalidatePath("/", "layout");
+}
+
+/** Commentaire propre à une étude, sur une mission à plusieurs études. */
+export async function definirNoteEtudeMission(tacheId: number, etudeId: number, notes: string) {
+  const compte = await exigerSession();
+  if (!tacheId || !etudeId) throw new Error("Étude manquante.");
+  await exigerEcritureEtudeMission(tacheId, etudeId, compte.id);
+
+  await db
+    .update(tachesEtudes)
+    .set({ notes: notes.trim().slice(0, 2000) || null })
+    .where(and(eq(tachesEtudes.tacheId, tacheId), eq(tachesEtudes.etudeId, etudeId)));
+  revalidatePath("/", "layout");
 }
 
 /** Relit une sous-tâche et vérifie l'accès via la mission parente. */

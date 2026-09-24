@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
+import { definirAccesToutesEtudes } from "@/actions/droits";
 import { inviter, revoquerInvitation } from "@/actions/invitations";
 import { LIBELLES_ROLE } from "@/lib/constantes";
 import { Icone } from "@/components/icones";
@@ -19,7 +20,40 @@ export type LigneMembre = {
   nom: string;
   email: string;
   role: string;
+  accesToutesEtudes: boolean;
 };
+
+/**
+ * Interrupteur du droit « accès à toutes les études ». Seul l'administrateur
+ * le voit ; les autres ne voient que l'étiquette.
+ */
+function DroitToutesEtudes({ membre }: { membre: LigneMembre }) {
+  const [accorde, setAccorde] = useState(membre.accesToutesEtudes);
+  const [enCours, demarrer] = useTransition();
+
+  return (
+    <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs text-attenue">
+      <input
+        type="checkbox"
+        checked={accorde}
+        disabled={enCours}
+        onChange={(e) => {
+          const valeur = e.target.checked;
+          setAccorde(valeur);
+          demarrer(async () => {
+            try {
+              await definirAccesToutesEtudes(membre.id, valeur);
+            } catch {
+              setAccorde(!valeur);
+            }
+          });
+        }}
+        className="h-4 w-4 accent-indigo-600"
+      />
+      Accès à toutes les études
+    </label>
+  );
+}
 
 function BoutonInviter() {
   const { pending } = useFormStatus();
@@ -63,9 +97,14 @@ function LienACopier({ jeton }: { jeton: string }) {
 export default function GestionEquipe({
   membres,
   invitationsEnCours,
+  administrateur,
+  moiId,
 }: {
   membres: LigneMembre[];
   invitationsEnCours: LigneInvitation[];
+  /** L'administrateur de l'installation accorde les droits étendus. */
+  administrateur: boolean;
+  moiId: number;
 }) {
   const [etat, action] = useActionState(inviter, {});
   const [email, setEmail] = useState("");
@@ -166,7 +205,7 @@ export default function GestionEquipe({
         <h2 className="sur-titre mb-3">Comptes de cette installation</h2>
         <ul className="space-y-2">
           {membres.map((m) => (
-            <li key={m.id} className="carte flex items-center gap-3 p-4">
+            <li key={m.id} className="carte flex flex-wrap items-center gap-3 p-4">
               <span
                 aria-hidden
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-voile font-titre text-xs font-bold text-accent-appuye"
@@ -178,12 +217,21 @@ export default function GestionEquipe({
                   .map((x) => x[0]?.toUpperCase() ?? "")
                   .join("")}
               </span>
-              <span className="min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold">{m.nom}</span>
                 <span className="block truncate text-xs text-efface">
                   {m.email} · {LIBELLES_ROLE[m.role]}
                 </span>
               </span>
+              {administrateur && m.id !== moiId ? (
+                <DroitToutesEtudes membre={m} />
+              ) : (
+                m.accesToutesEtudes && (
+                  <span className="etiquette shrink-0 bg-accent-voile text-accent-appuye">
+                    Toutes les études
+                  </span>
+                )
+              )}
             </li>
           ))}
         </ul>
@@ -193,7 +241,9 @@ export default function GestionEquipe({
         <Icone nom="bouclier" className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
         Créer un compte ne donne accès à rien : chacun ne voit que ses propres
         études, et celles auxquelles il a été convié depuis la fiche de
-        l&apos;étude.
+        l&apos;étude. Seul le droit « accès à toutes les études », accordé par
+        l&apos;administrateur de l&apos;installation, ouvre l&apos;ensemble des
+        études et de leurs missions — y compris celles créées par la suite.
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { utilisateurs, type Utilisateur } from "@/db/schema";
 import { LONGUEUR_MOT_DE_PASSE } from "@/lib/constantes";
@@ -211,3 +211,17 @@ export function aucunCompte(): boolean {
 }
 
 export { NOM_COOKIE };
+
+/**
+ * L'administrateur de l'installation est le tout premier compte créé. Lui
+ * seul accorde les droits étendus.
+ */
+export function estAdministrateur(utilisateurId: number): boolean {
+  const premier = db
+    .select({ id: utilisateurs.id })
+    .from(utilisateurs)
+    .orderBy(asc(utilisateurs.id))
+    .limit(1)
+    .get();
+  return premier?.id === utilisateurId;
+}

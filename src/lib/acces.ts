@@ -9,6 +9,8 @@ import { checklistItems, documents, etudes, faq, pages, partages, taches, taches
  *
  * La règle tient en deux lignes :
  *   — une étude est accessible à son propriétaire et aux personnes conviées ;
+ *     le droit « accès à toutes les études » vaut propriété de toutes les
+ *     études, pour ce qui touche aux missions ;
  *   — tout ce qui pend d'une étude suit l'accès de cette étude, et un objet
  *     sans étude n'est visible que de son propriétaire.
  *
@@ -25,16 +27,35 @@ import { checklistItems, documents, etudes, faq, pages, partages, taches, taches
  */
 export function idsEtudesAccessibles(utilisateurId: number): SQL {
   return sql`(
-    select id from etudes where proprietaire_id = ${utilisateurId}
+    select id from etudes
+      where proprietaire_id = ${utilisateurId} or ${aLeDroitToutesEtudes(utilisateurId)}
     union
     select ressource_id from partages
       where type = 'etude' and utilisateur_id = ${utilisateurId}
   )`;
 }
 
-/** Études dont la personne est propriétaire — pas seulement conviée. */
+/**
+ * Le droit « accès à toutes les études », relu en base à chaque requête : le
+ * retirer prend effet immédiatement, sans attendre une reconnexion.
+ */
+function aLeDroitToutesEtudes(utilisateurId: number): SQL {
+  return sql`exists (
+    select 1 from utilisateurs
+      where utilisateurs.id = ${utilisateurId} and utilisateurs.acces_toutes_etudes = 1
+  )`;
+}
+
+/**
+ * Études dont la personne pilote les missions : celles qu'elle possède — être
+ * seulement conviée ne suffit pas —, ou toutes avec le droit « accès à toutes
+ * les études ».
+ */
 export function idsEtudesPossedees(utilisateurId: number): SQL {
-  return sql`(select id from etudes where proprietaire_id = ${utilisateurId})`;
+  return sql`(
+    select id from etudes
+      where proprietaire_id = ${utilisateurId} or ${aLeDroitToutesEtudes(utilisateurId)}
+  )`;
 }
 
 /** Condition à poser sur la table `etudes` elle-même. */
@@ -166,9 +187,19 @@ async function possedeUneEtudeLiee(etudeIds: number[], utilisateurId: number): P
   const [ligne] = await db
     .select({ id: etudes.id })
     .from(etudes)
-    .where(and(eq(etudes.proprietaireId, utilisateurId), inArray(etudes.id, etudeIds)))
+    .where(and(sql`${etudes.id} in ${idsEtudesPossedees(utilisateurId)}`, inArray(etudes.id, etudeIds)))
     .limit(1);
   return Boolean(ligne);
+}
+
+/** Vrai si la personne pilote toutes ces études (propriété ou droit étendu). */
+export async function piloteLesEtudes(etudeIds: number[], utilisateurId: number): Promise<boolean> {
+  if (etudeIds.length === 0) return true;
+  const lignes = await db
+    .select({ id: etudes.id })
+    .from(etudes)
+    .where(and(sql`${etudes.id} in ${idsEtudesPossedees(utilisateurId)}`, inArray(etudes.id, etudeIds)));
+  return lignes.length === new Set(etudeIds).size;
 }
 
 /**
