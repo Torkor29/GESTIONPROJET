@@ -14,6 +14,7 @@ import {
   etudes,
   faq,
   pages,
+  publipostages,
   taches,
   temps,
   visites,
@@ -954,4 +955,52 @@ export async function conventionsPourChoix() {
     .from(conventions)
     .where(objetAccessible(conventions.proprietaireId, conventions.etudeId, id))
     .orderBy(desc(conventions.creeLe));
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Publipostage                                                              */
+/* -------------------------------------------------------------------------- */
+
+/** Les documents de publipostage, avec leur étude. */
+export async function tousLesPublipostages(
+  filtres: { etudeId?: number | null; modele?: string; statut?: string } = {},
+) {
+  const id = await moi();
+  const conditions = [objetAccessible(publipostages.proprietaireId, publipostages.etudeId, id)];
+  if (filtres.etudeId) conditions.push(eq(publipostages.etudeId, filtres.etudeId));
+  if (filtres.modele) conditions.push(eq(publipostages.modele, filtres.modele));
+  if (filtres.statut) conditions.push(eq(publipostages.statut, filtres.statut));
+
+  return db
+    .select({
+      publipostage: publipostages,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+    })
+    .from(publipostages)
+    .leftJoin(etudes, eq(publipostages.etudeId, etudes.id))
+    .where(and(...conditions))
+    .orderBy(desc(publipostages.modifieLe), desc(publipostages.id));
+}
+
+export async function publipostageParId(publipostageId: number) {
+  const id = await moi();
+  const [ligne] = await db
+    .select({
+      publipostage: publipostages,
+      etudeNom: etudes.nom,
+      etudeCode: etudes.code,
+      etudeCouleur: etudes.couleur,
+    })
+    .from(publipostages)
+    .leftJoin(etudes, eq(publipostages.etudeId, etudes.id))
+    .where(
+      and(
+        eq(publipostages.id, publipostageId),
+        objetAccessible(publipostages.proprietaireId, publipostages.etudeId, id),
+      ),
+    )
+    .limit(1);
+  return ligne ?? null;
 }

@@ -156,3 +156,24 @@ export const STATUTS_CONVENTION: Record<string, string> = {
 
 /** Une convention reste à suivre tant qu'elle n'est ni soldée ni annulée. */
 export const STATUTS_CONVENTION_OUVERTS = ["en_negociation", "signee", "en_cours"];
+
+/**
+ * Circuit d'un document de publipostage, de la saisie à la signature. Le
+ * statut se déplace à la main : c'est la personne qui sait quand elle a
+ * envoyé le document et quand le coordonnateur a répondu.
+ */
+export const STATUTS_PUBLIPOSTAGE: Record<string, string> = {
+  brouillon: "Brouillon",
+  pret: "Prêt à envoyer",
+  envoye_coordo: "Envoyé au coordo",
+  corrections: "Corrections demandées",
+  valide: "Validé",
+  signe: "Signé / finalisé",
+  annule: "Annulé",
+};
+
+/** Le document est chez le coordonnateur : on attend son retour. */
+export const STATUTS_PUBLIPOSTAGE_EN_ATTENTE = ["envoye_coordo"];
+
+/** Le document reste à faire avancer de notre côté. */
+export const STATUTS_PUBLIPOSTAGE_A_TRAITER = ["brouillon", "pret", "corrections"];

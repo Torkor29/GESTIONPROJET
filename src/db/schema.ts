@@ -412,6 +412,48 @@ export const conventions = sqliteTable(
 export type Convention = typeof conventions.$inferSelect;
 
 /**
+ * Un document produit par publipostage : une trame Word (convention, fiche
+ * de qualification…) complétée champ par champ, puis suivie dans son circuit
+ * de validation — envoi au coordonnateur, retour, signature.
+ *
+ * Seules les valeurs saisies sont en base : le .docx est régénéré à chaque
+ * export depuis le modèle, il n'y a donc jamais de fichier périmé qui traîne.
+ */
+export const publipostages = sqliteTable(
+  "publipostages",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Propriétaire : seul lui, et les personnes conviées, y ont accès. */
+    proprietaireId: integer("proprietaire_id").references(() => utilisateurs.id, {
+      onDelete: "cascade",
+    }),
+    etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
+    /** Clé du modèle, voir src/lib/modeles-publipostage.ts. */
+    modele: text("modele").notNull(),
+    titre: text("titre").notNull(),
+    /** Valeurs des champs, en JSON : { "nom_centre": "CHU de Brest", … }. */
+    valeurs: text("valeurs").notNull().default("{}"),
+    // "brouillon" | "pret" | "envoye_coordo" | "corrections" | "valide" | "signe" | "annule"
+    statut: text("statut").notNull().default("brouillon"),
+    /** À qui le document a été adressé : le coordonnateur, un service… */
+    destinataire: text("destinataire"),
+    /** Date d'envoi au coordonnateur : c'est d'elle que court l'attente. */
+    envoyeLe: integer("envoye_le"),
+    /** Date du retour : validation ou demande de corrections. */
+    retourLe: integer("retour_le"),
+    notes: text("notes"),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+    modifieLe: integer("modifie_le").notNull().default(maintenant),
+  },
+  (t) => [
+    index("idx_publipostages_etude").on(t.etudeId),
+    index("idx_publipostages_statut").on(t.statut),
+  ],
+);
+
+export type Publipostage = typeof publipostages.$inferSelect;
+
+/**
  * Un partage : une personne conviée sur une ressource dont elle n'est pas
  * propriétaire. Partager une étude donne accès à tout ce qui s'y rattache —
  * missions, documents, pages, FAQ, temps.

@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // Génère un serveur autonome dans .next/standalone : l'image Docker finale
   // n'a alors pas besoin des node_modules complets.
   output: "standalone",
-  serverExternalPackages: ["better-sqlite3", "exceljs"],
+  serverExternalPackages: ["better-sqlite3", "exceljs", "jszip"],
 
   async redirects() {
     return [

@@ -6,6 +6,11 @@ export function dossierUploads(): string {
   return process.env.DOSSIER_UPLOADS ?? path.join(process.cwd(), "data", "uploads");
 }
 
+/** Dossier des trames Word du publipostage, copié dans l'image Docker comme les migrations. */
+export function dossierModeles(): string {
+  return path.join(process.cwd(), "modeles");
+}
+
 export const TAILLE_MAX_OCTETS = 25 * 1024 * 1024; // 25 Mo
 
 /**

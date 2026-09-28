@@ -21,6 +21,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 | **Temps** | Chronomètre en un clic ou saisie manuelle (`1h30`, `1:30`, `90min`, `1,5`), export Excel valorisé |
 | **Monitorage** | Visites planifiées et réalisées par centre ; écarts et déviations avec gravité ; actions correctives jusqu'à vérification de leur efficacité |
 | **Budget** | Conventions et avenants : montant contractualisé, déjà perçu, reste à percevoir, échéances dépassées |
+| **Publipostage** | Convention centre associé et fiche de qualification complétées champ par champ, exportées en Word ou en PDF, et suivies jusqu'au retour du coordo |
 | **Portefeuille** | L'état de chaque étude en une ligne — missions, visites, écarts, actions, conformité — et la charge de chacun sur les études que vous portez |
 | **Indicateurs** | Charge, retards, respect des échéances, conformité par référentiel, tendances du temps et des missions |
 | **Exports** | Chaque tableau s'exporte en Excel, en CSV ou en PDF (via l'impression du navigateur) |
@@ -54,6 +55,41 @@ cochées ou annotées sont conservées, et l'application vous le signale.
 > Les référentiels vivent dans `src/lib/referentiels.ts` : vous pouvez les
 > modifier, en ajouter, et le bouton « Actualiser depuis le référentiel »
 > reporte vos changements sur une étude existante.
+
+### Le publipostage
+
+« Nouveau document » : on choisit la trame (convention centre associé
+ENR-02228 V4, fiche de qualification de projet 05505 V6.0) et l'étude. Les
+champs que la fiche étude connaît déjà — acronyme, titre, investigateur,
+ID-RCB — sont préremplis ; le reste se saisit sur la page du document, rangé
+par sections, avec un point orange sur chaque champ attendu encore vide.
+
+L'export Word régénère le document depuis la trame à chaque fois : mise en
+page, logos et pieds de page sont ceux de l'original. Une zone surlignée en
+jaune dans la trame le reste tant qu'elle n'est pas remplie, et perd son
+surlignage dès qu'elle l'est : un brouillon exporté montre d'un coup d'œil
+ce qui manque. L'export PDF passe par LibreOffice, installé dans l'image
+Docker.
+
+Le suivi se fait dans le tableau : brouillon, prêt à envoyer, envoyé au
+coordo, corrections demandées, validé, signé. Passer à « envoyé au coordo »
+date l'envoi ; au-delà de 15 jours sans retour, la ligne le signale. Le bouton
+« Dupliquer » repart d'un document existant — la même convention pour un
+second centre, par exemple.
+
+**Ajouter ou mettre à jour une trame.** Les trames vivent dans `modeles/`.
+Ouvrez-en une dans Word et écrivez une balise là où une valeur doit
+apparaître : `{{nom_du_champ}}`, `{{nom_du_champ|XXX}}` pour garder « XXX »
+tant que le champ est vide, ou `{{nom_du_champ=Option}}` à la place d'une case
+à cocher. Déclarez ensuite les champs dans `src/lib/modeles-publipostage.ts`,
+puis lancez :
+
+```bash
+npm run modeles:verifier
+```
+
+Le script signale toute balise sans champ, et toute case dont l'option
+n'existe pas.
 
 ---
 
@@ -222,6 +258,11 @@ npm run dev
 L'application écoute sur http://localhost:3000. En développement, le cookie
 n'est pas marqué `secure` : la connexion fonctionne en HTTP.
 
+L'export PDF du publipostage demande LibreOffice sur la machine
+(`sudo apt install libreoffice-writer-nogui`, ou `CHEMIN_LIBREOFFICE` vers
+l'exécutable `soffice`). Sans lui, l'export Word fonctionne et le PDF affiche
+un message explicite.
+
 Après une modification du schéma dans `src/db/schema.ts` :
 
 ```bash
@@ -241,7 +282,8 @@ src/
 │   │                    réglementaires, données et sécurité, mentions légales
 │   ├── (app)/           pages protégées : tableau de bord (/bord), études,
 │   │                    missions, documents, FAQ, temps, monitorage, budget
-│   ├── api/             exports Excel, dépôt et service des fichiers
+│   ├── api/             exports Excel, dépôt et service des fichiers,
+│   │                    génération Word et PDF du publipostage
 │   ├── robots.ts        robots.txt — n'ouvre que les pages publiques
 │   ├── sitemap.ts       plan du site, une entrée par référentiel
 │   └── connexion/       page de connexion
@@ -250,8 +292,11 @@ src/
 ├── db/                  schéma Drizzle et connexion SQLite
 └── lib/
     ├── referentiels.ts  contenu des checklists réglementaires
+    ├── modeles-publipostage.ts  champs des trames Word
+    ├── fusion-docx.ts   remplissage des balises {{…}} d'un .docx
     ├── requetes.ts      lectures en base
     └── …                authentification, formatage, durées, fichiers
+modeles/                 trames Word balisées du publipostage
 ```
 
 **Choix techniques et raisons :**
@@ -308,7 +353,8 @@ devenir payant.
 
 | Brique | Licence |
 |---|---|
-| Next.js, React, ExcelJS, better-sqlite3, Tailwind | MIT |
+| Next.js, React, ExcelJS, JSZip, better-sqlite3, Tailwind | MIT |
+| LibreOffice (conversion PDF, dans l'image Docker) | MPL-2.0 |
 | BlockNote | MPL-2.0 |
 | Drizzle ORM | Apache-2.0 |
 | Caddy | Apache-2.0 |

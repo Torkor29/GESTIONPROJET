@@ -231,6 +231,16 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
+    cle: "publipostage",
+    nom: "Publipostage",
+    description:
+      "Conventions et fiches de qualification complétées champ par champ, exportées en Word ou en PDF, et suivies jusqu'au retour du coordo.",
+    icone: "page",
+    domaine: "Réglementaire et documentaire",
+    href: "/publipostage",
+    roles: TOUS,
+  },
+  {
     cle: "faq",
     nom: "Base de connaissance",
     description: "Les questions qui reviennent, répondues une fois pour toutes.",

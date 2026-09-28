@@ -49,6 +49,16 @@ ENV NODE_ENV=production \
     CHEMIN_BASE=/donnees/gestionprojet.db \
     DOSSIER_UPLOADS=/donnees/uploads
 
+# LibreOffice sans interface convertit les documents de publipostage en PDF
+# en respectant la mise en page des trames Word. Les polices Carlito et
+# Caladea ont les mêmes métriques que Calibri et Cambria : sans elles, le
+# texte serait remplacé par une police plus large et les pages glisseraient.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      libreoffice-writer-nogui \
+      fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation2 fonts-dejavu-core \
+ && rm -rf /var/lib/apt/lists/*
+
 # L'application ne tourne pas en root.
 RUN groupadd --system --gid 1001 app \
  && useradd --system --uid 1001 --gid app app \
@@ -62,6 +72,8 @@ COPY --from=builder --chown=app:app /app/.next/static ./.next/static
 COPY --from=builder --chown=app:app /app/public ./public
 # Les migrations sont appliquées au démarrage par src/db/index.ts.
 COPY --from=builder --chown=app:app /app/drizzle ./drizzle
+# Les trames Word du publipostage, lues à chaque export.
+COPY --from=builder --chown=app:app /app/modeles ./modeles
 
 USER app
 EXPOSE 3000
