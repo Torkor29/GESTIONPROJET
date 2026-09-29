@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { utilisateurActuel } from "@/lib/auth";
-import { formaterDuree } from "@/lib/format";
+import { formaterDuree, sigleEtude } from "@/lib/format";
 import { REFERENTIELS_PAR_CLE } from "@/lib/referentiels";
 import {
   fluxMissionsParMois,
@@ -223,7 +223,7 @@ export default async function PageIndicateurs() {
                 <th scope="col" className="sur-titre px-3 py-3">En retard</th>
                 <th scope="col" className="sur-titre px-3 py-3">Conformité</th>
                 <th scope="col" className="sur-titre px-3 py-3">Temps</th>
-                <th scope="col" className="sur-titre px-3 py-3">Documents</th>
+                <th scope="col" className="sur-titre px-3 py-3">Pense-bête</th>
               </tr>
             </thead>
             <tbody>
@@ -264,7 +264,7 @@ export default async function PageIndicateurs() {
                     {s.minutes > 0 ? formaterDuree(s.minutes) : <span className="text-efface">—</span>}
                   </td>
                   <td className="chiffres px-3 py-3">
-                    {s.documents > 0 ? s.documents : <span className="text-efface">—</span>}
+                    {s.pages > 0 ? s.pages : <span className="text-efface">—</span>}
                   </td>
                 </tr>
               ))}
@@ -284,7 +284,7 @@ export default async function PageIndicateurs() {
               .sort((a, b) => b.minutes - a.minutes)
               .map((s) => ({
                 cle: String(s.id),
-                libelle: s.nom,
+                libelle: sigleEtude(s),
                 valeur: s.minutes,
                 couleur: s.couleur,
                 affichage: `${formaterDuree(s.minutes)} · ${Math.round((s.minutes / minutesTotales) * 100)} %`,

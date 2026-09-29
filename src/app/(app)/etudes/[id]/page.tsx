@@ -1,20 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { creerPage } from "@/actions/pages";
 import { retirerCouverture, supprimerEtude } from "@/actions/etudes";
 import { comptesDisponibles, invitesDeLEtude } from "@/actions/partages";
 import { demarrerChrono } from "@/actions/temps";
 import { utilisateurActuel } from "@/lib/auth";
 import Checklist from "@/components/checklist";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
-import FormulaireDocument from "@/components/formulaire-document";
 import FormulaireEtude from "@/components/formulaire-etude";
 import PartageEtude from "@/components/partage-etude";
 import FormulaireFaq from "@/components/formulaire-faq";
 import FormulaireTache from "@/components/formulaire-tache";
-import ListeDocuments from "@/components/liste-documents";
+import FormulairePenseBete from "@/components/formulaire-pense-bete";
+import ListePenseBete from "@/components/liste-pense-bete";
 import ListeFaq from "@/components/liste-faq";
 import TableauMissions from "@/components/tableau-missions";
+import { ChampFinInclusion } from "@/components/rappel-inclusion";
 import { formaterDate, formaterDuree, formaterMontant, heuresDecimales } from "@/lib/format";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
 import {
@@ -25,6 +25,8 @@ import {
   etudeParId,
   faqDEtude,
   listerEtudes,
+  membresPourAttribution,
+  niveauxPartage,
   pagesDEtude,
   progression,
   tachesDEtude,
@@ -36,8 +38,7 @@ const SECTIONS = [
   { cle: "apercu", libelle: "Aperçu" },
   { cle: "missions", libelle: "Missions" },
   { cle: "checklist", libelle: "Réglementaire" },
-  { cle: "documents", libelle: "Documents" },
-  { cle: "pages", libelle: "Pages" },
+  { cle: "pense-bete", libelle: "Pense-bête" },
   { cle: "faq", libelle: "FAQ" },
   { cle: "temps", libelle: "Temps" },
 ] as const;
@@ -50,8 +51,10 @@ export default async function PageEtude({
   searchParams: Promise<{ section?: string }>;
 }) {
   const { id } = await params;
-  const { section = "apercu" } = await searchParams;
+  const { section: sectionBrute = "apercu" } = await searchParams;
   const etudeId = Number(id);
+  const section =
+    sectionBrute === "documents" || sectionBrute === "pages" ? "pense-bete" : sectionBrute;
 
   const etude = await etudeParId(etudeId);
   if (!etude) notFound();
@@ -70,9 +73,14 @@ export default async function PageEtude({
   // voient l'étude sans pouvoir en élargir l'accès.
   const compte = await utilisateurActuel();
   const estProprietaire = compte !== null && etude.proprietaireId === compte.id;
-  const [invites, comptes] = estProprietaire
-    ? await Promise.all([invitesDeLEtude(etudeId), comptesDisponibles(compte.id)])
-    : [[], []];
+  const [invites, comptes, membres, niveaux] = estProprietaire
+    ? await Promise.all([
+        invitesDeLEtude(etudeId),
+        comptesDisponibles(compte.id),
+        membresPourAttribution(),
+        Promise.resolve({} as Record<number, string>),
+      ])
+    : [[], [], [], await niveauxPartage()];
 
   const maintenant = Math.floor(Date.now() / 1000);
   const minutesTotal = temps.reduce((t, l) => t + dureeMinutes(l.entree), 0);
@@ -89,8 +97,8 @@ export default async function PageEtude({
   const compteurs: Record<string, number> = {
     missions: ouvertes.length,
     checklist: prog.total - prog.faits,
-    documents: documents.length,
-    pages: pages.length,
+    documents: pages.length,
+    "pense-bete": pages.length,
     faq: faq.length,
   };
 
@@ -142,7 +150,9 @@ export default async function PageEtude({
                 ⏱ Démarrer
               </button>
             </form>
-            <FormulaireEtude etude={etude} libelle="Modifier" variante="discret" />
+            {estProprietaire && (
+              <FormulaireEtude etude={etude} libelle="Modifier" variante="discret" />
+            )}
             {/* Seul le propriétaire gère les accès : une personne conviée en
                 écriture modifie le contenu, pas la liste des invités. */}
             {estProprietaire && (
@@ -153,16 +163,16 @@ export default async function PageEtude({
       </header>
 
       {/* ------------------------------------------------------- Sections */}
-      <nav className="flex flex-wrap gap-1.5 border-b border-ligne pb-2">
+      <nav className="flex flex-wrap gap-1.5">
         {SECTIONS.map((s) => (
           <Link
             key={s.cle}
             href={lien(s.cle)}
             aria-current={section === s.cle ? "page" : undefined}
-            className={`rounded-lg px-3 py-1.5 text-sm transition
+            className={`rounded-full px-4 py-1.5 text-sm transition
                         ${
                           section === s.cle
-                            ? "bg-accent/10 font-medium text-accent"
+                            ? "bg-accent-voile font-medium text-accent-appuye shadow-posee"
                             : "text-attenue hover:bg-creux hover:text-encre"
                         }`}
           >
@@ -211,8 +221,8 @@ export default async function PageEtude({
               )}
             </div>
             <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-attenue">Documents</dt>
-              <dd className="chiffres mt-1 text-lg font-semibold">{documents.length}</dd>
+              <dt className="text-xs uppercase tracking-wide text-attenue">Pense-bête</dt>
+              <dd className="chiffres mt-1 text-lg font-semibold">{pages.length}</dd>
             </div>
           </dl>
 
@@ -234,9 +244,10 @@ export default async function PageEtude({
                   <dd className={valeur ? "mt-0.5" : "mt-0.5 text-attenue"}>{valeur || "—"}</dd>
                 </div>
               ))}
+              <ChampFinInclusion date={etude.dateFinInclusion} statut={etude.statut} />
             </dl>
 
-            {etude.imageCouverture && (
+            {etude.imageCouverture && estProprietaire && (
               <form action={retirerCouverture} className="mt-4 border-t border-ligne pt-3">
                 <input type="hidden" name="id" value={etude.id} />
                 <button
@@ -253,13 +264,29 @@ export default async function PageEtude({
             <section>
               <h2 className="mb-2 font-semibold text-alerte">Missions en retard</h2>
               <TableauMissions
-                lignes={enRetard.map((t) => ({ tache: t }))}
+                lignes={enRetard.map((t) => ({
+                  tache: t,
+                  assigneNom: t.assigneNom,
+                  sousTaches: t.sousTaches,
+                  minutes: t.minutes,
+                  minutesParEtape: t.minutesParEtape,
+                  chronoEnCours: t.chronoEnCours,
+                  chronoSousTacheId: t.chronoSousTacheId,
+                  etudeProprietaireId: etude.proprietaireId,
+                  etudesLiees: t.etudesLiees,
+                }))}
                 etudes={toutesEtudes}
                 afficherEtude={false}
+                membres={membres}
+                comptes={comptes}
+                utilisateurId={compte?.id}
+                pilote={compte?.accesToutesEtudes}
+                niveauxPartage={niveaux}
               />
             </section>
           )}
 
+          {estProprietaire && (
           <section className="border-t border-ligne pt-6">
             <details>
               <summary className="cursor-pointer text-sm text-attenue hover:text-alerte">
@@ -269,7 +296,7 @@ export default async function PageEtude({
                 <p className="text-sm">
                   La suppression retire définitivement l&apos;étude, ses{" "}
                   <strong>{pages.length} page(s)</strong>, <strong>{missions.length} mission(s)</strong>,{" "}
-                  <strong>{documents.length} document(s)</strong>,{" "}
+                  <strong>{documents.length} fichier(s)</strong>,{" "}
                   <strong>{checklist.length} ligne(s) de checklist</strong>,{" "}
                   <strong>{faq.length} question(s)</strong> et{" "}
                   <strong>{temps.length} saisie(s) de temps</strong>. C&apos;est irréversible.
@@ -286,26 +313,59 @@ export default async function PageEtude({
               </div>
             </details>
           </section>
+          )}
         </div>
       )}
 
       {/* ------------------------------------------------------- Missions */}
       {section === "missions" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
+        <div className="bloc-app space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-titre text-lg font-bold">Missions</h2>
-            <FormulaireTache
-              etudes={toutesEtudes}
-              etudeIdParDefaut={etude.id}
-              libelle="+ Nouvelle mission"
-              variante="discret"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`/missions?vue=archives&etude=${etude.id}`}
+                className="text-sm font-medium text-accent transition-opacity hover:opacity-70"
+              >
+                Archives
+              </Link>
+              {estProprietaire && (
+                <FormulaireTache
+                  etudes={toutesEtudes}
+                  etudeIdParDefaut={etude.id}
+                  libelle="+ Nouvelle mission"
+                  variante="discret"
+                  membres={membres}
+                  comptes={comptes}
+                  peutAttribuer
+                />
+              )}
+            </div>
           </div>
           <TableauMissions
-            lignes={missions.map((t) => ({ tache: t }))}
+            lignes={missions.map((t) => ({
+              tache: t,
+              assigneNom: t.assigneNom,
+              sousTaches: t.sousTaches,
+              minutes: t.minutes,
+              minutesParEtape: t.minutesParEtape,
+              chronoEnCours: t.chronoEnCours,
+              chronoSousTacheId: t.chronoSousTacheId,
+              etudeProprietaireId: etude.proprietaireId,
+              etudesLiees: t.etudesLiees,
+            }))}
             etudes={toutesEtudes}
             afficherEtude={false}
-            message="Aucune mission sur cette étude."
+            message={
+              estProprietaire
+                ? "Aucune mission sur cette étude."
+                : "Aucune mission ne vous est attribuée sur cette étude."
+            }
+            membres={membres}
+            comptes={comptes}
+            utilisateurId={compte?.id}
+            pilote={compte?.accesToutesEtudes}
+            niveauxPartage={niveaux}
           />
         </div>
       )}
@@ -313,66 +373,23 @@ export default async function PageEtude({
       {/* --------------------------------------------------- Réglementaire */}
       {section === "checklist" && <Checklist etudeId={etude.id} lignes={checklist} />}
 
-      {/* ------------------------------------------------------ Documents */}
-      {section === "documents" && (
+      {/* ------------------------------------------------------ Pense-bête */}
+      {section === "pense-bete" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-titre text-lg font-bold">Documents</h2>
-            <FormulaireDocument
-              etudes={toutesEtudes}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-titre text-lg font-bold">Pense-bête</h2>
+            <FormulairePenseBete
+              categories={[...new Set(pages.map((p) => p.categorie).filter(Boolean))]}
               etudeIdParDefaut={etude.id}
-              libelle="+ Ajouter un document"
+              libelle="Nouvelle page"
               variante="discret"
             />
           </div>
-          <ListeDocuments
-            lignes={documents.map((d) => ({ document: d }))}
-            etudes={toutesEtudes}
-            afficherEtude={false}
-            message="Aucun document déposé pour cette étude."
+          <ListePenseBete
+            pages={pages}
+            etudeIdParDefaut={etude.id}
+            message="Aucune page. Créez-en une pour un compte rendu, une liste ou ce qu'il ne faut pas oublier."
           />
-        </div>
-      )}
-
-      {/* ---------------------------------------------------------- Pages */}
-      {section === "pages" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-titre text-lg font-bold">Pages</h2>
-            <form action={creerPage}>
-              <input type="hidden" name="etudeId" value={etude.id} />
-              <button type="submit" className="bouton-discret">
-                + Nouvelle page
-              </button>
-            </form>
-          </div>
-
-          {pages.length === 0 ? (
-            <p className="carte p-8 text-center text-sm text-attenue">
-              Aucune page. Créez-en une pour vos comptes rendus de visite, vos notes de réunion ou
-              vos modes opératoires.
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {pages.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/pages/${p.id}`}
-                  className="carte flex items-start gap-3 p-4 transition hover:border-accent/50"
-                >
-                  <span aria-hidden className="text-xl leading-none">
-                    {p.icone}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{p.titre}</p>
-                    <p className="mt-0.5 text-xs text-attenue">
-                      modifiée le {formaterDate(p.modifieLe)}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -413,13 +430,16 @@ export default async function PageEtude({
             </p>
           ) : (
             <ul className="carte divide-y divide-ligne">
-              {temps.slice(0, 20).map(({ entree, tacheTitre }) => (
+              {temps.slice(0, 20).map(({ entree, tacheTitre, etapeTitre }) => (
                 <li key={entree.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm">
-                      {entree.description ?? tacheTitre ?? "Sans description"}
+                      {entree.description ?? etapeTitre ?? tacheTitre ?? "Sans description"}
                     </p>
-                    <p className="text-xs text-attenue">{formaterDate(entree.debut)}</p>
+                    <p className="text-xs text-attenue">
+                      {formaterDate(entree.debut)}
+                      {etapeTitre ? ` · ${etapeTitre}` : tacheTitre ? ` · ${tacheTitre}` : ""}
+                    </p>
                   </div>
                   <span className="chiffres shrink-0 text-sm font-medium">
                     {formaterDuree(dureeMinutes(entree))}

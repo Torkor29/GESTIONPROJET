@@ -40,6 +40,20 @@ export function analyserDuree(saisie: string): number | null {
   return null;
 }
 
+/**
+ * Durée saisie à côté d'une étape : un entier nu est lu en minutes
+ * (« 45 » = 45 min). Les écritures avec unité (« 1h30 », « 90min ») restent
+ * celles de `analyserDuree`.
+ */
+export function analyserDureeCompacte(saisie: string): number | null {
+  const texte = saisie.trim().toLowerCase();
+  if (/^\d+$/.test(texte)) {
+    const n = Number(texte);
+    return n > 0 ? n : null;
+  }
+  return analyserDuree(saisie);
+}
+
 /** "09:30" -> 570 minutes depuis minuit. */
 export function analyserHeure(saisie: string): number | null {
   const m = saisie.trim().match(/^(\d{1,2}):(\d{2})$/);

@@ -9,7 +9,7 @@
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "modeles:verifier": "tsx --conditions=react-server scripts/verifier-modeles.ts"
+    "modeles:verifier": "tsx scripts/verifier-modeles.ts"
   },
   "dependencies": {
     "@blocknote/core": "0.52.1",
@@ -22,6 +22,7 @@
     "exceljs": "4.4.0",
     "jszip": "3.10.1",
     "next": "15.5.22",
+    "nodemailer": "10.0.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "server-only": "^0.0.1"
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "22.18.1",
+    "@types/nodemailer": "8.0.1",
     "@types/react": "19.1.13",
     "@types/react-dom": "19.1.9",
     "autoprefixer": "10.4.21",

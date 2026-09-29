@@ -14,7 +14,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 |---|---|
 | **Études** | Un dossier par étude : acronyme, promoteur, investigateur, ID-RCB, n° CTIS, référence CPP, image de couverture |
 | **Checklists réglementaires** | Générées automatiquement selon le cadre coché : RIPH 1/2/3, règlement 536/2014, MDR, IVDR, ICH E6(R3), CNIL, archivage |
-| **Missions** | Vue tableau, groupée par statut ou par échéance, filtres par étude, statut et texte, commentaire, export Excel |
+| **Missions** | Vue tableau, par étude, par type, groupée par statut ou par échéance ; filtres par étude, type, statut et texte ; étapes ; une mission peut porter sur plusieurs études, chacune avec son propre avancement et son commentaire ; un acronyme d'étude inconnu se crée depuis le formulaire ; export Excel |
 | **Documents** | Dépôt de fichiers classés selon les catégories d'un TMF, versions, dates, recherche |
 | **Base de connaissance** | FAQ générale ou propre à une étude, classée par thème |
 | **Pages** | Éditeur riche façon Notion (titres, listes, tableaux, images), sauvegarde automatique |
@@ -25,7 +25,7 @@ Aucun service tiers, aucun abonnement : vos données restent sur votre machine.
 | **Portefeuille** | L'état de chaque étude en une ligne — missions, visites, écarts, actions, conformité — et la charge de chacun sur les études que vous portez |
 | **Indicateurs** | Charge, retards, respect des échéances, conformité par référentiel, tendances du temps et des missions |
 | **Exports** | Chaque tableau s'exporte en Excel, en CSV ou en PDF (via l'impression du navigateur) |
-| **Comptes et partage** | Chacun sa session et ses modules ; une étude se partage en lecture ou en écriture, et n'est visible que de son propriétaire et des personnes conviées |
+| **Comptes et partage** | Chacun sa session et ses modules ; une étude se partage en lecture ou en écriture, et n'est visible que de son propriétaire et des personnes conviées — sauf pour les comptes auxquels l'administrateur (le premier compte créé) accorde le droit « accès à toutes les études » |
 
 L'application est en français, s'adapte au thème clair ou sombre du système, et
 fonctionne sur téléphone.
@@ -123,19 +123,13 @@ cp .env.example .env
 nano .env
 ```
 
-Deux valeurs à renseigner :
+Une valeur à renseigner :
 
 ```bash
-MOT_DE_PASSE=votre-cle-d-installation-longue-et-unique
 SECRET_SESSION=<coller ici le résultat de : openssl rand -hex 32>
 ```
 
-`MOT_DE_PASSE` est la **clé d'installation** : elle n'ouvre pas l'application,
-elle autorise seulement la création du tout premier compte. Vous la saisirez
-une fois, à la création de votre compte, puis vous vous connecterez avec votre
-adresse et votre propre mot de passe.
-
-Générez la clé de session avec :
+`SECRET_SESSION` signe les sessions. Générez-la avec :
 
 ```bash
 openssl rand -hex 32
@@ -163,6 +157,20 @@ marqué `secure` que lorsqu'un domaine est configuré).
 > dizaine d'euros par an et suffit à ce que Caddy active le chiffrement tout
 > seul. En attendant, évitez les réseaux Wi-Fi publics.
 
+Pour qu'attribuer une mission prévienne la personne par courrier, ajoutez
+votre boîte — Gmail suffit, sans service payant. Il faut un mot de passe
+d'application (validation en deux étapes activée), pas le mot de passe
+habituel du compte. Les étapes sont dans [INSTALLATION.md](INSTALLATION.md)
+§ 6.4.
+
+```bash
+SMTP_USER=votre.adresse@gmail.com
+SMTP_MOT_DE_PASSE=xxxx xxxx xxxx xxxx
+```
+
+Sans ces lignes, l'attribution s'enregistre simplement : aucun courrier ne
+part, et aucun message d'erreur n'apparaît.
+
 ### 4. Démarrer
 
 ```bash
@@ -170,9 +178,10 @@ docker compose up -d --build
 ```
 
 C'est tout. Ouvrez `https://votre-domaine` : l'écran de création de compte
-s'affiche. Renseignez votre nom, votre adresse, un mot de passe et la clé
-d'installation. Une fois ce compte créé, l'écran d'inscription se referme —
-les comptes suivants passeront par une invitation.
+s'affiche. Renseignez votre nom, votre adresse et un mot de passe. Les comptes
+suivants se créent de la même façon, ou par invitation depuis Paramètres →
+Équipe (le lien se copie, il n'est pas envoyé par courrier). Un mot de passe
+oublié se réinitialise avec l'adresse du compte, sans envoi de courrier.
 
 La base de données est créée automatiquement au premier démarrage ; il n'y a
 aucune commande de migration à lancer.
@@ -251,12 +260,13 @@ Pour restaurer :
 
 ```bash
 npm install
-cp .env.example .env    # renseignez MOT_DE_PASSE et SECRET_SESSION
+cp .env.example .env    # renseignez SECRET_SESSION
 npm run dev
 ```
 
-L'application écoute sur http://localhost:3000. En développement, le cookie
-n'est pas marqué `secure` : la connexion fonctionne en HTTP.
+L'application écoute sur http://localhost:3000. Le cookie de session n'est
+marqué `secure` que si la requête arrive réellement en HTTPS : la connexion
+fonctionne donc en HTTP en local.
 
 L'export PDF du publipostage demande LibreOffice sur la machine
 (`sudo apt install libreoffice-writer-nogui`, ou `CHEMIN_LIBREOFFICE` vers
@@ -286,7 +296,8 @@ src/
 │   │                    génération Word et PDF du publipostage
 │   ├── robots.ts        robots.txt — n'ouvre que les pages publiques
 │   ├── sitemap.ts       plan du site, une entrée par référentiel
-│   └── connexion/       page de connexion
+│   └── connexion/       pages de compte : connexion, inscription,
+│                        mot de passe oublié
 ├── actions/             Server Actions (écritures en base)
 ├── components/          composants d'interface
 ├── db/                  schéma Drizzle et connexion SQLite
@@ -310,6 +321,11 @@ modeles/                 trames Word balisées du publipostage
   pas sous vos pieds. La mise à jour est explicite, via un bouton.
 - **Migrations au démarrage** : `docker compose up` suffit, jamais de commande
   manuelle à ne pas oublier.
+  ⚠️ Le migrateur n'applique qu'une migration dont la date (`when` dans
+  `drizzle/meta/_journal.json`) est **postérieure** à la dernière appliquée :
+  une migration écrite à la main avec une date plus ancienne serait ignorée
+  sans erreur. Générez-les avec `npm run db:generate`, ou donnez-leur une
+  date supérieure à celle de la dernière entrée du journal.
 - **Comptes individuels** : chacun sa session, son mot de passe (haché avec
   scrypt et un sel propre) et son métier. Le jeton de session porte
   l'identifiant du compte et il est resigné à chaque connexion ; un compte
@@ -330,9 +346,11 @@ modeles/                 trames Word balisées du publipostage
   annoncées dans `sitemap.xml`. La page des référentiels est rendue depuis
   `src/lib/referentiels.ts` : le contenu public et celui des checklists ne
   peuvent pas diverger.
-- **Invitations remises de la main à la main** : pas de serveur de courrier à
-  configurer, et aucune adresse confiée à un tiers. Le lien se copie et
-  s'envoie par ses propres moyens ; il vaut sept jours et ne sert qu'une fois.
+- **Invitations remises de la main à la main** : le lien se copie et s'envoie
+  par ses propres moyens ; il vaut sept jours et ne sert qu'une fois. Un
+  courrier d'attribution, lui, peut partir si une boîte SMTP est configurée
+  (Gmail avec un mot de passe d'application). Sans cette configuration,
+  l'attribution s'enregistre et personne n'est prévenu.
 
 **Deux pièges contournés, à connaître si vous reprenez le code :**
 

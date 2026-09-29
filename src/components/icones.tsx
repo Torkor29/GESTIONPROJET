@@ -17,6 +17,8 @@ const traces = {
   fleche: "M5 12h13.5M13 6.5l5.5 5.5-5.5 5.5",
   personnes: "M15.5 20v-1.6a3.4 3.4 0 0 0-3.4-3.4H6.9a3.4 3.4 0 0 0-3.4 3.4V20M9.5 11.6a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6ZM20.5 20v-1.6a3.4 3.4 0 0 0-2.5-3.3M16 5.2a3.3 3.3 0 0 1 0 6.4",
   eclair: "M13.5 3 5 13.5h6L10.5 21 19 10.5h-6z",
+  archive:
+    "M3 7h18l-1.7 11.2A2 2 0 0 1 17.3 20H6.7a2 2 0 0 1-2-1.8L3 7ZM3 7l2-3h14l2 3M9.5 11.5h5",
 } as const;
 
 export type NomIcone = keyof typeof traces;

@@ -49,27 +49,38 @@ export default function PartageEtude({
             <label htmlFor="emailPartage" className="mb-1.5 block text-sm font-medium">
               Personne à convier
             </label>
-            <input
-              id="emailPartage"
-              name="email"
-              type="email"
-              list="comptes-existants"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="champ"
-              placeholder="collegue@chu-brest.fr"
-            />
-            <datalist id="comptes-existants">
-              {comptes.map((c) => (
-                <option key={c.email} value={c.email}>
-                  {c.nom}
-                </option>
-              ))}
-            </datalist>
+            {comptes.length > 0 ? (
+              <select
+                id="emailPartage"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="champ"
+              >
+                <option value="">Choisir un compte</option>
+                {comptes.map((c) => (
+                  <option key={c.email} value={c.email}>
+                    {c.nom} — {c.email}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id="emailPartage"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="champ"
+                placeholder="collegue@chu-brest.fr"
+              />
+            )}
             <p className="mt-1.5 text-xs text-efface">
-              Elle doit déjà avoir un compte. Sinon, invitez-la depuis Modules ›
-              Équipe.
+              Elle verra les informations de l&apos;étude. Les missions n&apos;apparaissent chez
+              elle que si vous les lui attribuez. Pas encore de compte : invitez-la depuis
+              Modules › Équipe.
             </p>
           </div>
 
@@ -77,9 +88,9 @@ export default function PartageEtude({
             <label htmlFor="niveau" className="mb-1.5 block text-sm font-medium">
               Niveau d&apos;accès
             </label>
-            <select id="niveau" name="niveau" defaultValue="lecture" className="champ">
-              <option value="lecture">Lecture — consulter sans modifier</option>
-              <option value="ecriture">Écriture — ajouter et modifier</option>
+            <select id="niveau" name="niveau" defaultValue="ecriture" className="champ">
+              <option value="ecriture">Peut avancer ses missions (étapes, délais, temps)</option>
+              <option value="lecture">Consultation — sans modifier les missions</option>
             </select>
           </div>
 

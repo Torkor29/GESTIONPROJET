@@ -76,6 +76,7 @@ function champsCommuns(donnees: FormData) {
     numeroCpp: String(donnees.get("numeroCpp") ?? "").trim() || null,
     dateDebut: depuisChampDate(String(donnees.get("dateDebut") ?? "")),
     dateFin: depuisChampDate(String(donnees.get("dateFin") ?? "")),
+    dateFinInclusion: depuisChampDate(String(donnees.get("dateFinInclusion") ?? "")),
     reglementations: JSON.stringify(lireReglementationsFormulaire(donnees)),
   };
 }
@@ -178,6 +179,10 @@ export async function retirerCouverture(donnees: FormData) {
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Étude manquante.");
   await exigerAcces("etudes", id, compte.id);
+  const etude = db.select().from(etudes).where(eq(etudes.id, id)).get();
+  if (!etude || etude.proprietaireId !== compte.id) {
+    throw new Error("Seul le propriétaire de l'étude peut retirer la couverture.");
+  }
 
   await db.update(etudes).set({ imageCouverture: null }).where(eq(etudes.id, id));
   revalidatePath("/", "layout");

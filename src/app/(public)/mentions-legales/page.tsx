@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { NOM_PRODUIT } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Mentions légales — Vigie",
+  title: `Mentions légales — ${NOM_PRODUIT}`,
   description:
-    "Mentions légales du site Vigie : éditeur, hébergement, propriété intellectuelle, licences des briques logicielles et conditions d'accès à l'application.",
+    "Mentions légales du site Vigie Clinique : éditeur, hébergement, propriété intellectuelle, licences des briques logicielles et conditions d'accès à l'espace de travail.",
   alternates: { canonical: "/mentions-legales" },
 };
 
 /**
  * L'identité de l'éditeur dépend de qui installe l'outil : elle se renseigne
  * par variables d'environnement plutôt que d'être écrite en dur, pour qu'une
- * autre équipe qui déploie Vigie n'ait pas à modifier le code.
+ * autre équipe qui déploie Vigie Clinique n'ait pas à modifier le code.
  */
 const EDITEUR = process.env.EDITEUR ?? null;
 const EDITEUR_CONTACT = process.env.EDITEUR_CONTACT ?? null;
@@ -27,10 +28,10 @@ function Section({ titre, children }: { titre: string; children: React.ReactNode
 
 export default function PageMentionsLegales() {
   return (
-    <div className="px-6 py-16 sm:py-20">
+    <div className="px-5 py-16 sm:px-10 sm:py-24">
       <div className="mx-auto max-w-3xl">
         <p className="sur-titre">Informations légales</p>
-        <h1 className="mt-3 font-titre text-4xl font-bold leading-tight">Mentions légales</h1>
+        <h1 className="mt-4 font-titre text-[32px] leading-[1.2] tracking-[-0.02em] sm:text-[48px]">Mentions légales</h1>
 
         <Section titre="Éditeur du site">
           {EDITEUR ? (
@@ -45,14 +46,14 @@ export default function PageMentionsLegales() {
             </p>
           ) : (
             <p>
-              Ce site présente Vigie, un outil de gestion de projet en recherche
-              clinique installé et exploité par l&apos;équipe qui
+              Ce site présente {NOM_PRODUIT}, un espace de travail pour la
+              recherche clinique, installé et exploité par l&apos;équipe qui
               l&apos;héberge. L&apos;identité de l&apos;éditeur de cette
               installation se renseigne à la configuration du serveur.
             </p>
           )}
           <p>
-            Vigie n&apos;est pas un service commercial : il n&apos;y a ni
+            {NOM_PRODUIT} n&apos;est pas un service commercial : il n&apos;y a ni
             abonnement, ni compte à ouvrir chez un éditeur, ni collecte à des
             fins publicitaires ou statistiques.
           </p>
@@ -68,19 +69,18 @@ export default function PageMentionsLegales() {
           </p>
         </Section>
 
-        <Section titre="Accès à l'application">
+        <Section titre="Accès à l'espace de travail">
           <p>
             Les pages publiques — présentation, référentiels réglementaires,
-            page données et sécurité, présentes mentions — sont librement
-            consultables. Tout le reste demande un compte : les études, les
-            missions, les documents et les indicateurs ne sont accessibles
-            qu&apos;aux personnes autorisées, et uniquement pour les études qui
-            leur ont été ouvertes.
+            confidentialité et hébergement, présentes mentions — sont
+            librement consultables. Tout le reste demande un compte : les
+            études, les missions, les documents et les indicateurs ne sont
+            accessibles qu&apos;aux personnes autorisées, et uniquement pour
+            les études qui leur ont été ouvertes.
           </p>
           <p>
-            La création de compte n&apos;est pas ouverte au public. Les comptes
-            se créent par invitation nominative, remise par une personne déjà
-            autorisée.
+            Un compte se crée sur le site, ou par invitation nominative remise
+            par une personne déjà autorisée.
           </p>
         </Section>
 
@@ -97,7 +97,7 @@ export default function PageMentionsLegales() {
             qu&apos;elle n&apos;a pas vocation à recevoir et de la façon dont
             les accès sont cloisonnés figure sur la page{" "}
             <Link href="/donnees" className="text-accent hover:underline">
-              Données et sécurité
+              Confidentialité et hébergement
             </Link>
             .
           </p>
@@ -105,12 +105,12 @@ export default function PageMentionsLegales() {
 
         <Section titre="Propriété intellectuelle et licences">
           <p>
-            Vigie s&apos;appuie sur des briques sous licence libre irrévocable :
-            Next.js, React, Tailwind CSS, ExcelJS et SQLite sous licence MIT,
-            l&apos;éditeur de texte riche BlockNote sous licence MPL 2.0,
-            l&apos;ORM Drizzle et le serveur web Caddy sous licence Apache 2.0.
-            Les polices de caractères employées sont diffusées sous SIL Open
-            Font License.
+            {NOM_PRODUIT} s&apos;appuie sur des briques sous licence libre
+            irrévocable : Next.js, React, Tailwind CSS, ExcelJS et SQLite sous
+            licence MIT, l&apos;éditeur de texte riche BlockNote sous licence
+            MPL 2.0, l&apos;ORM Drizzle et le serveur web Caddy sous licence
+            Apache 2.0. Les polices de caractères employées sont diffusées sous
+            SIL Open Font License.
           </p>
           <p>
             Les contenus réglementaires publiés sur ce site renvoient à leurs

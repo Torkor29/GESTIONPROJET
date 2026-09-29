@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
 import {
@@ -15,13 +15,25 @@ import {
   faq,
   pages,
   publipostages,
+  sousTaches,
   taches,
+  tachesEtudes,
   temps,
   visites,
+  type SousTache,
 } from "@/db/schema";
-import { etudeAccessible, idsEtudesAccessibles, objetAccessible } from "./acces";
+import {
+  etudeAccessible,
+  idsEtudesAccessibles,
+  idsEtudesPossedees,
+  missionLieeA,
+  missionVisible,
+  objetAccessible,
+} from "./acces";
 import { utilisateurActuel } from "./auth";
-import { debutDeMois, debutDeSemaine } from "./format";
+import { debutDeMois, debutDeSemaine, statutDepuisEtapes } from "./format";
+import type { EtudeLiee, MembreAttribution } from "./attribution";
+import { cleType } from "./missions";
 
 /** Une semaine en jours : évite un 7 magique au milieu des calculs de fenêtre. */
 const SECONDES_SEMAINE_JOURS = 86400;
@@ -70,6 +82,73 @@ export async function etudeParId(id: number) {
   return ligne ?? null;
 }
 
+export type { EtudeLiee, MembreAttribution };
+
+/** Types de mission employés, sans doublon de casse, par ordre alphabétique. */
+export function typesDeMission(missions: { tache: { type: string | null } }[]): string[] {
+  const parCle = new Map<string, string>();
+  for (const { tache } of missions) {
+    const t = tache.type?.trim();
+    if (t && !parCle.has(cleType(t))) parCle.set(cleType(t), t);
+  }
+  return [...parCle.values()].sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+}
+
+/** Personnes à qui le propriétaire peut attribuer une mission sur ses études. */
+export async function membresPourAttribution(): Promise<MembreAttribution[]> {
+  const id = await moi();
+  const possedees = await db
+    .select({
+      etudeId: etudes.id,
+      utilisateurId: etudes.proprietaireId,
+      nom: utilisateurs.nom,
+    })
+    .from(etudes)
+    .innerJoin(utilisateurs, eq(etudes.proprietaireId, utilisateurs.id))
+    // Études qu'on pilote : les siennes, ou toutes avec le droit étendu.
+    .where(sql`${etudes.id} in ${idsEtudesPossedees(id)}`);
+
+  const membres: MembreAttribution[] = possedees
+    .filter((e) => e.utilisateurId != null)
+    .map((e) => ({
+      etudeId: e.etudeId,
+      utilisateurId: e.utilisateurId as number,
+      nom: e.nom,
+    }));
+
+  if (possedees.length === 0) return membres;
+
+  const invites = await db
+    .select({
+      etudeId: partages.ressourceId,
+      utilisateurId: partages.utilisateurId,
+      nom: utilisateurs.nom,
+    })
+    .from(partages)
+    .innerJoin(utilisateurs, eq(partages.utilisateurId, utilisateurs.id))
+    .where(
+      and(
+        eq(partages.type, "etude"),
+        inArray(
+          partages.ressourceId,
+          possedees.map((e) => e.etudeId),
+        ),
+      ),
+    );
+
+  return [...membres, ...invites].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+}
+
+/** Niveau d'accès (lecture / écriture) de la personne connectée, par étude. */
+export async function niveauxPartage(): Promise<Record<number, string>> {
+  const id = await moi();
+  const lignes = await db
+    .select({ etudeId: partages.ressourceId, niveau: partages.niveau })
+    .from(partages)
+    .where(and(eq(partages.type, "etude"), eq(partages.utilisateurId, id)));
+  return Object.fromEntries(lignes.map((l) => [l.etudeId, l.niveau]));
+}
+
 export async function pagesDEtude(etudeId: number) {
   const id = await moi();
   return db
@@ -81,18 +160,30 @@ export async function pagesDEtude(etudeId: number) {
         objetAccessible(pages.proprietaireId, pages.etudeId, id),
       ),
     )
-    .orderBy(asc(pages.ordre), asc(pages.id));
+    .orderBy(asc(pages.categorie), asc(pages.ordre), asc(pages.id));
 }
 
 export async function pagesLibres() {
   const id = await moi();
-  // Une page sans étude n'appartient qu'à son auteur : rien ne la rattache à
-  // un partage.
+  // Une page sans étude n'appartient qu'à son auteur : c'est une note
+  // personnelle, visible dans le pense-bête général.
   return db
     .select()
     .from(pages)
     .where(and(isNull(pages.etudeId), eq(pages.proprietaireId, id)))
-    .orderBy(asc(pages.ordre), asc(pages.id));
+    .orderBy(asc(pages.categorie), asc(pages.ordre), asc(pages.id));
+}
+
+/** Pages du pense-bête, éventuellement filtrées par étude. */
+export async function pagesPenseBete(filtres: { etudeId?: number | null } = {}) {
+  const id = await moi();
+  const conditions = [objetAccessible(pages.proprietaireId, pages.etudeId, id)];
+  if (filtres.etudeId) conditions.push(eq(pages.etudeId, filtres.etudeId));
+  return db
+    .select()
+    .from(pages)
+    .where(and(...conditions))
+    .orderBy(asc(pages.categorie), asc(pages.ordre), asc(pages.id));
 }
 
 export async function pageParId(id: number) {
@@ -107,39 +198,206 @@ export async function pageParId(id: number) {
   return ligne ?? null;
 }
 
-export async function tachesDEtude(etudeId: number) {
-  const id = await moi();
-  return db
+/** Étapes de plusieurs missions, en une lecture, groupées par mission. */
+async function sousTachesParMission(tacheIds: number[]): Promise<Map<number, SousTache[]>> {
+  const parTache = new Map<number, SousTache[]>();
+  if (tacheIds.length === 0) return parTache;
+
+  const lignes = await db
     .select()
-    .from(taches)
-    .where(
-      and(
-        eq(taches.etudeId, etudeId),
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
-      ),
-    )
-    .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
+    .from(sousTaches)
+    .where(inArray(sousTaches.tacheId, tacheIds))
+    .orderBy(asc(sousTaches.ordre), asc(sousTaches.id));
+
+  for (const s of lignes) {
+    const deja = parTache.get(s.tacheId);
+    if (deja) deja.push(s);
+    else parTache.set(s.tacheId, [s]);
+  }
+  return parTache;
 }
 
-/** Toutes les missions, avec le nom, le code et la couleur de leur étude. */
-export async function toutesLesTaches(filtreStatut?: string) {
+/** Études rattachées à un lot de missions, groupées par mission. */
+async function etudesDesMissions(tacheIds: number[]): Promise<Map<number, EtudeLiee[]>> {
+  const parTache = new Map<number, EtudeLiee[]>();
+  if (tacheIds.length === 0) return parTache;
+
+  const lignes = await db
+    .select({
+      tacheId: tachesEtudes.tacheId,
+      id: etudes.id,
+      nom: etudes.nom,
+      code: etudes.code,
+      couleur: etudes.couleur,
+      proprietaireId: etudes.proprietaireId,
+      statut: tachesEtudes.statut,
+      notes: tachesEtudes.notes,
+    })
+    .from(tachesEtudes)
+    .innerJoin(etudes, eq(tachesEtudes.etudeId, etudes.id))
+    .where(inArray(tachesEtudes.tacheId, tacheIds))
+    .orderBy(asc(etudes.nom));
+
+  for (const l of lignes) {
+    const etude: EtudeLiee = {
+      id: l.id,
+      nom: l.nom,
+      code: l.code,
+      couleur: l.couleur,
+      proprietaireId: l.proprietaireId,
+      statut: l.statut,
+      notes: l.notes,
+    };
+    const deja = parTache.get(l.tacheId);
+    if (deja) {
+      if (!deja.some((e) => e.id === etude.id)) deja.push(etude);
+    } else parTache.set(l.tacheId, [etude]);
+  }
+  return parTache;
+}
+
+export async function tachesDEtude(etudeId: number) {
   const id = await moi();
-  return db
+  const assigne = alias(utilisateurs, "assigne");
+  const liste = await db
+    .select({ tache: taches, assigneNom: assigne.nom })
+    .from(taches)
+    .leftJoin(assigne, eq(taches.assigneA, assigne.id))
+    .where(and(missionLieeA(etudeId), missionVisible(id), isNull(taches.archiveeLe)))
+    .orderBy(asc(taches.statut), asc(taches.ordre), desc(taches.creeLe));
+
+  const ids = liste.map((l) => l.tache.id);
+  const [parMission, cumul, parEtudes] = await Promise.all([
+    sousTachesParMission(ids),
+    cumulTempsDesMissions(ids),
+    etudesDesMissions(ids),
+  ]);
+  return liste.map((l) => {
+    const extra = rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul);
+    return {
+      ...l.tache,
+      ...extra,
+      assigneNom: l.assigneNom,
+      etudesLiees: parEtudes.get(l.tache.id) ?? [],
+    };
+  });
+}
+
+/** Toutes les missions, avec les études concernées. */
+export async function toutesLesTaches(filtreStatut?: string, archivees = false) {
+  const id = await moi();
+  const assigne = alias(utilisateurs, "assigne");
+  const lignes = await db
     .select({
       tache: taches,
-      etudeNom: etudes.nom,
-      etudeCode: etudes.code,
-      etudeCouleur: etudes.couleur,
+      assigneNom: assigne.nom,
     })
     .from(taches)
-    .leftJoin(etudes, eq(taches.etudeId, etudes.id))
+    .leftJoin(assigne, eq(taches.assigneA, assigne.id))
     .where(
       and(
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
-        filtreStatut ? eq(taches.statut, filtreStatut) : undefined,
+        missionVisible(id),
+        archivees ? isNotNull(taches.archiveeLe) : isNull(taches.archiveeLe),
       ),
     )
-    .orderBy(asc(taches.statut), asc(taches.echeance), desc(taches.creeLe));
+    .orderBy(
+      archivees ? desc(taches.termineeLe) : asc(taches.statut),
+      archivees ? desc(taches.archiveeLe) : asc(taches.echeance),
+      desc(taches.creeLe),
+    );
+
+  const ids = lignes.map((l) => l.tache.id);
+  const [parMission, cumul, parEtudes] = await Promise.all([
+    sousTachesParMission(ids),
+    cumulTempsDesMissions(ids),
+    etudesDesMissions(ids),
+  ]);
+  const resultat = lignes.map((l) => {
+    const extra = rattacherTemps(l.tache, parMission.get(l.tache.id) ?? [], cumul);
+    const etudesLiees = parEtudes.get(l.tache.id) ?? [];
+    const premiere = etudesLiees[0];
+    return {
+      tache: { ...l.tache, statut: extra.statut },
+      assigneNom: l.assigneNom,
+      etudesLiees,
+      etudeNom: premiere?.nom ?? null,
+      etudeCode: premiere?.code ?? null,
+      etudeCouleur: premiere?.couleur ?? null,
+      etudeProprietaireId: premiere?.proprietaireId ?? null,
+      ...extra,
+    };
+  });
+  return filtreStatut ? resultat.filter((l) => l.tache.statut === filtreStatut) : resultat;
+}
+
+type CumulTemps = {
+  parTache: Map<number, number>;
+  parEtape: Map<number, number>;
+  chronoSousTacheId: number | null;
+  chronoTacheId: number | null;
+};
+
+/** Minutes saisies (y compris un chrono en cours) pour un lot de missions. */
+async function cumulTempsDesMissions(tacheIds: number[]): Promise<CumulTemps> {
+  const vide: CumulTemps = {
+    parTache: new Map(),
+    parEtape: new Map(),
+    chronoSousTacheId: null,
+    chronoTacheId: null,
+  };
+  if (tacheIds.length === 0) return vide;
+
+  const id = await moi();
+  const lignes = await db
+    .select({
+      tacheId: temps.tacheId,
+      sousTacheId: temps.sousTacheId,
+      debut: temps.debut,
+      fin: temps.fin,
+    })
+    .from(temps)
+    .where(and(eq(temps.proprietaireId, id), inArray(temps.tacheId, tacheIds)));
+
+  const cumul: CumulTemps = {
+    parTache: new Map(),
+    parEtape: new Map(),
+    chronoSousTacheId: null,
+    chronoTacheId: null,
+  };
+
+  for (const l of lignes) {
+    if (!l.tacheId) continue;
+    const minutes = dureeMinutes(l);
+    cumul.parTache.set(l.tacheId, (cumul.parTache.get(l.tacheId) ?? 0) + minutes);
+    if (l.sousTacheId) {
+      cumul.parEtape.set(l.sousTacheId, (cumul.parEtape.get(l.sousTacheId) ?? 0) + minutes);
+    }
+    if (l.fin === null) {
+      cumul.chronoTacheId = l.tacheId;
+      cumul.chronoSousTacheId = l.sousTacheId;
+    }
+  }
+  return cumul;
+}
+
+function rattacherTemps<T extends { id: number; statut?: string }>(
+  tache: T,
+  etapes: SousTache[],
+  cumul: CumulTemps,
+) {
+  const minutesParEtape: Record<number, number> = {};
+  for (const s of etapes) {
+    minutesParEtape[s.id] = cumul.parEtape.get(s.id) ?? 0;
+  }
+  return {
+    sousTaches: etapes,
+    statut: statutDepuisEtapes(tache.statut ?? "a_faire", etapes),
+    minutes: cumul.parTache.get(tache.id) ?? 0,
+    minutesParEtape,
+    chronoEnCours: cumul.chronoTacheId === tache.id,
+    chronoSousTacheId:
+      cumul.chronoTacheId === tache.id ? cumul.chronoSousTacheId : null,
+  };
 }
 
 // ------------------------------------------------------------- Documents
@@ -275,10 +533,12 @@ export async function chronoEnCours() {
       etudeNom: etudes.nom,
       etudeCouleur: etudes.couleur,
       tacheTitre: taches.titre,
+      etapeTitre: sousTaches.titre,
     })
     .from(temps)
     .leftJoin(etudes, eq(temps.etudeId, etudes.id))
     .leftJoin(taches, eq(temps.tacheId, taches.id))
+    .leftJoin(sousTaches, eq(temps.sousTacheId, sousTaches.id))
     .where(and(isNull(temps.fin), eq(temps.proprietaireId, id)))
     .orderBy(desc(temps.debut))
     .limit(1);
@@ -309,14 +569,17 @@ export async function entreesTemps(filtres: FiltresTemps = {}) {
     .select({
       entree: temps,
       etudeNom: etudes.nom,
+      etudeCode: etudes.code,
       etudeCouleur: etudes.couleur,
       etudeClient: etudes.client,
       etudeTarif: etudes.tarifHoraire,
       tacheTitre: taches.titre,
+      etapeTitre: sousTaches.titre,
     })
     .from(temps)
     .leftJoin(etudes, eq(temps.etudeId, etudes.id))
     .leftJoin(taches, eq(temps.tacheId, taches.id))
+    .leftJoin(sousTaches, eq(temps.sousTacheId, sousTaches.id))
     .where(and(...conditions))
     .orderBy(desc(temps.debut));
 }
@@ -348,24 +611,27 @@ export async function statistiques() {
     .from(etudes)
     .where(and(eq(etudes.statut, "active"), etudeAccessible(etudes.id, id)));
 
-  const accessibles = objetAccessible(taches.proprietaireId, taches.etudeId, id);
+  const accessibles = missionVisible(id);
 
-  const [{ n: tachesOuvertes }] = await db
-    .select({ n: sql<number>`count(*)` })
+  const missions = await db
+    .select({
+      id: taches.id,
+      statut: taches.statut,
+      echeance: taches.echeance,
+      archiveeLe: taches.archiveeLe,
+    })
     .from(taches)
-    .where(and(sql`${taches.statut} != 'terminee'`, accessibles));
+    .where(and(accessibles, isNull(taches.archiveeLe)));
+  const etapesParMission = await sousTachesParMission(missions.map((t) => t.id));
+  const effectives = missions.map((t) => ({
+    ...t,
+    statut: statutDepuisEtapes(t.statut, etapesParMission.get(t.id) ?? []),
+  }));
 
-  const [{ n: tachesEnRetard }] = await db
-    .select({ n: sql<number>`count(*)` })
-    .from(taches)
-    .where(
-      and(
-        sql`${taches.statut} != 'terminee'`,
-        sql`${taches.echeance} is not null`,
-        lt(taches.echeance, maintenant),
-        accessibles,
-      ),
-    );
+  const tachesOuvertes = effectives.filter((t) => t.statut !== "terminee").length;
+  const tachesEnRetard = effectives.filter(
+    (t) => t.statut !== "terminee" && t.echeance !== null && t.echeance < maintenant,
+  ).length;
 
   return { minutesSemaine, minutesMois, etudesActives, tachesOuvertes, tachesEnRetard };
 }
@@ -375,13 +641,14 @@ export async function totauxParEtude(filtres: FiltresTemps = {}) {
   const lignes = await entreesTemps(filtres);
   const parEtude = new Map<
     number,
-    { nom: string; couleur: string; tarif: number | null; minutes: number }
+    { nom: string; code: string | null; couleur: string; tarif: number | null; minutes: number }
   >();
 
   for (const l of lignes) {
     const id = l.entree.etudeId ?? 0;
     const courant = parEtude.get(id) ?? {
       nom: l.etudeNom ?? "Sans étude",
+      code: l.etudeCode ?? null,
       couleur: l.etudeCouleur ?? "#a8a29e",
       tarif: l.etudeTarif ?? null,
       minutes: 0,
@@ -465,7 +732,7 @@ export async function fluxMissionsParMois(nbMois = 6): Promise<FluxMois[]> {
     .from(taches)
     .where(
       and(
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
+        missionVisible(id),
         sql`(${taches.creeLe} >= ${premier} or ${taches.termineeLe} >= ${premier})`,
       ),
     );
@@ -521,17 +788,17 @@ export type SyntheseEtude = {
   missionsEnRetard: number;
   conformite: number | null;
   minutes: number;
-  documents: number;
+  pages: number;
 };
 
 export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
   const maintenant = Math.floor(Date.now() / 1000);
 
-  const [etudesLues, missions, progressions, docs, tempsLu] = await Promise.all([
+  const [etudesLues, missions, progressions, pagesLues, tempsLu] = await Promise.all([
     listerEtudes({ avecArchivees: true }),
     toutesLesTaches(),
     progressionParEtude(),
-    tousLesDocuments({}),
+    pagesPenseBete(),
     entreesTemps(),
   ]);
 
@@ -544,18 +811,26 @@ export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
     return m;
   };
 
-  const ouvertes = compter(
-    missions.filter(({ tache }) => tache.statut !== "terminee"),
-    ({ tache }) => tache.etudeId,
-  );
-  const enRetard = compter(
+  const compterEtudes = (
+    liste: { tache: { etudeId: number | null }; etudesLiees?: { id: number }[] }[],
+  ) => {
+    const m = new Map<number, number>();
+    for (const x of liste) {
+      const ids = (x.etudesLiees ?? []).map((e) => e.id);
+      if (ids.length === 0 && x.tache.etudeId) ids.push(x.tache.etudeId);
+      for (const k of ids) m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  };
+
+  const ouvertes = compterEtudes(missions.filter(({ tache }) => tache.statut !== "terminee"));
+  const enRetard = compterEtudes(
     missions.filter(
       ({ tache }) =>
         tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant,
     ),
-    ({ tache }) => tache.etudeId,
   );
-  const nbDocs = compter(docs, (d) => d.document.etudeId);
+  const nbPages = compter(pagesLues, (p) => p.etudeId);
 
   const minutes = new Map<number, number>();
   for (const l of tempsLu) {
@@ -575,7 +850,7 @@ export async function synthesesParEtude(): Promise<SyntheseEtude[]> {
       missionsEnRetard: enRetard.get(e.id) ?? 0,
       conformite: p && p.total > 0 ? p.pourcentage : null,
       minutes: minutes.get(e.id) ?? 0,
-      documents: nbDocs.get(e.id) ?? 0,
+      pages: nbPages.get(e.id) ?? 0,
     };
   });
 }
@@ -592,7 +867,7 @@ export async function respectDesEcheances(): Promise<{
     .from(taches)
     .where(
       and(
-        objetAccessible(taches.proprietaireId, taches.etudeId, id),
+        missionVisible(id),
         eq(taches.statut, "terminee"),
         sql`${taches.echeance} is not null`,
         sql`${taches.termineeLe} is not null`,

@@ -87,7 +87,8 @@ export default function FormulaireInscription() {
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium">Votre métier</legend>
         <p className="mb-2.5 text-xs text-efface">
-          Sert à vous proposer les modules qui vont avec. Modifiable à tout moment.
+          Sert à vous proposer les parties de l&apos;outil qui vont avec.
+          Modifiable à tout moment.
         </p>
         <div className="grid grid-cols-2 gap-2">
           {ROLES.map((r) => (
@@ -111,17 +112,6 @@ export default function FormulaireInscription() {
           ))}
         </div>
       </fieldset>
-
-      <div>
-        <label htmlFor="cle" className="mb-1.5 block text-sm font-medium">
-          Clé d&apos;installation
-        </label>
-        <input id="cle" name="cle" type="password" required className="champ" />
-        <p className="mt-1.5 text-xs text-efface">
-          C&apos;est la valeur <code className="font-mono">MOT_DE_PASSE</code> de votre
-          fichier <code className="font-mono">.env</code>, sur le serveur.
-        </p>
-      </div>
 
       {etat.erreur && (
         <p role="alert" className="text-sm text-alerte">

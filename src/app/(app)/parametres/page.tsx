@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { appliquerMetier } from "@/actions/modules";
+import { appliquerMetier, enregistrerModules } from "@/actions/modules";
 import ChoixModules from "@/components/choix-modules";
+import PersonnaliserAccueil from "@/components/personnaliser-accueil";
+import FormulaireChangerMotDePasse from "./formulaire-mot-de-passe";
 import { utilisateurActuel } from "@/lib/auth";
+import { lireWidgetsAccueil } from "@/lib/accueil";
 import { LIBELLES_ROLE } from "@/lib/constantes";
-import { lireModules } from "@/lib/modules";
+import { DOMAINES, MODULES, construit, lireModules } from "@/lib/modules";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +42,17 @@ export default async function PageParametres() {
       </section>
 
       <section className="carte p-5">
+        <h2 className="font-titre text-lg font-bold">Votre accueil</h2>
+        <p className="mt-1 text-sm text-attenue">
+          Les vues du tableau de bord : échéances, indicateurs, projets. Chaque
+          compte compose le sien, sans toucher aux données.
+        </p>
+        <div className="mt-4">
+          <PersonnaliserAccueil actifs={lireWidgetsAccueil(compte.accueil)} />
+        </div>
+      </section>
+
+      <section className="carte p-5">
         <h2 className="font-titre text-lg font-bold">Votre métier</h2>
         <p className="mt-1 text-sm text-attenue">
           Actuellement : <strong className="text-encre">{LIBELLES_ROLE[compte.role]}</strong>.
@@ -62,7 +76,30 @@ export default async function PageParametres() {
         </form>
       </section>
 
-      <ChoixModules actifs={actifs} />
+      <section className="carte p-5">
+        <h2 className="font-titre text-lg font-bold">Mot de passe</h2>
+        <p className="mt-1 text-sm text-attenue">
+          Pour le changer ici, il faut encore connaître l&apos;actuel. Si vous
+          l&apos;avez perdu, utilisez « Mot de passe oublié » sur l&apos;écran
+          de connexion.
+        </p>
+        <FormulaireChangerMotDePasse />
+      </section>
+
+      <ChoixModules
+        actifs={actifs}
+        domaines={DOMAINES}
+        enregistrer={enregistrerModules}
+        modules={MODULES.map((m) => ({
+          cle: m.cle,
+          nom: m.nom,
+          description: m.description,
+          icone: m.icone,
+          domaine: m.domaine,
+          pret: construit(m),
+          socle: Boolean(m.socle),
+        }))}
+      />
     </div>
   );
 }

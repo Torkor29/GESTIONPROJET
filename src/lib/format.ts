@@ -116,10 +116,32 @@ export const LIBELLES_STATUT_TACHE: Record<string, string> = {
 };
 
 export const LIBELLES_PRIORITE: Record<string, string> = {
-  basse: "Basse",
+  basse: "Peu importante",
   normale: "Normale",
-  haute: "Haute",
+  haute: "Importante",
 };
+
+/** Acronyme s'il existe, sinon le nom — pour les listes serrées. */
+export function sigleEtude(etude: { nom: string; code?: string | null }): string {
+  const code = (etude.code ?? "").trim();
+  return code || etude.nom;
+}
+
+/**
+ * Statut affiché d'une mission.
+ *
+ * Sans étape, on s'en tient au statut saisi sur la mission.
+ * Dès qu'il y a des étapes : en cours tant qu'il en reste, terminée
+ * quand toutes sont cochées.
+ */
+export function statutDepuisEtapes(
+  statutManuel: string,
+  etapes: { faite: boolean }[],
+): string {
+  if (etapes.length === 0) return statutManuel;
+  if (etapes.every((e) => e.faite)) return "terminee";
+  return "en_cours";
+}
 
 /**
  * Lit un montant saisi à la française : « 12 500,50 », « 12500.5 », « 1 200 € ».

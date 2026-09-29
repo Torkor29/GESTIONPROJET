@@ -24,10 +24,13 @@ export async function creerPage(donnees: FormData) {
       parentId: parentIdBrut ? Number(parentIdBrut) : null,
       titre: String(donnees.get("titre") ?? "").trim() || "Sans titre",
       icone: String(donnees.get("icone") ?? "📄"),
+      categorie: String(donnees.get("categorie") ?? "").trim(),
     })
     .returning({ id: pages.id });
 
   revalidatePath("/", "layout");
+  revalidatePath("/notes");
+  revalidatePath("/pense-bete");
   redirect(`/pages/${creee.id}`);
 }
 
@@ -36,6 +39,7 @@ export async function enregistrerPage(entree: {
   id: number;
   titre?: string;
   icone?: string;
+  categorie?: string;
   contenu?: string;
 }) {
   const compte = await exigerSession();
@@ -45,6 +49,7 @@ export async function enregistrerPage(entree: {
   const modifs: Record<string, unknown> = { modifieLe: maintenant() };
   if (entree.titre !== undefined) modifs.titre = entree.titre.trim() || "Sans titre";
   if (entree.icone !== undefined) modifs.icone = entree.icone;
+  if (entree.categorie !== undefined) modifs.categorie = entree.categorie.trim();
   if (entree.contenu !== undefined) {
     // On refuse un contenu illisible plutôt que d'écraser la page avec.
     try {
@@ -57,6 +62,8 @@ export async function enregistrerPage(entree: {
 
   await db.update(pages).set(modifs).where(eq(pages.id, entree.id));
   revalidatePath("/", "layout");
+  revalidatePath("/notes");
+  revalidatePath("/pense-bete");
 }
 
 export async function supprimerPage(donnees: FormData) {
@@ -77,5 +84,7 @@ export async function supprimerPage(donnees: FormData) {
   await db.delete(pages).where(eq(pages.id, id));
 
   revalidatePath("/", "layout");
-  redirect(page?.etudeId ? `/etudes/${page.etudeId}` : "/etudes");
+  revalidatePath("/notes");
+  revalidatePath("/pense-bete");
+  redirect(page?.etudeId ? `/etudes/${page.etudeId}?section=pense-bete` : "/pense-bete");
 }

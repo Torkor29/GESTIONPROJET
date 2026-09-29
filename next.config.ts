@@ -1,10 +1,32 @@
 import type { NextConfig } from "next";
 
+/**
+ * Hôtes publics derrière lesquels Next.js tourne (Caddy, ou un proxy commun).
+ * Sans cette liste, une action de formulaire — connexion comprise — peut être
+ * refusée : l'origine vue par le navigateur ne correspond pas à l'hôte interne.
+ */
+function originesActions(): string[] {
+  const brut = (process.env.DOMAINE ?? "").trim();
+  if (!brut || brut.startsWith(":")) return [];
+  const hote = brut.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/:\d+$/, "");
+  if (!hote) return [];
+  return hote.startsWith("www.") ? [hote, hote.slice(4)] : [hote, `www.${hote}`];
+}
+
 const nextConfig: NextConfig = {
   // Génère un serveur autonome dans .next/standalone : l'image Docker finale
   // n'a alors pas besoin des node_modules complets.
   output: "standalone",
-  serverExternalPackages: ["better-sqlite3", "exceljs", "jszip"],
+  serverExternalPackages: ["better-sqlite3", "exceljs", "jszip", "nodemailer"],
+  // En local, le navigateur tape parfois 127.0.0.1 alors que Next écoute sur
+  // localhost : sans cette liste, les actions de formulaire et le rendu RSC
+  // d'une page comme /parametres peuvent échouer après hydratation.
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  experimental: {
+    serverActions: {
+      allowedOrigins: originesActions(),
+    },
+  },
 
   async redirects() {
     return [
@@ -13,6 +35,8 @@ const nextConfig: NextConfig = {
       // robots reportent alors la page d'accueil sur l'ancienne adresse au
       // lieu de la traiter comme disparue.
       { source: "/presentation", destination: "/", permanent: true },
+      { source: "/documents", destination: "/pense-bete", permanent: false },
+      { source: "/notes", destination: "/pense-bete", permanent: false },
     ];
   },
 };

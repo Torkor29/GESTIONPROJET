@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { invitations, utilisateurs } from "@/db/schema";
-import { utilisateurActuel } from "@/lib/auth";
+import { estAdministrateur, utilisateurActuel } from "@/lib/auth";
 import GestionEquipe from "@/components/gestion-equipe";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export default async function PageEquipe() {
         nom: utilisateurs.nom,
         email: utilisateurs.email,
         role: utilisateurs.role,
+        accesToutesEtudes: utilisateurs.accesToutesEtudes,
       })
       .from(utilisateurs)
       .where(eq(utilisateurs.actif, true))
@@ -52,13 +53,17 @@ export default async function PageEquipe() {
         <h1 className="mt-1.5 font-titre text-3xl font-bold">Équipe</h1>
         <p className="mt-2 max-w-2xl text-attenue">
           Invitez vos collègues à créer un compte sur cette installation. Le lien
-          d&apos;invitation se copie et se transmet par vos propres moyens —
-          l&apos;application n&apos;envoie aucun courrier, et ne confie donc
-          aucune adresse à un tiers.
+          d&apos;invitation se copie et se transmet par vos propres moyens — il
+          n&apos;est pas envoyé par courrier.
         </p>
       </header>
 
-      <GestionEquipe membres={membres} invitationsEnCours={valides} />
+      <GestionEquipe
+        membres={membres}
+        invitationsEnCours={valides}
+        administrateur={estAdministrateur(compte.id)}
+        moiId={compte.id}
+      />
     </div>
   );
 }

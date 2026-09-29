@@ -61,8 +61,78 @@
     {
       "idx": 8,
       "version": "6",
-      "when": 1790603468794,
-      "tag": "0008_demonic_kat_farrell",
+      "when": 1788789000000,
+      "tag": "0008_sous_taches",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788870000000,
+      "tag": "0009_temps_sous_taches",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1788950000000,
+      "tag": "0010_fin_inclusion",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1789040000000,
+      "tag": "0011_mission_assignee",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1789120000000,
+      "tag": "0012_missions_plusieurs_etudes",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1789200000000,
+      "tag": "0013_accueil_widgets",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1789280000000,
+      "tag": "0014_archives_missions",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1789360000000,
+      "tag": "0015_pense_bete",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1790235596073,
+      "tag": "0016_missions_multi_etudes",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1790251636782,
+      "tag": "0017_statut_par_etude",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1790683834967,
+      "tag": "0018_publipostage",
       "breakpoints": true
     }
   ]

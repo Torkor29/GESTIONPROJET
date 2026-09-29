@@ -45,6 +45,7 @@ export async function GET(requete: Request) {
         { entete: "Étude", valeur: (l) => l.etudeNom ?? "Sans étude" },
         { entete: "Client", valeur: (l) => l.etudeClient ?? "" },
         { entete: "Mission", valeur: (l) => l.tacheTitre ?? "" },
+        { entete: "Étape", valeur: (l) => l.etapeTitre ?? "" },
         { entete: "Description", valeur: (l) => l.entree.description ?? "" },
         { entete: "Durée", valeur: (l) => formaterDuree(dureeMinutes(l.entree)) },
         // Les heures décimales servent à la facturation : on les donne avec la
@@ -84,6 +85,7 @@ export async function GET(requete: Request) {
     { header: "Étude", key: "etude", width: 28 },
     { header: "Client", key: "client", width: 20 },
     { header: "Tâche", key: "tache", width: 28 },
+    { header: "Étape", key: "etape", width: 28 },
     { header: "Description", key: "description", width: 36 },
     { header: "Durée", key: "duree", width: 10 },
     { header: "Heures", key: "heures", width: 10 },
@@ -105,6 +107,7 @@ export async function GET(requete: Request) {
       etude: l.etudeNom ?? "Sans étude",
       client: l.etudeClient ?? "",
       tache: l.tacheTitre ?? "",
+      etape: l.etapeTitre ?? "",
       description: l.entree.description ?? "",
       duree: formaterDuree(minutes),
       heures,
@@ -126,13 +129,13 @@ export async function GET(requete: Request) {
     const derniere = lignes.length + 1;
     const totalDetail = detail.addRow({
       description: "TOTAL",
-      heures: { formula: `SUBTOTAL(9,I${premiere}:I${derniere})` },
-      montant: { formula: `SUBTOTAL(9,K${premiere}:K${derniere})` },
+      heures: { formula: `SUBTOTAL(9,J${premiere}:J${derniere})` },
+      montant: { formula: `SUBTOTAL(9,L${premiere}:L${derniere})` },
     });
     totalDetail.font = { bold: true };
     totalDetail.fill = { type: "pattern", pattern: "solid", fgColor: GRIS };
 
-    detail.autoFilter = { from: "A1", to: `K${derniere}` };
+    detail.autoFilter = { from: "A1", to: `L${derniere}` };
   }
 
   // --------------------------------------------------------- Récapitulatif

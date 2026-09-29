@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icone } from "@/components/icones";
+import { NOM_PRODUIT } from "@/lib/site";
 import {
   AVERTISSEMENT,
   LIBELLES_PHASE,
@@ -22,11 +23,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { cle } = await params;
   const r = referentiel(cle);
-  if (!r) return { title: "Référentiel introuvable — Vigie" };
+  if (!r) return { title: `Référentiel introuvable — ${NOM_PRODUIT}` };
 
   return {
-    title: `${r.nom} — Vigie`,
-    description: `${r.resume} ${r.items.length} obligations réparties sur les phases du projet, avec leur référence réglementaire.`,
+    title: `${r.nom} — ${NOM_PRODUIT}`,
+    description: `${r.resume} ${r.items.length} obligations réparties sur les phases du projet, avec leur référence réglementaire. Aide au suivi dans l'espace de travail Vigie Clinique.`,
     alternates: { canonical: `/reglementaire/${r.cle}` },
   };
 }
@@ -69,8 +70,8 @@ export default async function PageReferentiel({
         <p className="sur-titre mt-8">
           {r.categorie === "type" ? "Selon le type de recherche" : "Cadre transversal"}
         </p>
-        <h1 className="mt-3 font-titre text-3xl font-bold leading-tight sm:text-4xl">{r.nom}</h1>
-        <p className="mt-5 text-lg leading-relaxed text-attenue">{r.resume}</p>
+        <h1 className="mt-4 font-titre text-[32px] leading-[1.2] tracking-[-0.02em] sm:text-[40px]">{r.nom}</h1>
+        <p className="mt-6 text-[18px] leading-[1.35] text-attenue">{r.resume}</p>
 
         <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="carte p-4">

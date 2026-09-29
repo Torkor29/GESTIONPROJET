@@ -4,21 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Etude } from "@/db/schema";
-import { seDeconnecter } from "@/actions/session";
 import { Icone, type NomIcone } from "@/components/icones";
+import { Marque } from "@/components/marque";
 
-export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
-
-function Marque() {
+function IconeSortie({ className }: { className?: string }) {
   return (
-    <span className="flex items-center gap-2.5 font-titre text-[15px] font-bold tracking-tight">
-      <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-accent text-sur-accent shadow-douce">
-        <Icone nom="eclair" className="h-4 w-4" />
-      </span>
-      Vigie
-    </span>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`shrink-0 ${className ?? ""}`}
+      aria-hidden
+    >
+      <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
+    </svg>
   );
 }
+
+export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
 
 /** Initiales tirées du nom, pour la pastille d'identité. */
 function initiales(nom: string): string {
@@ -50,13 +56,17 @@ export default function BarreLaterale({
     setOuvert(false);
   }, [chemin]);
 
-  const actif = (href: string) =>
-    href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(`${href}/`);
+  const actif = (href: string) => {
+    if (href === "/pense-bete" && (chemin.startsWith("/pages/") || chemin === "/notes")) {
+      return true;
+    }
+    return href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(`${href}/`);
+  };
 
   return (
     <>
       {/* Barre supérieure, mobile uniquement */}
-      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-ligne bg-surface/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-ligne/70 bg-relief/80 px-4 py-2.5 shadow-posee backdrop-blur-md lg:hidden">
         <button
           type="button"
           onClick={() => setOuvert((o) => !o)}
@@ -76,7 +86,16 @@ export default function BarreLaterale({
             {ouvert ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
         </button>
-        <Marque />
+        <Marque complete={false} />
+        <form action="/deconnexion" method="post" className="ml-auto">
+          <button
+            type="submit"
+            aria-label="Se déconnecter"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-ligne bg-relief text-attenue shadow-posee transition-all duration-200 hover:text-encre active:scale-95"
+          >
+            <IconeSortie className="h-4 w-4" />
+          </button>
+        </form>
       </div>
 
       {ouvert && (
@@ -89,29 +108,35 @@ export default function BarreLaterale({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-ligne bg-relief
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col overflow-y-auto border-r border-ligne/70 bg-relief/90
+                    shadow-posee backdrop-blur-md
                     transition-transform duration-300 ease-souple
                     lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
                     ${ouvert ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="px-4 py-4">
-          <Marque />
+        <div className="px-4 py-5">
+          <Marque complete={false} />
         </div>
 
-        <nav className="space-y-0.5 px-3">
+        <nav className="space-y-1 px-3">
           {liens.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               aria-current={actif(l.href) ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-200
+              className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-1.5 text-sm transition-all duration-200
                           ${
                             actif(l.href)
-                              ? "bg-accent-voile font-semibold text-accent-appuye"
+                              ? "bg-accent-voile font-semibold text-accent-appuye shadow-posee"
                               : "font-medium text-attenue hover:bg-creux hover:text-encre"
                           }`}
             >
-              <Icone nom={l.icone} className="h-[18px] w-[18px] shrink-0" />
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition
+                            ${actif(l.href) ? "bg-relief text-accent-appuye" : "bg-creux/80"}`}
+              >
+                <Icone nom={l.icone} className="h-[16px] w-[16px]" />
+              </span>
               {l.libelle}
             </Link>
           ))}
@@ -184,23 +209,12 @@ export default function BarreLaterale({
             </span>
           </div>
 
-          <form action={seDeconnecter}>
+          <form action="/deconnexion" method="post">
             <button
               type="submit"
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium text-attenue transition-all duration-200 hover:bg-creux hover:text-encre"
             >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-[18px] w-[18px] shrink-0"
-              aria-hidden
-            >
-                <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
-              </svg>
+              <IconeSortie className="h-[18px] w-[18px]" />
               Se déconnecter
             </button>
           </form>

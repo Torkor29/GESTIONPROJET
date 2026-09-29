@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const maintenant = sql`(unixepoch())`;
 
@@ -22,8 +22,23 @@ export const utilisateurs = sqliteTable("utilisateurs", {
    * Vide au départ : la sélection suggérée par le métier s'applique alors.
    */
   modules: text("modules"),
+  /**
+   * Widgets du tableau de bord, en JSON : ["chiffres","timeline","priorite"].
+   * Vide = sélection par défaut (tout afficher).
+   */
+  accueil: text("accueil"),
   /** Un compte désactivé conserve ses données mais ne peut plus se connecter. */
   actif: integer("actif", { mode: "boolean" }).notNull().default(true),
+  /**
+   * Droit « accès à toutes les études » : la personne pilote les missions de
+   * toutes les études de l'installation — y compris celles créées après coup
+   * par d'autres — comme si elle en était propriétaire. Pensé pour une
+   * assistante de projet qui porte des missions transverses (archivage,
+   * soumissions…). Seul l'administrateur de l'installation l'accorde.
+   */
+  accesToutesEtudes: integer("acces_toutes_etudes", { mode: "boolean" })
+    .notNull()
+    .default(false),
   creeLe: integer("cree_le").notNull().default(maintenant),
   derniereConnexion: integer("derniere_connexion"),
 });
@@ -67,6 +82,11 @@ export const etudes = sqliteTable("etudes", {
   numeroCpp: text("numero_cpp"),
   dateDebut: integer("date_debut"),
   dateFin: integer("date_fin"),
+  /**
+   * Fin d'inclusion prévue — distincte de la fin d'étude.
+   * Sert au rappel sur le tableau de bord (MS à anticiper).
+   */
+  dateFinInclusion: integer("date_fin_inclusion"),
 
   creeLe: integer("cree_le").notNull().default(maintenant),
   modifieLe: integer("modifie_le").notNull().default(maintenant),
@@ -75,7 +95,8 @@ export const etudes = sqliteTable("etudes", {
 /**
  * Une page de contenu riche, façon Notion. Le contenu est le document
  * BlockNote sérialisé en JSON.
- * - etudeId nul = page libre, rangée à la racine.
+ * - etudeId nul = page personnelle, rangée dans le pense-bête général.
+ * - categorie range les pages (réunions, à retenir…) ; vide = sans catégorie.
  * - parentId permet d'imbriquer les pages entre elles.
  */
 export const pages = sqliteTable(
@@ -90,6 +111,8 @@ export const pages = sqliteTable(
     parentId: integer("parent_id"),
     titre: text("titre").notNull().default("Sans titre"),
     icone: text("icone").notNull().default("📄"),
+    /** Libellé libre pour grouper les pages dans le pense-bête. */
+    categorie: text("categorie").notNull().default(""),
     // Document BlockNote sérialisé. Tableau JSON de blocs.
     contenu: text("contenu").notNull().default("[]"),
     ordre: integer("ordre").notNull().default(0),
@@ -100,7 +123,8 @@ export const pages = sqliteTable(
 );
 
 /**
- * Une tâche à suivre. Rattachée à une étude, éventuellement à une page.
+ * Une tâche à suivre. Rattachée à une ou plusieurs études via `taches_etudes`.
+ * `etudeId` reprend la première, pour le chronomètre et l'existant.
  */
 export const taches = sqliteTable(
   "taches",
@@ -112,6 +136,11 @@ export const taches = sqliteTable(
     }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     titre: text("titre").notNull(),
+    /**
+     * Type de mission, en texte libre : Archivage, Soumission, Clôture…
+     * Sert à regrouper les missions de même nature.
+     */
+    type: text("type"),
     notes: text("notes"),
     // "a_faire" | "en_cours" | "terminee"
     statut: text("statut").notNull().default("a_faire"),
@@ -119,12 +148,82 @@ export const taches = sqliteTable(
     priorite: text("priorite").notNull().default("normale"),
     // Date d'échéance, en secondes Unix (minuit heure locale).
     echeance: integer("echeance"),
+    /**
+     * Couleur propre à la mission. Sans valeur, on reprend celle de l'étude.
+     * Permet de reconnaître une mission partout (accueil, suivi, dossier).
+     */
+    couleur: text("couleur"),
+    /**
+     * Personne à qui la mission est confiée. Sur une étude partagée, elle ne
+     * voit que les missions qui lui sont attribuées — le propriétaire les voit
+     * toutes. Sans attribution, la mission reste chez le propriétaire.
+     */
+    assigneA: integer("assigne_a").references(() => utilisateurs.id, {
+      onDelete: "set null",
+    }),
     ordre: integer("ordre").notNull().default(0),
     termineeLe: integer("terminee_le"),
+    /**
+     * Instant d'archivage. Null = encore dans le suivi.
+     * Les archives restent consultables pour les points ; on les vide ensuite.
+     */
+    archiveeLe: integer("archivee_le"),
     creeLe: integer("cree_le").notNull().default(maintenant),
     modifieLe: integer("modifie_le").notNull().default(maintenant),
   },
-  (t) => [index("idx_taches_etude").on(t.etudeId), index("idx_taches_statut").on(t.statut)],
+  (t) => [
+    index("idx_taches_etude").on(t.etudeId),
+    index("idx_taches_statut").on(t.statut),
+    index("idx_taches_assigne").on(t.assigneA),
+  ],
+);
+
+/**
+ * Une mission peut concerner plusieurs études (archivage, envoi CSTS…).
+ * Elle apparaît alors dans le suivi et dans chaque dossier. `taches.etude_id`
+ * reste la première étude, pour le temps et les anciens écrans.
+ *
+ * Sur une mission à plusieurs études, chaque ligne a son propre avancement :
+ * « l'archivage de cette mission, pour cette étude-ci ».
+ */
+export const tachesEtudes = sqliteTable(
+  "taches_etudes",
+  {
+    tacheId: integer("tache_id")
+      .notNull()
+      .references(() => taches.id, { onDelete: "cascade" }),
+    etudeId: integer("etude_id")
+      .notNull()
+      .references(() => etudes.id, { onDelete: "cascade" }),
+    // "a_faire" | "en_cours" | "terminee" | "sans_objet"
+    statut: text("statut").notNull().default("a_faire"),
+    /** Commentaire propre à cette étude : « cartons partis le 12 »… */
+    notes: text("notes"),
+    termineeLe: integer("terminee_le"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tacheId, t.etudeId] }),
+    index("idx_taches_etudes_etude").on(t.etudeId),
+  ],
+);
+
+/**
+ * Une étape d'une mission : relancer quelqu'un, attendre un retour, déposer
+ * un document… Cocher au fur et à mesure, sans en faire une mission à part.
+ */
+export const sousTaches = sqliteTable(
+  "sous_taches",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    tacheId: integer("tache_id")
+      .notNull()
+      .references(() => taches.id, { onDelete: "cascade" }),
+    titre: text("titre").notNull(),
+    faite: integer("faite", { mode: "boolean" }).notNull().default(false),
+    ordre: integer("ordre").notNull().default(0),
+    creeLe: integer("cree_le").notNull().default(maintenant),
+  },
+  (t) => [index("idx_sous_taches_tache").on(t.tacheId)],
 );
 
 /**
@@ -140,12 +239,23 @@ export const temps = sqliteTable(
     }),
     etudeId: integer("etude_id").references(() => etudes.id, { onDelete: "cascade" }),
     tacheId: integer("tache_id").references(() => taches.id, { onDelete: "set null" }),
+    /**
+     * Étape d'une mission, si le temps a été saisi ou chronométré dessus.
+     * Supprimer l'étape ne jette pas la saisie : elle reste sur la mission.
+     */
+    sousTacheId: integer("sous_tache_id").references(() => sousTaches.id, {
+      onDelete: "set null",
+    }),
     description: text("description"),
     debut: integer("debut").notNull(),
     fin: integer("fin"),
     creeLe: integer("cree_le").notNull().default(maintenant),
   },
-  (t) => [index("idx_temps_etude").on(t.etudeId), index("idx_temps_debut").on(t.debut)],
+  (t) => [
+    index("idx_temps_etude").on(t.etudeId),
+    index("idx_temps_debut").on(t.debut),
+    index("idx_temps_sous_tache").on(t.sousTacheId),
+  ],
 );
 
 /**
@@ -455,8 +565,8 @@ export type Publipostage = typeof publipostages.$inferSelect;
 
 /**
  * Un partage : une personne conviée sur une ressource dont elle n'est pas
- * propriétaire. Partager une étude donne accès à tout ce qui s'y rattache —
- * missions, documents, pages, FAQ, temps.
+ * propriétaire. Partager une étude donne accès aux informations du dossier ;
+ * les missions, elles, ne s'affichent que si elles lui sont attribuées.
  */
 export const partages = sqliteTable(
   "partages",
@@ -510,6 +620,8 @@ export type Invitation = typeof invitations.$inferSelect;
 export type Etude = typeof etudes.$inferSelect;
 export type Page = typeof pages.$inferSelect;
 export type Tache = typeof taches.$inferSelect;
+export type TacheEtude = typeof tachesEtudes.$inferSelect;
+export type SousTache = typeof sousTaches.$inferSelect;
 export type Temps = typeof temps.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type ChecklistItem = typeof checklistItems.$inferSelect;

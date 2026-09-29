@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "411c6d64-39ae-4489-a3cc-9015286ff025",
-  "prevId": "f2fb2961-3419-45e1-98eb-f6a5117e79b8",
+  "id": "fa35d023-4471-47d8-8b0c-96cb56589e97",
+  "prevId": "9672a4d2-76ea-4fd2-8fbc-75c56d3b5e98",
   "tables": {
     "actions_correctives": {
       "name": "actions_correctives",
@@ -943,6 +943,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "date_fin_inclusion": {
+          "name": "date_fin_inclusion",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "cree_le": {
           "name": "cree_le",
           "type": "integer",
@@ -1229,6 +1236,14 @@
           "autoincrement": false,
           "default": "'📄'"
         },
+        "categorie": {
+          "name": "categorie",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
         "contenu": {
           "name": "contenu",
           "type": "text",
@@ -1416,8 +1431,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "publipostages": {
-      "name": "publipostages",
+    "sous_taches": {
+      "name": "sous_taches",
       "columns": {
         "id": {
           "name": "id",
@@ -1426,23 +1441,9 @@
           "notNull": true,
           "autoincrement": true
         },
-        "proprietaire_id": {
-          "name": "proprietaire_id",
+        "tache_id": {
+          "name": "tache_id",
           "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "etude_id": {
-          "name": "etude_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "modele": {
-          "name": "modele",
-          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -1454,49 +1455,21 @@
           "notNull": true,
           "autoincrement": false
         },
-        "valeurs": {
-          "name": "valeurs",
-          "type": "text",
+        "faite": {
+          "name": "faite",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'{}'"
+          "default": false
         },
-        "statut": {
-          "name": "statut",
-          "type": "text",
+        "ordre": {
+          "name": "ordre",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'brouillon'"
-        },
-        "destinataire": {
-          "name": "destinataire",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "envoye_le": {
-          "name": "envoye_le",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "retour_le": {
-          "name": "retour_le",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "default": 0
         },
         "cree_le": {
           "name": "cree_le",
@@ -1505,52 +1478,24 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(unixepoch())"
-        },
-        "modifie_le": {
-          "name": "modifie_le",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
         }
       },
       "indexes": {
-        "idx_publipostages_etude": {
-          "name": "idx_publipostages_etude",
+        "idx_sous_taches_tache": {
+          "name": "idx_sous_taches_tache",
           "columns": [
-            "etude_id"
-          ],
-          "isUnique": false
-        },
-        "idx_publipostages_statut": {
-          "name": "idx_publipostages_statut",
-          "columns": [
-            "statut"
+            "tache_id"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "publipostages_proprietaire_id_utilisateurs_id_fk": {
-          "name": "publipostages_proprietaire_id_utilisateurs_id_fk",
-          "tableFrom": "publipostages",
-          "tableTo": "utilisateurs",
+        "sous_taches_tache_id_taches_id_fk": {
+          "name": "sous_taches_tache_id_taches_id_fk",
+          "tableFrom": "sous_taches",
+          "tableTo": "taches",
           "columnsFrom": [
-            "proprietaire_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "publipostages_etude_id_etudes_id_fk": {
-          "name": "publipostages_etude_id_etudes_id_fk",
-          "tableFrom": "publipostages",
-          "tableTo": "etudes",
-          "columnsFrom": [
-            "etude_id"
+            "tache_id"
           ],
           "columnsTo": [
             "id"
@@ -1594,6 +1539,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "notes": {
           "name": "notes",
           "type": "text",
@@ -1624,6 +1576,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "couleur": {
+          "name": "couleur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "assigne_a": {
+          "name": "assigne_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "ordre": {
           "name": "ordre",
           "type": "integer",
@@ -1634,6 +1600,13 @@
         },
         "terminee_le": {
           "name": "terminee_le",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "archivee_le": {
+          "name": "archivee_le",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -1670,6 +1643,13 @@
             "statut"
           ],
           "isUnique": false
+        },
+        "idx_taches_assigne": {
+          "name": "idx_taches_assigne",
+          "columns": [
+            "assigne_a"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1698,9 +1678,111 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "taches_assigne_a_utilisateurs_id_fk": {
+          "name": "taches_assigne_a_utilisateurs_id_fk",
+          "tableFrom": "taches",
+          "tableTo": "utilisateurs",
+          "columnsFrom": [
+            "assigne_a"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "taches_etudes": {
+      "name": "taches_etudes",
+      "columns": {
+        "tache_id": {
+          "name": "tache_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "etude_id": {
+          "name": "etude_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "statut": {
+          "name": "statut",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'a_faire'"
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "terminee_le": {
+          "name": "terminee_le",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_taches_etudes_etude": {
+          "name": "idx_taches_etudes_etude",
+          "columns": [
+            "etude_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "taches_etudes_tache_id_taches_id_fk": {
+          "name": "taches_etudes_tache_id_taches_id_fk",
+          "tableFrom": "taches_etudes",
+          "tableTo": "taches",
+          "columnsFrom": [
+            "tache_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "taches_etudes_etude_id_etudes_id_fk": {
+          "name": "taches_etudes_etude_id_etudes_id_fk",
+          "tableFrom": "taches_etudes",
+          "tableTo": "etudes",
+          "columnsFrom": [
+            "etude_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "taches_etudes_tache_id_etude_id_pk": {
+          "columns": [
+            "tache_id",
+            "etude_id"
+          ],
+          "name": "taches_etudes_tache_id_etude_id_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -1730,6 +1812,13 @@
         },
         "tache_id": {
           "name": "tache_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sous_tache_id": {
+          "name": "sous_tache_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -1779,6 +1868,13 @@
             "debut"
           ],
           "isUnique": false
+        },
+        "idx_temps_sous_tache": {
+          "name": "idx_temps_sous_tache",
+          "columns": [
+            "sous_tache_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1814,6 +1910,19 @@
           "tableTo": "taches",
           "columnsFrom": [
             "tache_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "temps_sous_tache_id_sous_taches_id_fk": {
+          "name": "temps_sous_tache_id_sous_taches_id_fk",
+          "tableFrom": "temps",
+          "tableTo": "sous_taches",
+          "columnsFrom": [
+            "sous_tache_id"
           ],
           "columnsTo": [
             "id"
@@ -1872,6 +1981,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "accueil": {
+          "name": "accueil",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "actif": {
           "name": "actif",
           "type": "integer",
@@ -1879,6 +1995,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": true
+        },
+        "acces_toutes_etudes": {
+          "name": "acces_toutes_etudes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         },
         "cree_le": {
           "name": "cree_le",

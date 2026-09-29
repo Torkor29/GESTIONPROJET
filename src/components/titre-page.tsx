@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { enregistrerPage } from "@/actions/pages";
+import { categoriesProposees } from "@/lib/pense-bete";
 
 const ICONES = ["📄", "📝", "📐", "📊", "🗂", "🔬", "🏗", "⚙️", "📌", "💡", "✅", "🗺"];
 
@@ -9,15 +10,21 @@ export default function TitrePage({
   pageId,
   titreInitial,
   iconeInitiale,
+  categorieInitiale,
+  categories = [],
 }: {
   pageId: number;
   titreInitial: string;
   iconeInitiale: string;
+  categorieInitiale?: string;
+  categories?: string[];
 }) {
   const [titre, setTitre] = useState(titreInitial);
   const [icone, setIcone] = useState(iconeInitiale);
+  const [categorie, setCategorie] = useState(categorieInitiale ?? "");
   const [choixOuvert, setChoixOuvert] = useState(false);
   const minuterie = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const minuterieCat = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Le titre s'enregistre après une pause de frappe, comme le corps de la page.
   useEffect(() => {
@@ -30,6 +37,17 @@ export default function TitrePage({
       if (minuterie.current) clearTimeout(minuterie.current);
     };
   }, [titre, titreInitial, pageId]);
+
+  useEffect(() => {
+    if (categorie === (categorieInitiale ?? "")) return;
+    if (minuterieCat.current) clearTimeout(minuterieCat.current);
+    minuterieCat.current = setTimeout(() => {
+      void enregistrerPage({ id: pageId, categorie });
+    }, 800);
+    return () => {
+      if (minuterieCat.current) clearTimeout(minuterieCat.current);
+    };
+  }, [categorie, categorieInitiale, pageId]);
 
   return (
     <div className="relative">
@@ -69,6 +87,20 @@ export default function TitrePage({
         aria-label="Titre de la page"
         className="mt-2 w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-attenue"
       />
+
+      <input
+        value={categorie}
+        onChange={(e) => setCategorie(e.target.value)}
+        list="categories-page"
+        placeholder="Catégorie"
+        aria-label="Catégorie"
+        className="mt-2 w-full max-w-xs bg-transparent text-sm text-attenue outline-none placeholder:text-efface"
+      />
+      <datalist id="categories-page">
+        {categoriesProposees(categories).map((c) => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
     </div>
   );
 }

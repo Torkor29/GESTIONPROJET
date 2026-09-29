@@ -61,6 +61,27 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
+    cle: "extractions",
+    nom: "Extractions",
+    description:
+      "Tableau de suivi des missions, à extraire pour un point avec la hiérarchie.",
+    icone: "document",
+    domaine: "Suivi de projet",
+    href: "/extractions",
+    socle: true,
+    roles: TOUS,
+  },
+  {
+    cle: "documents",
+    nom: "Pense-bête",
+    description: "Pages classées par catégorie : texte, images, listes.",
+    icone: "page",
+    domaine: "Suivi de projet",
+    href: "/pense-bete",
+    socle: true,
+    roles: TOUS,
+  },
+  {
     cle: "calendrier",
     nom: "Calendrier",
     description: "Vue mois et semaine de toutes les échéances, tous modules confondus.",
@@ -222,15 +243,6 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
-    cle: "documents",
-    nom: "Documents",
-    description: "Dépôt et classement selon les catégories d'un Trial Master File.",
-    icone: "document",
-    domaine: "Réglementaire et documentaire",
-    href: "/documents",
-    roles: TOUS,
-  },
-  {
     cle: "publipostage",
     nom: "Publipostage",
     description:
@@ -379,5 +391,7 @@ export function lireModules(brut: string | null | undefined, role: string): stri
 /** Modules actifs **et** construits, dans l'ordre du catalogue : la navigation. */
 export function navigation(actifs: string[]): Module[] {
   const choisis = new Set(actifs);
-  return MODULES.filter((m) => construit(m) && choisis.has(m.cle) && m.cle !== "checklists");
+  return MODULES.filter(
+    (m) => construit(m) && choisis.has(m.cle) && m.cle !== "checklists",
+  );
 }

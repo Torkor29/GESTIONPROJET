@@ -7,6 +7,10 @@ import { creerTache, modifierTache } from "@/actions/taches";
 import { VIDE } from "@/actions/etat";
 import type { Etude, Tache } from "@/db/schema";
 import { LIBELLES_PRIORITE, LIBELLES_STATUT_TACHE, versChampDate } from "@/lib/format";
+import { TYPES_MISSION_SUGGERES } from "@/lib/constantes";
+import { PALETTE_COULEURS } from "@/lib/couleurs";
+import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
+import SelecteurEtudes from "./selecteur-etudes";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -21,14 +25,28 @@ export default function FormulaireTache({
   tache,
   etudes,
   etudeIdParDefaut,
+  etudeIdsInitiales,
   libelle,
   variante = "principal",
+  statutSuitEtapes = false,
+  membres = [],
+  comptes = [],
+  peutAttribuer = false,
+  typesConnus = [],
 }: {
   tache?: Tache;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   etudeIdParDefaut?: number;
+  etudeIdsInitiales?: number[];
   libelle: string;
   variante?: "principal" | "discret" | "icone";
+  /** S'il y a des étapes, le statut de la mission n'est plus saisi à la main. */
+  statutSuitEtapes?: boolean;
+  membres?: MembreAttribution[];
+  comptes?: CompteChoix[];
+  peutAttribuer?: boolean;
+  /** Types déjà employés, proposés en plus des suggestions. */
+  typesConnus?: string[];
 }) {
   // Plusieurs de ces formulaires cohabitent sur une même page : les identifiants
   // doivent être uniques, sinon les libellés pointent vers le mauvais champ.
@@ -42,14 +60,32 @@ export default function FormulaireTache({
     const s = etat.succes ?? 0;
     if (s > succesVu.current) {
       succesVu.current = s;
-      setOuverte(false);
+      // Un avertissement (courrier non parti) mérite d'être lu : la modale reste ouverte.
+      if (!etat.avertissement) setOuverte(false);
     }
-  }, [etat.succes]);
+  }, [etat.succes, etat.avertissement]);
+
+  const [idsChoisis, setIdsChoisis] = useState<number[]>(() => {
+    if (etudeIdsInitiales && etudeIdsInitiales.length > 0) return etudeIdsInitiales;
+    if (tache?.etudeId) return [tache.etudeId];
+    if (etudeIdParDefaut) return [etudeIdParDefaut];
+    return [];
+  });
+  const etudesPossedees = etudes.filter((e) => membres.some((m) => m.etudeId === e.id));
+  const dejaSurLEtude = [
+    ...new Map(
+      membres.filter((m) => idsChoisis.includes(m.etudeId)).map((m) => [m.utilisateurId, m]),
+    ).values(),
+  ];
+  const idsDeja = new Set(dejaSurLEtude.map((m) => m.utilisateurId));
+  const autresComptes = comptes.filter((c) => !idsDeja.has(c.id));
+  const editionRestreinte = edition && !peutAttribuer;
+  const types = [...new Set([...TYPES_MISSION_SUGGERES, ...typesConnus])];
 
   const classes = {
     principal: "bouton",
     discret: "bouton-discret",
-    icone: "rounded-lg px-2 py-1 text-sm text-attenue transition hover:bg-creux hover:text-accent",
+    icone: "rounded-xl px-2 py-1.5 text-sm text-attenue transition hover:bg-creux hover:text-accent",
   }[variante];
 
   return (
@@ -68,15 +104,32 @@ export default function FormulaireTache({
         ouverte={ouverte}
         onFermer={() => setOuverte(false)}
         titre={edition ? "Modifier la mission" : "Nouvelle mission"}
+        large={!edition}
       >
         {/* La clé suit la date de modification de l'enregistrement.
             Sans elle, les champs gardent la valeur qu'ils avaient au montage :
             changer le statut depuis le tableau puis modifier la mission
             réécrirait l'ancien statut, annulant silencieusement le changement.
-            `defaultValue` ne se relit qu'au montage — la clé force ce montage. */}
-        <form key={tache?.modifieLe ?? "nouvelle"} action={action} className="space-y-4">
+            `defaultValue` ne se relit qu'au montage — la clé force ce montage.
+            Le compteur de succès vide aussi les acronymes nouveaux, gardés
+            dans un état React, après chaque ajout. */}
+        <form key={`${tache?.modifieLe ?? "nouvelle"}-${etat.succes ?? 0}`} action={action} className="space-y-4">
           {edition && <input type="hidden" name="id" value={tache!.id} />}
 
+          {editionRestreinte ? (
+            <>
+              <input type="hidden" name="titre" value={tache!.titre} />
+              {idsChoisis.map((id) => (
+                <input key={id} type="hidden" name="etudeIds" value={id} />
+              ))}
+              <p className="font-titre text-lg font-bold">{tache!.titre}</p>
+              <p className="text-sm text-attenue">
+                Vous pouvez mettre à jour le commentaire et le statut. L&apos;attribution et
+                les délais restent chez le propriétaire de l&apos;étude.
+              </p>
+            </>
+          ) : (
+            <>
           <div>
             <label htmlFor={`${uid}-titre`} className="mb-1.5 block text-sm font-medium">
               Mission
@@ -93,28 +146,105 @@ export default function FormulaireTache({
           </div>
 
           <div>
-            <label htmlFor={`${uid}-etudeId`} className="mb-1.5 block text-sm font-medium">
-              Étude
+            <label htmlFor={`${uid}-type`} className="mb-1.5 block text-sm font-medium">
+              Type <span className="font-normal text-attenue">(facultatif)</span>
             </label>
-            <select
-              id={`${uid}-etudeId`}
-              name="etudeId"
-              defaultValue={tache?.etudeId ?? etudeIdParDefaut ?? ""}
+            <input
+              id={`${uid}-type`}
+              name="type"
+              list={`${uid}-types`}
+              defaultValue={tache?.type ?? ""}
+              placeholder="Archivage, Soumission, Clôture…"
+              autoComplete="off"
               className="champ"
-            >
-              <option value="">Sans étude</option>
-              {etudes.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nom}
-                </option>
+            />
+            <datalist id={`${uid}-types`}>
+              {types.map((t) => (
+                <option key={t} value={t} />
               ))}
-            </select>
+            </datalist>
           </div>
+
+          {!edition && (
+            <div>
+              <label htmlFor={`${uid}-etapes`} className="mb-1.5 block text-sm font-medium">
+                Étapes <span className="font-normal text-attenue">(une par ligne, facultatif)</span>
+              </label>
+              <textarea
+                id={`${uid}-etapes`}
+                name="lignesSousTaches"
+                rows={3}
+                placeholder={"Relancer le promoteur\nAttendre le retour ANSM\nDéposer le document"}
+                className="champ resize-y"
+              />
+            </div>
+          )}
+
+          <div>
+            <p className="mb-1.5 text-sm font-medium" id={`${uid}-etudes`}>
+              Études
+            </p>
+            {/* Toujours proposé : même sans étude à soi, on peut en créer une
+                en tapant son acronyme. */}
+            <SelecteurEtudes
+              etudes={etudesPossedees}
+              ids={idsChoisis}
+              onChange={setIdsChoisis}
+              etiquette="Études"
+              libelleId={`${uid}-etudes`}
+              creation
+            />
+            <p className="mt-1 text-xs text-attenue">
+              Une ou plusieurs, par acronyme — un acronyme inconnu se crée à la volée. La
+              mission apparaît dans le suivi et dans chaque dossier ; à plusieurs études,
+              chacune a son propre avancement.
+            </p>
+          </div>
+
+          {peutAttribuer && idsChoisis.length > 0 && (
+            <div>
+              <label htmlFor={`${uid}-assigneA`} className="mb-1.5 block text-sm font-medium">
+                Attribuer à
+              </label>
+              <select
+                key={idsChoisis.join("-")}
+                id={`${uid}-assigneA`}
+                name="assigneA"
+                defaultValue={tache?.assigneA ?? ""}
+                className="champ"
+              >
+                <option value="">Non attribuée — vous seul la voyez</option>
+                {dejaSurLEtude.length > 0 && (
+                  <optgroup label="Déjà sur l'étude">
+                    {dejaSurLEtude.map((m) => (
+                      <option key={`m-${m.utilisateurId}`} value={m.utilisateurId}>
+                        {m.nom}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {autresComptes.length > 0 && (
+                  <optgroup label="Autre compte — sera convié sur l'étude">
+                    {autresComptes.map((c) => (
+                      <option key={`c-${c.id}`} value={c.id}>
+                        {c.nom} ({c.email})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <p className="mt-1 text-xs text-attenue">
+                La personne verra les informations de chaque étude concernée, et uniquement
+                les missions qui lui sont attribuées. Si une messagerie est configurée sur
+                le serveur, elle reçoit aussi un courrier avec le détail de la mission.
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor={`${uid}-priorite`} className="mb-1.5 block text-sm font-medium">
-                Priorité
+                Importance
               </label>
               <select
                 id={`${uid}-priorite`}
@@ -128,6 +258,10 @@ export default function FormulaireTache({
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-attenue">
+                Peu importante : absente du bloc « À traiter ». Importante : y figure même sans
+                échéance proche.
+              </p>
             </div>
 
             <div>
@@ -144,7 +278,50 @@ export default function FormulaireTache({
             </div>
           </div>
 
-          {edition && (
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium">Couleur</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer" title="Reprendre la couleur de l'étude">
+                <input
+                  type="radio"
+                  name="couleur"
+                  value="etude"
+                  defaultChecked={!tache?.couleur}
+                  className="peer sr-only"
+                />
+                <span
+                  className="block h-7 w-7 rounded-full border border-dashed border-ligne-forte ring-offset-2 ring-offset-raised transition
+                             peer-checked:ring-2 peer-checked:ring-ink peer-focus-visible:ring-2"
+                  aria-hidden
+                />
+                <span className="sr-only">Couleur de l&apos;étude</span>
+              </label>
+              {PALETTE_COULEURS.map((c) => (
+                <label key={c} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="couleur"
+                    value={c}
+                    defaultChecked={tache?.couleur === c}
+                    className="peer sr-only"
+                  />
+                  <span
+                    className="block h-7 w-7 rounded-full ring-offset-2 ring-offset-raised transition
+                               peer-checked:ring-2 peer-checked:ring-ink peer-focus-visible:ring-2"
+                    style={{ backgroundColor: c }}
+                  />
+                  <span className="sr-only">Couleur {c}</span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-attenue">
+              Elle reste la même partout : accueil, suivi, dossier.
+            </p>
+          </fieldset>
+            </>
+          )}
+
+          {edition && !statutSuitEtapes && (
             <div>
               <label htmlFor={`${uid}-statut`} className="mb-1.5 block text-sm font-medium">
                 Statut
@@ -157,6 +334,12 @@ export default function FormulaireTache({
                 ))}
               </select>
             </div>
+          )}
+          {edition && statutSuitEtapes && (
+            <p className="text-sm text-attenue">
+              Le statut suit les étapes : en cours tant qu&apos;il en reste, terminée quand
+              toutes sont cochées.
+            </p>
           )}
 
           <div>
@@ -177,10 +360,18 @@ export default function FormulaireTache({
               {etat.erreur}
             </p>
           )}
+          {etat.avertissement && (
+            <p
+              role="status"
+              className="rounded-lg bg-attention-voile/50 p-3 text-sm text-attenue"
+            >
+              {etat.avertissement}
+            </p>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={() => setOuverte(false)} className="bouton-discret">
-              Annuler
+              {etat.avertissement ? "Fermer" : "Annuler"}
             </button>
             <BoutonEnvoyer libelle={edition ? "Enregistrer" : "Ajouter"} />
           </div>

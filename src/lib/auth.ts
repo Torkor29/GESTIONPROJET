@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
+import { cookies, headers } from "next/headers";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { utilisateurs, type Utilisateur } from "@/db/schema";
 import { LONGUEUR_MOT_DE_PASSE } from "@/lib/constantes";
@@ -45,25 +45,6 @@ export function motDePasseCorrespond(clair: string, stocke: string): boolean {
   return attendue.length === calculee.length && timingSafeEqual(attendue, calculee);
 }
 
-/**
- * Clé d'installation : le `MOT_DE_PASSE` du fichier .env. Elle n'ouvre plus
- * l'application — elle n'autorise que la création du tout premier compte, pour
- * qu'un inconnu tombant sur l'adresse avant vous ne puisse pas s'en emparer.
- */
-export function cleInstallationValide(saisie: string): boolean {
-  const attendue = process.env.MOT_DE_PASSE ?? "";
-  if (!attendue) {
-    throw new Error(
-      "MOT_DE_PASSE n'est pas défini dans le fichier .env. Il sert de clé " +
-        "d'installation pour créer le premier compte.",
-    );
-  }
-  const sel = "vigie-installation";
-  const a = scryptSync(saisie, sel, 32);
-  const b = scryptSync(attendue, sel, 32);
-  return timingSafeEqual(a, b);
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Jetons de session                                                         */
 /* -------------------------------------------------------------------------- */
@@ -104,32 +85,92 @@ export function lireJeton(jeton: string | undefined): number | null {
 }
 
 /**
- * Le cookie ne doit être marqué « secure » que si le site est réellement servi
- * en HTTPS — sinon le navigateur le refuse et la connexion échoue en boucle.
+ * Le cookie ne doit être marqué « secure » que si *cette* requête est en
+ * HTTPS. Se fier à `DOMAINE` cassait la connexion : dès que le nom était
+ * renseigné, le témoin n'était plus envoyé en HTTP (accès par IP, certificat
+ * pas encore prêt, développement local avec un `.env` de production).
  *
- * DOMAINE est renseigné quand un vrai nom de domaine est configuré : Caddy sert
- * alors le site en HTTPS. Sans domaine (accès par IP en HTTP), on retombe sur
- * un cookie non sécurisé, seul moyen que la connexion fonctionne.
+ * Caddy pose `X-Forwarded-Proto`. En son absence, on ne force pas `secure` :
+ * un cookie non marqué circule aussi en HTTPS, alors que l'inverse bloque.
  */
-function cookieSecurise(): boolean {
-  const domaine = (process.env.DOMAINE ?? "").trim();
-  return domaine !== "" && !domaine.startsWith(":");
+async function cookieSecurise(): Promise<boolean> {
+  try {
+    const h = await headers();
+    const proto = (h.get("x-forwarded-proto") ?? h.get("x-forwarded-protocol") ?? "")
+      .split(",")[0]
+      .trim()
+      .toLowerCase();
+    return proto === "https";
+  } catch {
+    return false;
+  }
+}
+
+function optionsCookie(securise: boolean) {
+  return {
+    httpOnly: true as const,
+    sameSite: "lax" as const,
+    secure: securise,
+    path: "/",
+  };
+}
+
+/**
+ * En-tête Set-Cookie qui expire le témoin. Le navigateur n'efface un cookie
+ * que si le chemin — et, en HTTPS, l'attribut Secure — correspondent à ceux
+ * de la pose. On envoie donc les deux variantes.
+ */
+function enTeteCookieVide(securise: boolean): string {
+  const parts = [
+    `${NOM_COOKIE}=`,
+    "Path=/",
+    "Max-Age=0",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+  if (securise) parts.push("Secure");
+  return parts.join("; ");
 }
 
 export async function ouvrirSession(utilisateurId: number): Promise<void> {
   const boite = await cookies();
   boite.set(NOM_COOKIE, creerJeton(utilisateurId), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: cookieSecurise(),
-    path: "/",
+    ...optionsCookie(await cookieSecurise()),
     maxAge: DUREE_SESSION,
   });
 }
 
 export async function fermerSession(): Promise<void> {
   const boite = await cookies();
-  boite.delete(NOM_COOKIE);
+  boite.set(NOM_COOKIE, "", {
+    ...optionsCookie(await cookieSecurise()),
+    maxAge: 0,
+    expires: new Date(0),
+  });
+}
+
+/** Adresse publique vue par le navigateur, derrière un reverse proxy. */
+export function originePublique(requete: Request): string {
+  const url = new URL(requete.url);
+  const proto = (requete.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", ""))
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+  const hote = (
+    requete.headers.get("x-forwarded-host") ??
+    requete.headers.get("host") ??
+    url.host
+  )
+    .split(",")[0]
+    .trim();
+  return `${proto === "https" ? "https" : "http"}://${hote}`;
+}
+
+/** Expire le cookie de session sur une réponse HTTP (les deux variantes Secure). */
+export function expirerCookieSession(enTetes: Headers): void {
+  enTetes.append("Set-Cookie", enTeteCookieVide(true));
+  enTetes.append("Set-Cookie", enTeteCookieVide(false));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -164,9 +205,23 @@ export async function exigerSession(): Promise<Utilisateur> {
   return compte;
 }
 
-/** Vrai tant qu'aucun compte n'existe : seul moment où l'inscription est ouverte. */
+/** Vrai tant qu'aucun compte n'existe : l'installation n'a pas encore de propriétaire. */
 export function aucunCompte(): boolean {
   return db.select({ id: utilisateurs.id }).from(utilisateurs).limit(1).all().length === 0;
 }
 
 export { NOM_COOKIE };
+
+/**
+ * L'administrateur de l'installation est le tout premier compte créé. Lui
+ * seul accorde les droits étendus.
+ */
+export function estAdministrateur(utilisateurId: number): boolean {
+  const premier = db
+    .select({ id: utilisateurs.id })
+    .from(utilisateurs)
+    .orderBy(asc(utilisateurs.id))
+    .limit(1)
+    .get();
+  return premier?.id === utilisateurId;
+}

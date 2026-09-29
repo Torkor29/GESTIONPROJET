@@ -16,7 +16,11 @@ vigie-clinique.fr {
 
 	# « vigie » est l'alias donné au conteneur applicatif sur le réseau web
 	# par docker-compose.derriere-proxy.yml.
-	reverse_proxy vigie:3000
+	reverse_proxy vigie:3000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+		header_up Host {host}
+	}
 }
 
 # « www » renvoie vers le domaine nu, pour que les deux écritures fonctionnent.

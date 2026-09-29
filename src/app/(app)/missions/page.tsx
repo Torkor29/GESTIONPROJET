@@ -2,19 +2,35 @@ import Link from "next/link";
 import FormulaireTache from "@/components/formulaire-tache";
 import MenuExport from "@/components/menu-export";
 import TableauMissions from "@/components/tableau-missions";
-import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
-import { listerEtudes, toutesLesTaches } from "@/lib/requetes";
+import ViderArchives from "@/components/vider-archives";
+import { VueParEtude, VueParType } from "@/components/vues-missions";
+import { LIBELLES_STATUT_LIGNE_MISSION, LIBELLES_STATUT_MISSION } from "@/lib/constantes";
+import { cleType } from "@/lib/missions";
+import { utilisateurActuel } from "@/lib/auth";
+import type { CompteChoix, MembreAttribution } from "@/lib/attribution";
+import { comptesDisponibles } from "@/actions/partages";
+import {
+  listerEtudes,
+  membresPourAttribution,
+  niveauxPartage,
+  toutesLesTaches,
+  typesDeMission,
+} from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
 
 const VUES = [
   { cle: "tableau", libelle: "Tableau" },
+  { cle: "etude", libelle: "Par étude" },
+  { cle: "type", libelle: "Par type" },
   { cle: "groupe", libelle: "Groupé par statut" },
   { cle: "echeances", libelle: "Par échéance" },
+  { cle: "archives", libelle: "Archives" },
 ] as const;
 
 type Params = {
   etude?: string;
+  type?: string;
   statut?: string;
   q?: string;
   vue?: string;
@@ -28,20 +44,37 @@ export default async function PageMissions({
 }) {
   const params = await searchParams;
   const vue = params.vue ?? "tableau";
+  const archives = vue === "archives";
   const maintenant = Math.floor(Date.now() / 1000);
 
-  const [toutes, etudes] = await Promise.all([toutesLesTaches(), listerEtudes()]);
+  const [toutes, etudes, membres, compte, niveaux] = await Promise.all([
+    toutesLesTaches(undefined, archives),
+    listerEtudes(),
+    membresPourAttribution(),
+    utilisateurActuel(),
+    niveauxPartage(),
+  ]);
+  const comptes = compte ? await comptesDisponibles(compte.id) : [];
+  const typesConnus = typesDeMission(toutes);
+  // La vue par étude filtre le statut étude par étude, pas mission par mission :
+  // une mission « en cours » peut n'avoir pas démarré pour l'une de ses études.
+  const statutParEtude = vue === "etude";
 
   const etudeId = params.etude ? Number(params.etude) : null;
   const recherche = (params.q ?? "").trim().toLowerCase();
   const masquerTerminees = params.masquerTerminees === "1";
 
-  const lignes = toutes.filter(({ tache }) => {
-    if (etudeId && tache.etudeId !== etudeId) return false;
-    if (params.statut && tache.statut !== params.statut) return false;
-    if (masquerTerminees && tache.statut === "terminee") return false;
+  const lignes = toutes.filter(({ tache, sousTaches, etudesLiees }) => {
+    if (etudeId) {
+      const ids = (etudesLiees ?? []).map((e) => e.id);
+      if (ids.length === 0 ? tache.etudeId !== etudeId : !ids.includes(etudeId)) return false;
+    }
+    if (params.type && cleType(tache.type) !== cleType(params.type)) return false;
+    if (!archives && !statutParEtude && params.statut && tache.statut !== params.statut) return false;
+    if (!archives && !statutParEtude && masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
-      const texte = `${tache.titre} ${tache.notes ?? ""}`.toLowerCase();
+      const etapes = (sousTaches ?? []).map((s) => s.titre).join(" ");
+      const texte = `${tache.titre} ${tache.notes ?? ""} ${etapes}`.toLowerCase();
       if (!texte.includes(recherche)) return false;
     }
     return true;
@@ -53,14 +86,24 @@ export default async function PageMissions({
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="anime-bloc flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-titre text-3xl font-bold">Suivi de missions</h1>
           <p className="mt-1 text-sm text-attenue">
-            {lignes.length} mission{lignes.length > 1 ? "s" : ""} affichée
-            {lignes.length > 1 ? "s" : ""}
-            {enRetard.length > 0 && (
-              <span className="text-alerte"> · {enRetard.length} en retard</span>
+            {archives ? (
+              <>
+                {lignes.length} mission{lignes.length > 1 ? "s" : ""} archivée
+                {lignes.length > 1 ? "s" : ""}. Elles restent pour le point,
+                jusqu&apos;à ce que vous les vidiez.
+              </>
+            ) : (
+              <>
+                {lignes.length} mission{lignes.length > 1 ? "s" : ""} affichée
+                {lignes.length > 1 ? "s" : ""}
+                {enRetard.length > 0 && (
+                  <span className="text-alerte"> · {enRetard.length} en retard</span>
+                )}
+              </>
             )}
           </p>
         </div>
@@ -69,19 +112,36 @@ export default async function PageMissions({
             base="/api/export-missions"
             parametres={
               Object.fromEntries(
-                Object.entries(params).filter(([, v]) => v),
+                Object.entries({
+                  ...params,
+                  ...(archives ? { archives: "1" } : {}),
+                }).filter(([, v]) => v),
               ) as Record<string, string>
             }
           />
-          <FormulaireTache etudes={etudes} libelle="Nouvelle mission" />
+          {!archives && (
+          <FormulaireTache
+            etudes={etudes}
+            libelle="Nouvelle mission"
+            membres={membres}
+            comptes={comptes}
+            peutAttribuer
+            typesConnus={typesConnus}
+            etudeIdParDefaut={etudeId ?? undefined}
+          />
+          )}
         </div>
       </header>
 
       {/* Barre de vues */}
-      <nav className="flex flex-wrap gap-2">
+      <nav className="anime-bloc flex flex-wrap gap-2">
         {VUES.map((v) => {
           const q = new URLSearchParams(
-            Object.entries(params).filter(([k, val]) => val && k !== "vue") as [string, string][],
+            Object.entries(params).filter(([k, val]) => {
+              if (!val || k === "vue") return false;
+              if (v.cle === "archives" && (k === "masquerTerminees" || k === "statut")) return false;
+              return true;
+            }) as [string, string][],
           );
           q.set("vue", v.cle);
           return (
@@ -89,11 +149,11 @@ export default async function PageMissions({
               key={v.cle}
               href={`/missions?${q.toString()}`}
               aria-current={vue === v.cle ? "page" : undefined}
-              className={`rounded-lg border px-3 py-1.5 text-sm transition
+              className={`rounded-full border px-4 py-1.5 text-sm transition
                           ${
                             vue === v.cle
-                              ? "border-accent bg-accent/10 font-medium text-accent"
-                              : "border-ligne text-attenue hover:text-encre"
+                              ? "border-accent bg-accent-voile font-medium text-accent-appuye shadow-posee"
+                              : "border-ligne text-attenue hover:border-encre/30 hover:text-encre"
                           }`}
             >
               {v.libelle}
@@ -103,7 +163,7 @@ export default async function PageMissions({
       </nav>
 
       {/* Filtres */}
-      <form method="get" className="sans-impression carte flex flex-wrap items-end gap-3 p-4">
+      <form method="get" className="sans-impression bloc-app anime-bloc flex flex-wrap items-end gap-3">
         <input type="hidden" name="vue" value={vue} />
 
         <div className="min-w-48 flex-1">
@@ -133,20 +193,41 @@ export default async function PageMissions({
           </select>
         </div>
 
+        {typesConnus.length > 0 && (
+        <div className="min-w-40">
+          <label htmlFor="type" className="mb-1.5 block text-xs text-attenue">
+            Type
+          </label>
+          <select id="type" name="type" defaultValue={params.type ?? ""} className="champ">
+            <option value="">Tous</option>
+            {typesConnus.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        )}
+
+        {!archives && (
         <div className="min-w-40">
           <label htmlFor="statut" className="mb-1.5 block text-xs text-attenue">
             Statut
           </label>
           <select id="statut" name="statut" defaultValue={params.statut ?? ""} className="champ">
             <option value="">Tous</option>
-            {Object.entries(LIBELLES_STATUT_MISSION).map(([v, l]) => (
+            {Object.entries(
+              statutParEtude ? LIBELLES_STATUT_LIGNE_MISSION : LIBELLES_STATUT_MISSION,
+            ).map(([v, l]) => (
               <option key={v} value={v}>
                 {l}
               </option>
             ))}
           </select>
         </div>
+        )}
 
+        {!archives && (
         <label className="flex items-center gap-2 pb-2 text-sm">
           <input
             type="checkbox"
@@ -157,42 +238,93 @@ export default async function PageMissions({
           />
           Masquer les terminées
         </label>
+        )}
 
         <button type="submit" className="bouton-discret">
           Filtrer
         </button>
-        {(params.q || params.etude || params.statut || masquerTerminees) && (
+        {(params.q || params.etude || params.type || params.statut || masquerTerminees) && (
           <Link href={`/missions?vue=${vue}`} className="pb-2 text-sm text-attenue hover:text-encre">
             Réinitialiser
           </Link>
         )}
       </form>
 
-      {vue === "groupe" ? (
+      {archives && <ViderArchives />}
+
+      {archives || vue === "tableau" ? (
+        <TableauMissions
+          lignes={lignes}
+          etudes={etudes}
+          message={
+            archives
+              ? "Aucune mission archivée."
+              : "Aucune mission ne correspond à ces filtres."
+          }
+          membres={membres}
+          comptes={comptes}
+          utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
+          niveauxPartage={niveaux}
+        />
+      ) : vue === "etude" ? (
+        <VueParEtude
+          missions={lignes}
+          etudeId={etudeId}
+          statut={params.statut}
+          masquerTerminees={masquerTerminees}
+          message="Aucune mission ne correspond à ces filtres."
+          utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
+          niveauxPartage={niveaux}
+        />
+      ) : vue === "type" ? (
+        <VueParType
+          missions={lignes}
+          etudes={etudes}
+          membres={membres}
+          comptes={comptes}
+          message="Aucune mission ne correspond à ces filtres."
+          utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
+          niveauxPartage={niveaux}
+        />
+      ) : vue === "groupe" ? (
         <div className="space-y-5">
           {Object.entries(LIBELLES_STATUT_MISSION).map(([statut, libelle]) => {
             const duGroupe = lignes.filter((l) => l.tache.statut === statut);
             if (duGroupe.length === 0) return null;
             return (
-              <section key={statut}>
-                <h2 className="mb-2 px-1 text-sm font-medium">
+              <section key={statut} className="bloc-app">
+                <h2 className="mb-3 font-titre text-lg font-bold">
                   {libelle}
-                  <span className="chiffres ml-2 text-xs text-attenue">{duGroupe.length}</span>
+                  <span className="chiffres ml-2 text-sm font-normal text-attenue">{duGroupe.length}</span>
                 </h2>
-                <TableauMissions lignes={duGroupe} etudes={etudes} />
+                <TableauMissions
+                  lignes={duGroupe}
+                  etudes={etudes}
+                  membres={membres}
+                  comptes={comptes}
+                  utilisateurId={compte?.id}
+                  pilote={compte?.accesToutesEtudes}
+                  niveauxPartage={niveaux}
+                />
               </section>
             );
           })}
         </div>
       ) : vue === "echeances" ? (
-        <VueEcheances lignes={lignes} etudes={etudes} maintenant={maintenant} />
-      ) : (
-        <TableauMissions
+        <VueEcheances
           lignes={lignes}
           etudes={etudes}
-          message="Aucune mission ne correspond à ces filtres."
+          maintenant={maintenant}
+          membres={membres}
+          comptes={comptes}
+          utilisateurId={compte?.id}
+          pilote={compte?.accesToutesEtudes}
+          niveauxPartage={niveaux}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -202,10 +334,20 @@ function VueEcheances({
   lignes,
   etudes,
   maintenant,
+  membres,
+  comptes,
+  utilisateurId,
+  pilote,
+  niveauxPartage,
 }: {
   lignes: Awaited<ReturnType<typeof toutesLesTaches>>;
   etudes: Awaited<ReturnType<typeof listerEtudes>>;
   maintenant: number;
+  membres: MembreAttribution[];
+  comptes: CompteChoix[];
+  utilisateurId?: number;
+  pilote?: boolean;
+  niveauxPartage: Record<number, string>;
 }) {
   const dansUneSemaine = maintenant + 7 * 86400;
   const ouvertes = lignes.filter((l) => l.tache.statut !== "terminee");
@@ -236,12 +378,20 @@ function VueEcheances({
   return (
     <div className="space-y-5">
       {groupes.map((g) => (
-        <section key={g.titre}>
-          <h2 className="mb-2 px-1 text-sm font-medium">
+        <section key={g.titre} className="bloc-app">
+          <h2 className="mb-3 font-titre text-lg font-bold">
             {g.titre}
-            <span className="chiffres ml-2 text-xs text-attenue">{g.lignes.length}</span>
+            <span className="chiffres ml-2 text-sm font-normal text-attenue">{g.lignes.length}</span>
           </h2>
-          <TableauMissions lignes={g.lignes} etudes={etudes} />
+          <TableauMissions
+            lignes={g.lignes}
+            etudes={etudes}
+            membres={membres}
+            comptes={comptes}
+            utilisateurId={utilisateurId}
+            pilote={pilote}
+            niveauxPartage={niveauxPartage}
+          />
         </section>
       ))}
     </div>

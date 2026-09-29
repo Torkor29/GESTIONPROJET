@@ -19,14 +19,18 @@ export async function GET(requete: Request) {
   const statut = params.get("statut");
   const recherche = (params.get("q") ?? "").trim().toLowerCase();
   const masquerTerminees = params.get("masquerTerminees") === "1";
+  const archives = params.get("archives") === "1";
 
-  const toutes = await toutesLesTaches();
-  const lignes = toutes.filter(({ tache }) => {
-    if (etudeId && tache.etudeId !== etudeId) return false;
-    if (statut && tache.statut !== statut) return false;
-    if (masquerTerminees && tache.statut === "terminee") return false;
+  const toutes = await toutesLesTaches(undefined, archives);
+  const lignes = toutes.filter(({ tache, sousTaches: etapes, etudesLiees }) => {
+    if (etudeId) {
+      const ids = (etudesLiees ?? []).map((e) => e.id);
+      if (ids.length === 0 ? tache.etudeId !== etudeId : !ids.includes(etudeId)) return false;
+    }
+    if (!archives && statut && tache.statut !== statut) return false;
+    if (!archives && masquerTerminees && tache.statut === "terminee") return false;
     if (recherche) {
-      const texte = `${tache.titre} ${tache.notes ?? ""}`.toLowerCase();
+      const texte = `${tache.titre} ${tache.notes ?? ""} ${etapes.map((s) => s.titre).join(" ")}`.toLowerCase();
       if (!texte.includes(recherche)) return false;
     }
     return true;
@@ -42,15 +46,21 @@ export async function GET(requete: Request) {
         { entete: "Mission", valeur: (l) => l.tache.titre },
         {
           entete: "Étude",
-          valeur: (l) =>
-            l.etudeCode ? `${l.etudeCode} — ${l.etudeNom}` : (l.etudeNom ?? "Sans étude"),
+          valeur: (l) => {
+            const liees = l.etudesLiees ?? [];
+            if (liees.length > 0) {
+              return liees.map((e) => (e.code ? `${e.code} — ${e.nom}` : e.nom)).join(" · ");
+            }
+            return l.etudeCode ? `${l.etudeCode} — ${l.etudeNom}` : (l.etudeNom ?? "Sans étude");
+          },
         },
+        { entete: "Attribuée à", valeur: (l) => l.assigneNom ?? "" },
         {
           entete: "Statut",
           valeur: (l) => LIBELLES_STATUT_MISSION[l.tache.statut] ?? l.tache.statut,
         },
         {
-          entete: "Priorité",
+          entete: "Importance",
           valeur: (l) => LIBELLES_PRIORITE[l.tache.priorite] ?? l.tache.priorite,
         },
         { entete: "Échéance", valeur: (l) => (l.tache.echeance ? formaterDate(l.tache.echeance) : "") },
@@ -62,6 +72,15 @@ export async function GET(requete: Request) {
               : "",
         },
         { entete: "Commentaire", valeur: (l) => l.tache.notes ?? "" },
+        {
+          entete: "Étapes",
+          valeur: (l) => {
+            const etapes = l.sousTaches ?? [];
+            if (etapes.length === 0) return "";
+            const faites = etapes.filter((s) => s.faite).length;
+            return `${faites}/${etapes.length}`;
+          },
+        },
         {
           entete: "Terminée le",
           valeur: (l) => (l.tache.termineeLe ? formaterDate(l.tache.termineeLe) : ""),
@@ -83,11 +102,13 @@ export async function GET(requete: Request) {
   feuille.columns = [
     { header: "Mission", key: "titre", width: 52 },
     { header: "Étude", key: "etude", width: 24 },
+    { header: "Attribuée à", key: "assignee", width: 22 },
     { header: "Statut", key: "statut", width: 14 },
-    { header: "Priorité", key: "priorite", width: 10 },
+    { header: "Importance", key: "priorite", width: 14 },
     { header: "Échéance", key: "echeance", width: 12 },
     { header: "En retard", key: "retard", width: 10 },
     { header: "Commentaire", key: "commentaire", width: 46 },
+    { header: "Étapes", key: "etapes", width: 10 },
     { header: "Terminée le", key: "termineeLe", width: 12 },
   ];
 
@@ -98,18 +119,28 @@ export async function GET(requete: Request) {
 
   const maintenant = Math.floor(Date.now() / 1000);
 
-  for (const { tache, etudeNom, etudeCode } of lignes) {
+  for (const { tache, etudeNom, etudeCode, assigneNom, sousTaches, etudesLiees } of lignes) {
     const enRetard =
       tache.statut !== "terminee" && tache.echeance && tache.echeance < maintenant;
+    const etapes = sousTaches ?? [];
+    const etapesFaites = etapes.filter((s) => s.faite).length;
+    const libelleEtudes =
+      etudesLiees && etudesLiees.length > 0
+        ? etudesLiees.map((e) => (e.code ? `${e.code} — ${e.nom}` : e.nom)).join(" · ")
+        : etudeCode
+          ? `${etudeCode} — ${etudeNom}`
+          : (etudeNom ?? "Sans étude");
 
     const ligne = feuille.addRow({
       titre: tache.titre,
-      etude: etudeCode ? `${etudeCode} — ${etudeNom}` : (etudeNom ?? "Sans étude"),
+      etude: libelleEtudes,
+      assignee: assigneNom ?? "",
       statut: LIBELLES_STATUT_MISSION[tache.statut] ?? tache.statut,
       priorite: LIBELLES_PRIORITE[tache.priorite] ?? tache.priorite,
       echeance: tache.echeance ? new Date(tache.echeance * 1000) : null,
       retard: enRetard ? "OUI" : "",
       commentaire: tache.notes ?? "",
+      etapes: etapes.length === 0 ? "" : `${etapesFaites}/${etapes.length}`,
       termineeLe: tache.termineeLe ? new Date(tache.termineeLe * 1000) : null,
     });
 
@@ -123,7 +154,7 @@ export async function GET(requete: Request) {
   feuille.getColumn("commentaire").alignment = { wrapText: true, vertical: "top" };
 
   if (lignes.length > 0) {
-    feuille.autoFilter = { from: "A1", to: `H${lignes.length + 1}` };
+    feuille.autoFilter = { from: "A1", to: `J${lignes.length + 1}` };
   }
 
   const tampon = await classeur.xlsx.writeBuffer();

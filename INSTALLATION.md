@@ -14,6 +14,7 @@ de Linux n'est nécessaire : chaque commande est donnée telle quelle, à copier
 4. [Le nom de domaine](#4-le-nom-de-domaine-fortement-recommandé)
 5. [Installer Docker](#5-installer-docker)
 6. [Installer l'application](#6-installer-lapplication)
+   - [Courrier d'attribution (facultatif)](#64-courrier-dattribution-facultatif)
 7. [Vérifier que tout marche](#7-vérifier-que-tout-marche)
 8. [Sauvegardes automatiques](#8-sauvegardes-automatiques)
 9. [Mettre à jour l'application](#9-mettre-à-jour-lapplication)
@@ -320,13 +321,10 @@ nano .env
 `nano` est un éditeur de texte dans le terminal. Renseignez :
 
 ```bash
-MOT_DE_PASSE=choisissez-ici-un-mot-de-passe-long-et-unique
 SECRET_SESSION=collez-ici-la-suite-generee-juste-avant
 DOMAINE=projets.mondomaine.fr
 ```
 
-- `MOT_DE_PASSE` : celui que **vous** saisirez pour entrer dans l'application.
-  Prenez-en un long et propre à cet outil.
 - `SECRET_SESSION` : la valeur générée par `openssl`. Ne la réutilisez nulle
   part ailleurs.
 - `DOMAINE` : votre domaine. **Si vous n'en avez pas encore, supprimez cette
@@ -357,6 +355,60 @@ Les deux services `app` et `caddy` doivent être à l'état `running`.
 La base de données se crée toute seule au premier démarrage : il n'y a
 **aucune** commande de migration à lancer.
 
+### 6.4 Courrier d'attribution (facultatif)
+
+Par défaut, attribuer une mission s'enregistre et s'arrête là : la personne
+le voit dans l'application, aucun courrier ne part. Si vous avez une boîte
+Gmail, vous pouvez la brancher pour que la personne reçoive le titre, les
+études, l'échéance, la priorité, le commentaire et un lien.
+
+Ce n'est **pas** un service payant, et ce n'est **pas** un serveur de
+courrier opéré par Vigie : le message sort de **votre** boîte, comme si vous
+l'aviez écrit. Les invitations et la réinitialisation du mot de passe, eux,
+restent sans courrier.
+
+1. Sur le compte Google, activez la **validation en deux étapes**.
+2. Ouvrez **<https://myaccount.google.com/apppasswords>** et créez un mot de
+   passe d'application (seize lettres, éventuellement groupées par quatre).
+   **Ce n'est pas le mot de passe habituel** de la boîte : Gmail le refuserait.
+3. Dans `.env` :
+
+```bash
+nano .env
+```
+
+Ajoutez (ou décommentez) :
+
+```bash
+SMTP_USER=votre.adresse@gmail.com
+SMTP_MOT_DE_PASSE=xxxx xxxx xxxx xxxx
+```
+
+Les espaces dans le mot de passe d'application n'ont pas d'importance.
+
+Si la boîte n'est pas `@gmail.com` — Google Workspace d'un établissement,
+messagerie du CHU, etc. — indiquez aussi l'hôte :
+
+```bash
+SMTP_HOTE=smtp.gmail.com
+```
+
+Pour une messagerie d'établissement qui n'est pas Gmail, `SMTP_HOTE` est
+celui que vous donne l'informatique (souvent `smtp.mondomaine.fr`, port 587).
+
+4. Rechargez l'application pour qu'elle lise les nouvelles variables :
+
+```bash
+docker compose up -d
+```
+
+Un premier déploiement de cette fonction demande aussi `--build` (le
+programme d'envoi est alors dans l'image) : `docker compose up -d --build`.
+
+Pour vérifier : attribuez une mission à un autre compte. Si le courrier ne
+part pas, la mission est tout de même enregistrée, et un avertissement
+s'affiche dans le formulaire.
+
 ---
 
 ## 7. Vérifier que tout marche
@@ -366,8 +418,8 @@ Ouvrez dans votre navigateur :
 - avec un domaine : **`https://projets.mondomaine.fr`**
 - sans domaine : **`http://VOTRE_IP`**
 
-Vous devez voir l'écran de connexion. Saisissez le `MOT_DE_PASSE` du fichier
-`.env`.
+Vous devez voir l'écran de création de compte (ou de connexion s'il existe
+déjà). Créez votre compte avec votre nom, votre adresse et un mot de passe.
 
 Faites ensuite un test complet, il prend deux minutes :
 
@@ -607,15 +659,36 @@ Si le DNS vient d'être modifié, attendez et relancez :
 docker compose restart caddy
 ```
 
+### Le courrier d'attribution n'arrive pas
+
+La mission doit tout de même être enregistrée : l'envoi n'est jamais
+bloquant. Vérifiez dans l'ordre :
+
+1. `SMTP_USER` et `SMTP_MOT_DE_PASSE` sont bien dans `.env`, **sans**
+   guillemets autour des valeurs.
+2. C'est un **mot de passe d'application** Gmail, pas le mot de passe du
+   compte. La validation en deux étapes doit être activée.
+3. Après modification de `.env` : `docker compose up -d` (les variables
+   sont lues au démarrage du conteneur).
+4. Les journaux : `docker compose logs --tail 80 app` — une ligne
+   « Envoi du courrier impossible » donne le motif renvoyé par Gmail
+   (mot de passe refusé, envoi bloqué, etc.).
+
+Un courrier à soi-même n'est pas envoyé : on n'écrit pas pour s'annoncer
+une mission qu'on vient d'attribuer.
+
 ### Je me connecte, mais je reviens toujours sur l'écran de connexion
 
-Typiquement : `DOMAINE` est renseigné dans `.env` alors que vous accédez au
-site en `http://IP`. Le cookie de session n'est alors transmis qu'en HTTPS.
-Accédez au site par son domaine en `https://`, ou retirez la ligne `DOMAINE`
-et relancez :
+Le cookie de session n'est marqué « secure » que si la requête arrive en
+HTTPS (Caddy pose `X-Forwarded-Proto`). Si la boucle continue :
+
+1. Accédez au site par son domaine en `https://`, pas par `http://IP`, dès
+   qu'un domaine est configuré.
+2. Vérifiez que vous utilisez le mot de passe **du compte**. En cas de doute :
+   page « Mot de passe oublié ».
 
 ```bash
-docker compose up -d
+docker compose logs app | tail -50
 ```
 
 ### « no space left on device »

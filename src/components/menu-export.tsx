@@ -50,7 +50,7 @@ export default function MenuExport({
   };
 
   return (
-    <div ref={conteneur} className="relative sans-impression">
+    <div ref={conteneur} className="relative z-20 sans-impression">
       <button
         type="button"
         onClick={() => setOuvert((o) => !o)}
@@ -77,7 +77,7 @@ export default function MenuExport({
       {ouvert && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-1.5 w-64 animate-apparait overflow-hidden rounded-2xl border border-ligne bg-relief shadow-elevee"
+          className="absolute right-0 z-50 mt-1.5 w-64 animate-apparait overflow-hidden rounded-2xl border border-ligne bg-relief shadow-elevee"
         >
           <a
             href={lien("")}
