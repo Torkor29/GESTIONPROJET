@@ -82,19 +82,26 @@ export function objetAccessible(
   )`;
 }
 
+/** Études dont la personne est réellement propriétaire, droit étendu exclu. */
+function idsEtudesProprietaire(utilisateurId: number): SQL {
+  return sql`(select id from etudes where proprietaire_id = ${utilisateurId})`;
+}
+
 /**
  * Une mission n'est visible que si on l'a créée, qu'on nous l'a attribuée,
- * ou qu'on possède l'une des études concernées. Être convié ne suffit pas.
+ * ou qu'on est propriétaire de l'une des études concernées. Être convié ne
+ * suffit pas, et le droit « accès à toutes les études » non plus : il ouvre
+ * toutes les études, pas les missions que les autres y ont créées.
  */
 export function missionVisible(utilisateurId: number): SQL {
   return sql`(
     ${taches.proprietaireId} = ${utilisateurId}
     or ${taches.assigneA} = ${utilisateurId}
-    or ${taches.etudeId} in ${idsEtudesPossedees(utilisateurId)}
+    or ${taches.etudeId} in ${idsEtudesProprietaire(utilisateurId)}
     or exists (
       select 1 from taches_etudes
       where taches_etudes.tache_id = ${taches.id}
-        and taches_etudes.etude_id in ${idsEtudesPossedees(utilisateurId)}
+        and taches_etudes.etude_id in ${idsEtudesProprietaire(utilisateurId)}
     )
   )`;
 }

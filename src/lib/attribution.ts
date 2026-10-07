@@ -38,7 +38,7 @@ function possede(ids: VisibiliteMission["idsEtudesPossedees"], etudeId: number):
 
 /**
  * Même règle que `missionVisible` en SQL : créateur, personne à qui c'est
- * attribué, ou propriétaire de l'une des études. Être convié ne suffit pas.
+ * attribué, ou propriétaire de l'une des études (droit étendu exclu).
  */
 export function missionEstVisiblePour({
   utilisateurId,

@@ -201,7 +201,7 @@ export default function FormulaireTache({
             </p>
           </div>
 
-          {peutAttribuer && idsChoisis.length > 0 && (
+          {peutAttribuer && (
             <div>
               <label htmlFor={`${uid}-assigneA`} className="mb-1.5 block text-sm font-medium">
                 Attribuer à

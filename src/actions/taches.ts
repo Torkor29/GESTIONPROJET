@@ -153,10 +153,6 @@ async function lireAssigneA(
   const personne = db.select({ id: utilisateurs.id }).from(utilisateurs).where(eq(utilisateurs.id, assigneA)).get();
   if (!personne) return { erreur: "Personne introuvable pour cette attribution." };
 
-  if (etudeIds.length === 0) {
-    return { erreur: "Pour attribuer une mission, rattachez-la d'abord à une étude." };
-  }
-
   for (const etudeId of etudeIds) {
     await assurerPartageEtude(etudeId, assigneA, compteId);
   }
