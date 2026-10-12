@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { definirStatutPublipostage } from "@/actions/publipostage";
+import ActionsLignePublipostage from "./actions-ligne-publipostage";
 import SelecteurStatutGenerique from "./selecteur-statut-generique";
 import {
   COULEURS_PUBLIPOSTAGE,
@@ -165,9 +166,6 @@ export default function TableauPublipostages({
 
                 <td className="px-3 py-3">
                   <span className="flex items-center justify-end gap-1">
-                    {/* La suppression vit sur la page du document, derrière une
-                        confirmation : une fiche de cinquante champs ne doit pas
-                        disparaître sur un clic égaré dans un tableau. */}
                     {modele && (
                       <>
                         <a
@@ -192,6 +190,7 @@ export default function TableauPublipostages({
                     >
                       Ouvrir
                     </Link>
+                    <ActionsLignePublipostage id={p.id} titre={p.titre} />
                   </span>
                 </td>
               </tr>
