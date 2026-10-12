@@ -56,6 +56,22 @@ const CONVENTION: ModelePublipostage = {
     "Convention de participation d'un centre associé à une recherche promue par le CHU de Brest.",
   fichier: "convention-centre-associe.docx",
   champsTitre: ["acronyme", "centre_nom"],
+  champsCentre: [
+    "centre_nom",
+    "centre_finess",
+    "centre_siret",
+    "centre_adresse",
+    "centre_directeur",
+    "lieu_recherche",
+    "service",
+    "investigateur_principal",
+    "inclusions_patients",
+    "inclusions_volontaires",
+    "centre_rib",
+    "contact_financier_centre",
+    "pharmacie_adresse",
+    "centre_dpd",
+  ],
   sections: [
     {
       titre: "Étude",

@@ -74,6 +74,12 @@ export type ModelePublipostage = {
   /** Champs dont les valeurs composent le titre proposé et le nom du fichier exporté. */
   champsTitre: string[];
   /**
+   * Champs propres à chaque centre (identité, investigateur, RIB…). Quand le
+   * modèle en déclare, un même document peut être décliné pour plusieurs
+   * centres : tout le reste est commun et se recopie tel quel.
+   */
+  champsCentre?: string[];
+  /**
    * Balises déduites des champs saisis, sans question à poser : la
    * qualification de l'article 2 découle de la catégorie cochée, par exemple.
    * Rendre `undefined` laisse la balise sur son texte de repli.
@@ -223,4 +229,39 @@ export function titreSuggere(modele: ModelePublipostage, valeurs: Valeurs): stri
     .filter((v): v is string => typeof v === "string" && v.trim() !== "")
     .map((v) => v.trim());
   return [modele.nom, ...morceaux].join(" — ");
+}
+
+/** Champs propres à un centre, dans l'ordre du formulaire. */
+export function champsParCentre(modele: ModelePublipostage): Champ[] {
+  const cles = new Set(modele.champsCentre ?? []);
+  return champsDuModele(modele).filter((c) => cles.has(c.cle));
+}
+
+/** Les valeurs communes du document, débarrassées de tout ce qui est propre au centre. */
+export function sansChampsCentre(modele: ModelePublipostage, valeurs: Valeurs): Valeurs {
+  const cles = new Set(modele.champsCentre ?? []);
+  return Object.fromEntries(Object.entries(valeurs).filter(([cle]) => !cles.has(cle)));
+}
+
+/**
+ * Découpe un collage depuis Excel (une ligne par centre, colonnes séparées par
+ * des tabulations, dans l'ordre de `colonnes`) en valeurs par centre. Une
+ * première ligne qui reprend les libellés des colonnes est ignorée.
+ */
+export function lireCollageCentres(texte: string, colonnes: Champ[]): Valeurs[] {
+  const libelles = new Set(colonnes.map((c) => c.libelle.toLowerCase()));
+  return texte
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .filter((ligne) => ligne.trim() !== "")
+    .map((ligne) => ligne.split("\t").map((v) => v.trim()))
+    .filter((cellules) => !libelles.has((cellules[0] ?? "").toLowerCase()))
+    .map((cellules) => {
+      const centre: Valeurs = {};
+      colonnes.forEach((champ, i) => {
+        if (cellules[i]) centre[champ.cle] = cellules[i];
+      });
+      return centre;
+    })
+    .filter((centre) => Object.keys(centre).length > 0);
 }

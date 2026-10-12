@@ -13,7 +13,9 @@ import {
   champsDuModele,
   completerDepuisEtude,
   lireValeurs,
+  champsParCentre,
   modelePublipostage,
+  sansChampsCentre,
   titreSuggere,
   type ModelePublipostage,
   type Valeurs,
@@ -208,14 +210,24 @@ export async function definirStatutPublipostage(id: number, statut: string): Pro
 }
 
 /**
- * Copie un document pour en faire un autre : la même convention pour un
- * second centre, par exemple. La copie repart en brouillon, sans dates de suivi.
+ * Copie un document pour en faire un autre. La copie repart en brouillon, sans
+ * dates de suivi. Avec `viderCentre`, les champs propres au centre sont
+ * effacés : on n'a plus qu'à saisir le centre suivant, sans risquer d'envoyer
+ * une convention qui garde le RIB ou le FINESS du précédent.
  */
 export async function dupliquerPublipostage(donnees: FormData): Promise<void> {
   const compte = await exigerSession();
   const id = Number(donnees.get("id"));
   if (!id) throw new Error("Document manquant.");
   const source = await publipostageAccessible(id, compte.id);
+  const modele = modelePublipostage(source.modele);
+
+  const viderCentre = donnees.get("viderCentre") === "1" && modele?.champsCentre;
+  const valeurs = viderCentre
+    ? sansChampsCentre(modele, lireValeurs(source.valeurs))
+    : lireValeurs(source.valeurs);
+  const titre =
+    viderCentre && modele ? `${titreSuggere(modele, valeurs)} — nouveau centre` : `${source.titre} (copie)`;
 
   const [copie] = await db
     .insert(publipostages)
@@ -223,14 +235,93 @@ export async function dupliquerPublipostage(donnees: FormData): Promise<void> {
       proprietaireId: compte.id,
       etudeId: source.etudeId,
       modele: source.modele,
-      titre: `${source.titre} (copie)`.slice(0, 300),
-      valeurs: source.valeurs,
+      titre: titre.slice(0, 300),
+      valeurs: JSON.stringify(valeurs),
       notes: source.notes,
     })
     .returning({ id: publipostages.id });
 
   revalidatePath("/publipostage");
   redirect(`/publipostage/${copie.id}`);
+}
+
+/** Plafond d'une génération : au-delà, c'est probablement un collage raté. */
+const CENTRES_MAX = 200;
+
+/**
+ * Décline un document pour plusieurs centres d'un coup : chaque centre reçoit
+ * son propre document, avec les valeurs communes de la source et les siennes
+ * à la place des champs de centre. Chacun a ensuite son propre suivi.
+ */
+export async function genererPourCentres(
+  _precedent: EtatFormulaire,
+  donnees: FormData,
+): Promise<EtatFormulaire> {
+  let etudeId: number | null = null;
+  try {
+    const compte = await utilisateurActuel();
+    if (!compte) return { erreur: "Session expirée. Reconnectez-vous." };
+    const id = Number(donnees.get("id"));
+    if (!id) return { erreur: "Document manquant." };
+    const source = await publipostageAccessible(id, compte.id);
+    etudeId = source.etudeId;
+
+    const modele = modelePublipostage(source.modele);
+    const colonnes = modele ? champsParCentre(modele) : [];
+    if (!modele || colonnes.length === 0) {
+      return { erreur: "Ce modèle ne se décline pas par centre." };
+    }
+
+    let lignes: unknown;
+    try {
+      lignes = JSON.parse(String(donnees.get("centres") ?? "[]"));
+    } catch {
+      return { erreur: "Liste de centres illisible." };
+    }
+    if (!Array.isArray(lignes)) return { erreur: "Liste de centres illisible." };
+
+    const centres: Valeurs[] = [];
+    for (const ligne of lignes) {
+      if (!ligne || typeof ligne !== "object") continue;
+      const centre: Valeurs = {};
+      for (const champ of colonnes) {
+        const v = (ligne as Record<string, unknown>)[champ.cle];
+        if (typeof v !== "string") continue;
+        const texte = v.replace(/\r\n/g, "\n").trim().slice(0, LONGUEUR_MAX_CHAMP);
+        if (texte) centre[champ.cle] = texte;
+      }
+      if (Object.keys(centre).length > 0) centres.push(centre);
+    }
+    if (centres.length === 0) return { erreur: "Ajoutez au moins un centre." };
+    if (centres.length > CENTRES_MAX) {
+      return { erreur: `${CENTRES_MAX} centres au plus par génération.` };
+    }
+    if (centres.some((c) => !c.centre_nom && colonnes.some((ch) => ch.cle === "centre_nom"))) {
+      return { erreur: "Chaque centre doit avoir un nom d'établissement." };
+    }
+
+    const communes = sansChampsCentre(modele, lireValeurs(source.valeurs));
+    db.transaction((tx) => {
+      for (const centre of centres) {
+        const valeurs = { ...communes, ...centre };
+        tx.insert(publipostages)
+          .values({
+            proprietaireId: compte.id,
+            etudeId: source.etudeId,
+            modele: source.modele,
+            titre: titreSuggere(modele, valeurs).slice(0, 300),
+            valeurs: JSON.stringify(valeurs),
+            notes: source.notes,
+          })
+          .run();
+      }
+    });
+  } catch (e) {
+    return { erreur: messageErreur(e) };
+  }
+
+  revalidatePath("/publipostage");
+  redirect(etudeId ? `/publipostage?etude=${etudeId}` : "/publipostage");
 }
 
 export async function supprimerPublipostage(donnees: FormData): Promise<void> {
