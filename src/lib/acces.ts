@@ -2,7 +2,18 @@ import "server-only";
 import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { db } from "@/db";
-import { checklistItems, documents, etudes, faq, pages, partages, taches, tachesEtudes, temps } from "@/db/schema";
+import {
+  checklistItems,
+  documents,
+  etudes,
+  faq,
+  pages,
+  partages,
+  publipostages,
+  taches,
+  tachesEtudes,
+  temps,
+} from "@/db/schema";
 
 /**
  * Cloisonnement des données entre comptes.
@@ -125,7 +136,7 @@ export function missionLieeA(etudeId: number): SQL {
 const REFUS = "Vous n'avez pas accès à cet élément.";
 
 /** Tables rattachées à une étude, toutes gardées de la même façon. */
-const RATTACHEES = { taches, documents, pages, faq, temps } as const;
+const RATTACHEES = { taches, documents, pages, faq, temps, publipostages } as const;
 
 export type EntiteGardee = keyof typeof RATTACHEES | "etudes";
 
