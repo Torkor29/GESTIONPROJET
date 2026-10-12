@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { dupliquerPublipostage, supprimerPublipostage } from "@/actions/publipostage";
 import EditeurPublipostage from "@/components/editeur-publipostage";
+import GenerateurCentres from "@/components/generateur-centres";
 import { formaterDateHeure } from "@/lib/format";
-import { type Valeurs, completerDepuisEtude, modelePublipostage } from "@/lib/publipostage";
+import { type Valeurs, champsParCentre, completerDepuisEtude, modelePublipostage } from "@/lib/publipostage";
 import { listerEtudes, publipostageParId } from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export default async function PageDocumentPublipostage({
   const doc = ligne.publipostage;
   const modele = modelePublipostage(doc.modele);
   const etudes = await listerEtudes({ avecArchivees: true });
+  const colonnesCentre = modele ? champsParCentre(modele) : [];
 
   // Ce que chaque fiche étude peut apporter au document : l'éditeur s'en sert
   // pour « Reprendre les infos de l'étude », y compris après un changement
@@ -60,11 +62,24 @@ export default async function PageDocumentPublipostage({
               <button
                 type="submit"
                 className="bouton-fantome"
-                title="Crée une copie en brouillon — pour un autre centre, par exemple"
+                title="Crée une copie identique, en brouillon"
               >
                 Dupliquer
               </button>
             </form>
+            {colonnesCentre.length > 0 && (
+              <form action={dupliquerPublipostage}>
+                <input type="hidden" name="id" value={doc.id} />
+                <input type="hidden" name="viderCentre" value="1" />
+                <button
+                  type="submit"
+                  className="bouton-fantome"
+                  title="Crée une copie en brouillon dont les champs du centre sont vides"
+                >
+                  Dupliquer pour un autre centre
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </header>
@@ -80,6 +95,19 @@ export default async function PageDocumentPublipostage({
           Le modèle « {doc.modele} » n&apos;existe plus dans cette installation : le document ne
           peut plus être complété ni exporté.
         </p>
+      )}
+
+      {colonnesCentre.length > 0 && (
+        <section className="sans-impression carte p-5">
+          <details>
+            <summary className="cursor-pointer font-titre text-lg font-semibold">
+              Décliner pour plusieurs centres
+            </summary>
+            <div className="mt-4">
+              <GenerateurCentres documentId={doc.id} colonnes={colonnesCentre} />
+            </div>
+          </details>
+        </section>
       )}
 
       <section className="sans-impression border-t border-ligne pt-6">

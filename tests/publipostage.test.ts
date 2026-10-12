@@ -7,9 +7,12 @@ import { balisesDuModele, remplirDocx, type SourceFusion } from "../src/lib/fusi
 import {
   MODELES_PUBLIPOSTAGE,
   champsDuModele,
+  champsParCentre,
   completude,
   formaterPourDocument,
+  lireCollageCentres,
   modelePublipostage,
+  sansChampsCentre,
   sourceFusion,
   titreSuggere,
 } from "../src/lib/publipostage";
@@ -172,5 +175,37 @@ describe("modèles de publipostage", () => {
     assert.equal(vide.remplis, 0);
     assert.equal(avecFacultatif.remplis, 0);
     assert.equal(completude(fiche, { porteur_nom: "Dr Y" }).remplis, 1);
+  });
+});
+
+describe("déclinaison par centre", () => {
+  const convention = modelePublipostage("convention_centre_associe")!;
+  const colonnes = champsParCentre(convention);
+
+  it("déclare des champs de centre qui existent tous dans le modèle", () => {
+    assert.equal(colonnes.length, convention.champsCentre!.length);
+    assert.equal(colonnes[0].cle, "centre_nom");
+  });
+
+  it("retire les champs du centre et garde les champs communs", () => {
+    const communes = sansChampsCentre(convention, {
+      acronyme: "ETUDE",
+      centre_nom: "CH Quimper",
+      centre_rib: "FR76…",
+    });
+    assert.deepEqual(communes, { acronyme: "ETUDE" });
+  });
+
+  it("lit un collage Excel, en ignorant la ligne d'en-têtes et les lignes vides", () => {
+    const texte = [
+      colonnes.map((c) => c.libelle).join("\t"),
+      "CH Quimper\t290000000",
+      "",
+      "CH Morlaix\t\t26290000000000",
+    ].join("\r\n");
+    assert.deepEqual(lireCollageCentres(texte, colonnes), [
+      { centre_nom: "CH Quimper", centre_finess: "290000000" },
+      { centre_nom: "CH Morlaix", centre_siret: "26290000000000" },
+    ]);
   });
 });
