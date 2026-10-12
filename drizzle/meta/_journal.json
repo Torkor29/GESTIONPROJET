@@ -127,6 +127,13 @@
       "when": 1790251636782,
       "tag": "0017_statut_par_etude",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1790683834967,
+      "tag": "0018_publipostage",
+      "breakpoints": true
     }
   ]
 }
