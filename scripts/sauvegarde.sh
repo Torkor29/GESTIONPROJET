@@ -24,7 +24,16 @@ if ! docker compose ps --status running --services 2>/dev/null | grep -qx app; t
   exit 1
 fi
 
+# La copie est écrite par le conteneur, sous son propre utilisateur : c'est
+# donc lui qui l'efface, avant (reste d'une sauvegarde interrompue, sur lequel
+# VACUUM INTO refuse d'écrire) et après. L'utilisateur du serveur n'en a
+# souvent pas le droit.
+effacer_copie() {
+  docker compose exec -T app rm -f /donnees/copie-sauvegarde.db
+}
+
 echo "→ Copie cohérente de la base…"
+effacer_copie
 docker compose exec -T app node -e "
   const Database = require('better-sqlite3');
   const db = new Database(process.env.CHEMIN_BASE);
@@ -40,7 +49,7 @@ tar -czf "$ARCHIVE" \
   copie-sauvegarde.db \
   $([ -d "$RACINE/donnees/uploads" ] && echo uploads)
 
-rm -f "$RACINE/donnees/copie-sauvegarde.db"
+effacer_copie
 
 echo "→ Suppression des sauvegardes de plus de $CONSERVER_JOURS jours…"
 find "$DESTINATION" -name 'gestionprojet_*.tar.gz' -type f -mtime "+$CONSERVER_JOURS" -delete
