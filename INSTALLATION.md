@@ -496,10 +496,14 @@ cd ~/GESTIONPROJET
 
 ```bash
 cd ~/GESTIONPROJET
-./scripts/sauvegarde.sh
 git pull
-docker compose up -d --build
+./scripts/mettre-a-jour.sh
 ```
+
+Le script sauvegarde, récupère le code et reconstruit. Il détecte seul si le
+serveur passe par le portier commun (voir `deploiement/README.md`) et choisit
+la bonne commande : en mode portier, un `docker compose up` nu sortirait
+l'application du réseau du portier et le site tomberait en 502.
 
 La sauvegarde avant mise à jour est une habitude qui coûte dix secondes et
 sauve des soirées.
