@@ -342,6 +342,38 @@ export default function FormulaireTache({
             </p>
           )}
 
+          <div className="group/rappel">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                name="rappel"
+                value="1"
+                defaultChecked={tache?.rappelLe != null}
+                className="h-4 w-4 accent-accent"
+              />
+              Me rappeler par mail
+              <span className="font-normal text-attenue">(facultatif)</span>
+            </label>
+            {/* Toujours envoyé, même masqué : le serveur sait ainsi que le
+                formulaire porte le rappel, et le retire si la case est décochée. */}
+            <div className="mt-2 hidden group-has-[:checked]/rappel:block">
+              <label htmlFor={`${uid}-rappelLe`} className="mb-1.5 block text-xs text-attenue">
+                Date du rappel
+              </label>
+              <input
+                id={`${uid}-rappelLe`}
+                name="rappelLe"
+                type="date"
+                defaultValue={versChampDate(tache?.rappelLe)}
+                className="champ max-w-xs"
+              />
+            </div>
+            <p className="mt-1 text-xs text-attenue">
+              Un courrier part ce jour-là à la personne qui porte la mission. Indépendamment,
+              un rappel automatique part avant l&apos;échéance (réglable dans Paramètres).
+            </p>
+          </div>
+
           <div>
             <label htmlFor={`${uid}-notes`} className="mb-1.5 block text-sm font-medium">
               Commentaire <span className="font-normal text-attenue">(facultatif)</span>

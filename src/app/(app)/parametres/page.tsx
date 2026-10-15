@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { appliquerMetier, enregistrerModules } from "@/actions/modules";
+import { enregistrerRappelJours } from "@/actions/rappels";
 import ChoixModules from "@/components/choix-modules";
 import PersonnaliserAccueil from "@/components/personnaliser-accueil";
 import FormulaireChangerMotDePasse from "./formulaire-mot-de-passe";
 import { utilisateurActuel } from "@/lib/auth";
+import { lireCompteSmtp } from "@/lib/courrier";
 import { lireWidgetsAccueil } from "@/lib/accueil";
 import { LIBELLES_ROLE } from "@/lib/constantes";
 import { DOMAINES, MODULES, construit, lireModules } from "@/lib/modules";
@@ -72,6 +74,42 @@ export default async function PageParametres() {
           </select>
           <button type="submit" className="bouton-discret">
             Appliquer les suggestions
+          </button>
+        </form>
+      </section>
+
+      <section className="carte p-5">
+        <h2 className="font-titre text-lg font-bold">Rappels par mail</h2>
+        <p className="mt-1 text-sm text-attenue">
+          Un courrier vous rappelle les missions que vous portez (attribuées à vous,
+          ou créées par vous et non attribuées), quelques jours avant leur échéance.
+          Le rappel à une date précise se choisit sur chaque mission.
+        </p>
+        {!lireCompteSmtp() && (
+          <p className="mt-2 text-sm text-alerte">
+            Aucune messagerie n&apos;est configurée sur le serveur : aucun rappel ne part
+            pour l&apos;instant.
+          </p>
+        )}
+        <form action={enregistrerRappelJours} className="mt-4 flex flex-wrap items-center gap-2">
+          <label htmlFor="rappelJours" className="text-sm">
+            Me prévenir
+          </label>
+          <select
+            id="rappelJours"
+            name="rappelJours"
+            defaultValue={String(compte.rappelJours)}
+            className="champ max-w-xs"
+          >
+            <option value="0">Jamais</option>
+            {[1, 2, 3, 5, 7, 14].map((j) => (
+              <option key={j} value={j}>
+                {j} jour{j > 1 ? "s" : ""} avant l&apos;échéance
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="bouton-discret">
+            Enregistrer
           </button>
         </form>
       </section>
