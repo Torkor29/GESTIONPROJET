@@ -63,7 +63,7 @@ export async function POST(requete: Request) {
         temperature: 0.3,
         messages: [{ role: "system", content: CONSIGNES_ASSISTANT }, ...messages],
       }),
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(180_000),
     });
   } catch {
     return erreur("Le service de l'assistant ne répond pas. Réessayez dans un instant.", 502);
@@ -83,19 +83,28 @@ export async function POST(requete: Request) {
   let tampon = "";
 
   const flux = new ReadableStream<Uint8Array>({
+    // Un appel à `pull` doit transmettre quelque chose ou clore le flux : s'il
+    // rend la main sans rien envoyer, il n'est plus rappelé et la réponse
+    // reste suspendue. Or les modèles qui « réfléchissent » envoient d'abord
+    // de nombreux blocs sans texte de réponse : on lit donc jusqu'au premier
+    // texte ou jusqu'à la fin.
     async pull(controleur) {
-      const { done, value } = await lecteur.read();
-      if (done) {
-        controleur.close();
-        return;
-      }
-      tampon += decodeur.decode(value, { stream: true });
-      const lu = lireFluxSse(tampon);
-      tampon = lu.reste;
-      for (const m of lu.morceaux) controleur.enqueue(encodeur.encode(m));
-      if (lu.fini) {
-        await lecteur.cancel().catch(() => {});
-        controleur.close();
+      for (;;) {
+        const { done, value } = await lecteur.read();
+        if (done) {
+          controleur.close();
+          return;
+        }
+        tampon += decodeur.decode(value, { stream: true });
+        const lu = lireFluxSse(tampon);
+        tampon = lu.reste;
+        for (const m of lu.morceaux) controleur.enqueue(encodeur.encode(m));
+        if (lu.fini) {
+          controleur.close();
+          void lecteur.cancel().catch(() => {});
+          return;
+        }
+        if (lu.morceaux.length > 0) return;
       }
     },
     cancel() {
@@ -104,6 +113,12 @@ export async function POST(requete: Request) {
   });
 
   return new Response(flux, {
-    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      // no-transform : ni Next ni le proxy ne compressent la réponse, ce qui
+      // la retiendrait jusqu'à la fin au lieu de l'afficher au fil de l'eau.
+      "Cache-Control": "no-store, no-transform",
+      "X-Accel-Buffering": "no",
+    },
   });
 }
