@@ -134,6 +134,13 @@
       "when": 1790683834967,
       "tag": "0018_publipostage",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1792074833660,
+      "tag": "0019_rappels",
+      "breakpoints": true
     }
   ]
 }

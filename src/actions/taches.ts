@@ -159,6 +159,32 @@ async function lireAssigneA(
   return { assigneA };
 }
 
+/**
+ * Rappel choisi dans le formulaire, et remise à zéro des envois : un rappel
+ * déplacé, ou une échéance changée, doit pouvoir repartir.
+ */
+function lireRappels(
+  donnees: FormData,
+  echeance: number | null,
+  actuelle?: {
+    rappelLe: number | null;
+    rappelEnvoyeLe: number | null;
+    echeance: number | null;
+    rappelEcheanceEnvoyeLe: number | null;
+  },
+) {
+  const rappelLe =
+    donnees.get("rappel") === "1"
+      ? depuisChampDate(String(donnees.get("rappelLe") ?? ""))
+      : null;
+  return {
+    rappelLe,
+    rappelEnvoyeLe: actuelle && actuelle.rappelLe === rappelLe ? actuelle.rappelEnvoyeLe : null,
+    rappelEcheanceEnvoyeLe:
+      actuelle && actuelle.echeance === echeance ? actuelle.rappelEcheanceEnvoyeLe : null,
+  };
+}
+
 const AVERTISSEMENT_COURRIER =
   "La mission est enregistrée, mais le courrier n'est pas parti. Vérifiez la messagerie du serveur.";
 
@@ -217,6 +243,9 @@ export async function creerTache(
 
     const titre = String(donnees.get("titre") ?? "").trim();
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
+    if (donnees.get("rappel") === "1" && !String(donnees.get("rappelLe") ?? "").trim()) {
+      return { erreur: "Choisissez la date du rappel, ou décochez « Me rappeler par mail »." };
+    }
 
     const choix = await lireEtudesChoisies(donnees, compte.id);
     if ("erreur" in choix) return { erreur: choix.erreur };
@@ -242,6 +271,7 @@ export async function creerTache(
         notes: String(donnees.get("notes") ?? "").trim() || null,
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+        ...lireRappels(donnees, depuisChampDate(String(donnees.get("echeance") ?? ""))),
         assigneA: attribution.assigneA,
         couleur: lireCouleur(String(donnees.get("couleur") ?? "")),
         statut: etapes.length > 0 ? "en_cours" : "a_faire",
@@ -294,6 +324,9 @@ export async function modifierTache(
     await exigerAcces("taches", id, compte.id);
     await exigerEcritureMission(id, compte.id);
     if (!titre) return { erreur: "Le titre de la tâche est obligatoire." };
+    if (donnees.get("rappel") === "1" && !String(donnees.get("rappelLe") ?? "").trim()) {
+      return { erreur: "Choisissez la date du rappel, ou décochez « Me rappeler par mail »." };
+    }
 
     const statut = String(donnees.get("statut") ?? "a_faire");
 
@@ -320,6 +353,7 @@ export async function modifierTache(
         .set({
           notes: String(donnees.get("notes") ?? "").trim() || null,
           statut,
+          ...(donnees.has("rappelLe") ? lireRappels(donnees, actuelle.echeance, actuelle) : {}),
           termineeLe: statut === "terminee" ? maintenant() : null,
           archiveeLe: statut === "terminee" ? actuelle.archiveeLe : null,
           modifieLe: maintenant(),
@@ -345,6 +379,14 @@ export async function modifierTache(
         statut,
         priorite: String(donnees.get("priorite") ?? "normale"),
         echeance: depuisChampDate(String(donnees.get("echeance") ?? "")),
+        ...(donnees.has("rappelLe")
+          ? lireRappels(donnees, depuisChampDate(String(donnees.get("echeance") ?? "")), actuelle)
+          : {
+              rappelEcheanceEnvoyeLe:
+                actuelle.echeance === depuisChampDate(String(donnees.get("echeance") ?? ""))
+                  ? actuelle.rappelEcheanceEnvoyeLe
+                  : null,
+            }),
         assigneA: attribution.assigneA,
         couleur: donnees.has("couleur")
           ? lireCouleur(String(donnees.get("couleur") ?? ""))

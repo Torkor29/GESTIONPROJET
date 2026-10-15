@@ -39,6 +39,11 @@ export const utilisateurs = sqliteTable("utilisateurs", {
   accesToutesEtudes: integer("acces_toutes_etudes", { mode: "boolean" })
     .notNull()
     .default(false),
+  /**
+   * Rappel automatique par courrier, tant de jours avant l'échéance des
+   * missions qu'on porte. 0 le désactive.
+   */
+  rappelJours: integer("rappel_jours").notNull().default(3),
   creeLe: integer("cree_le").notNull().default(maintenant),
   derniereConnexion: integer("derniere_connexion"),
 });
@@ -162,6 +167,15 @@ export const taches = sqliteTable(
       onDelete: "set null",
     }),
     ordre: integer("ordre").notNull().default(0),
+    /**
+     * Rappel par courrier choisi sur la mission : le jour dit (secondes Unix,
+     * minuit heure locale), un courrier part à la personne qui la porte.
+     */
+    rappelLe: integer("rappel_le"),
+    /** Envoi du rappel choisi. Remis à zéro quand la date du rappel change. */
+    rappelEnvoyeLe: integer("rappel_envoye_le"),
+    /** Envoi du rappel automatique avant échéance. Remis à zéro si l'échéance change. */
+    rappelEcheanceEnvoyeLe: integer("rappel_echeance_envoye_le"),
     termineeLe: integer("terminee_le"),
     /**
      * Instant d'archivage. Null = encore dans le suivi.
