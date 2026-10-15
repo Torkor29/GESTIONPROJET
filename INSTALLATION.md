@@ -409,6 +409,27 @@ Pour vérifier : attribuez une mission à un autre compte. Si le courrier ne
 part pas, la mission est tout de même enregistrée, et un avertissement
 s'affiche dans le formulaire.
 
+La même messagerie envoie les **rappels** : à la date choisie sur une mission,
+et quelques jours avant son échéance (réglable par chacun dans Paramètres).
+
+### 6.5 Assistant réglementaire (facultatif)
+
+Le module « Assistant » répond aux questions de réglementation et aide à
+rédiger. Il **n'a aucun accès aux données** de l'application : seules les
+questions tapées partent chez le fournisseur du modèle, et rien n'est
+conservé sur le serveur. Ne pas y saisir de données patients.
+
+Créez une clé sur <https://www.orcarouter.ai> (le modèle DeepSeek V4 Flash
+y est gratuit, avec un quota limité), puis ajoutez au `.env` :
+
+```
+ASSISTANT_CLE_API=votre-cle
+```
+
+Relancez l'application (`./scripts/mettre-a-jour.sh`). Chacun active ensuite
+le module « Assistant » dans Paramètres. Pour changer de fournisseur, voir
+`ASSISTANT_URL` et `ASSISTANT_MODELE` dans `.env.example`.
+
 ---
 
 ## 7. Vérifier que tout marche

@@ -26,6 +26,11 @@ services:
       SMTP_HOTE: ${SMTP_HOTE:-}
       SMTP_PORT: ${SMTP_PORT:-}
       SMTP_DE: ${SMTP_DE:-}
+      # Assistant réglementaire facultatif (module « Assistant ») : sans clé,
+      # il reste désactivé. Il n'a aucun accès aux données de l'application.
+      ASSISTANT_CLE_API: ${ASSISTANT_CLE_API:-}
+      ASSISTANT_URL: ${ASSISTANT_URL:-}
+      ASSISTANT_MODELE: ${ASSISTANT_MODELE:-}
     volumes:
       # Toutes vos données vivent ici : base SQLite et fichiers téléversés.
       # C'est le seul dossier à sauvegarder.
