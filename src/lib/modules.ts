@@ -253,6 +253,16 @@ export const MODULES: Module[] = [
     roles: TOUS,
   },
   {
+    cle: "assistant",
+    nom: "Assistant",
+    description:
+      "Questions de réglementation et aide à la rédaction, auprès d'un modèle de langage. Sans accès à vos données.",
+    icone: "eclair",
+    domaine: "Réglementaire et documentaire",
+    href: "/assistant",
+    roles: TOUS,
+  },
+  {
     cle: "faq",
     nom: "Base de connaissance",
     description: "Les questions qui reviennent, répondues une fois pour toutes.",
