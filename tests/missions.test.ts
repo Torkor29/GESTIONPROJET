@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { etudesModifiables } from "../src/lib/attribution";
+import { assigneePeutAvancer, droitsSurMission, etudesModifiables } from "../src/lib/attribution";
 import { avancement, cleType, normaliserAcronyme, statutDeduit } from "../src/lib/missions";
 
 describe("statutDeduit", () => {
@@ -79,5 +79,26 @@ describe("etudesModifiables", () => {
       }),
       [],
     );
+  });
+});
+
+describe("mission attribuée", () => {
+  it("se fait avancer par la personne attribuée, même sans étude", () => {
+    assert.deepEqual(
+      droitsSurMission({
+        utilisateurId: 2,
+        proprietaireId: 1,
+        etudeIds: [],
+        etudesLiees: [],
+        assigneA: 2,
+      }),
+      { peutGerer: false, peutEcrire: true },
+    );
+  });
+
+  it("reste en lecture seule si les partages de la personne le sont tous", () => {
+    assert.equal(assigneePeutAvancer(["lecture"]), false);
+    assert.equal(assigneePeutAvancer(["lecture", "ecriture"]), true);
+    assert.equal(assigneePeutAvancer([]), true);
   });
 });

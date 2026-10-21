@@ -215,7 +215,7 @@ export default function FormulaireTache({
               >
                 <option value="">Non attribuée — vous seul la voyez</option>
                 {dejaSurLEtude.length > 0 && (
-                  <optgroup label="Déjà sur l'étude">
+                  <optgroup label="Ont déjà accès à l'étude">
                     {dejaSurLEtude.map((m) => (
                       <option key={`m-${m.utilisateurId}`} value={m.utilisateurId}>
                         {m.nom}

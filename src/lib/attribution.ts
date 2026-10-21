@@ -52,6 +52,16 @@ export function missionEstVisiblePour({
   return etudeIds.some((id) => possede(idsEtudesPossedees, id));
 }
 
+/**
+ * La personne à qui une mission est attribuée la fait avancer, sauf si ses
+ * partages sur les études de la mission sont tous en lecture seule. Même
+ * règle côté serveur (`exigerEcritureMission`).
+ */
+export function assigneePeutAvancer(niveauxPartage: readonly string[]): boolean {
+  if (niveauxPartage.includes("ecriture")) return true;
+  return !niveauxPartage.includes("lecture");
+}
+
 export function droitsSurMission(opts: {
   utilisateurId: number;
   /** Droit « accès à toutes les études » : vaut propriété de chaque étude. */
@@ -68,8 +78,14 @@ export function droitsSurMission(opts: {
     etudes.some((e) => e.proprietaireId === opts.utilisateurId);
   const estMissionPerso = etudes.length === 0 && opts.proprietaireId === opts.utilisateurId;
   const peutGerer = possedeEtude || estMissionPerso;
-  const ecriture = etudes.some((e) => opts.niveauxPartage?.[e.id] === "ecriture");
-  const peutEcrire = peutGerer || (opts.assigneA === opts.utilisateurId && ecriture);
+  const niveaux = etudes
+    .map((e) => opts.niveauxPartage?.[e.id])
+    .filter((n): n is string => Boolean(n));
+  const peutEcrire =
+    peutGerer ||
+    opts.proprietaireId === opts.utilisateurId ||
+    (opts.assigneA === opts.utilisateurId &&
+      (etudes.length === 0 || assigneePeutAvancer(niveaux)));
   return { peutGerer, peutEcrire };
 }
 

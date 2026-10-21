@@ -29,6 +29,7 @@ import {
   missionLieeA,
   missionVisible,
   objetAccessible,
+  pageVisible,
 } from "./acces";
 import { utilisateurActuel } from "./auth";
 import { debutDeMois, debutDeSemaine, statutDepuisEtapes } from "./format";
@@ -157,7 +158,7 @@ export async function pagesDEtude(etudeId: number) {
     .where(
       and(
         eq(pages.etudeId, etudeId),
-        objetAccessible(pages.proprietaireId, pages.etudeId, id),
+        pageVisible(id),
       ),
     )
     .orderBy(asc(pages.categorie), asc(pages.ordre), asc(pages.id));
@@ -177,7 +178,7 @@ export async function pagesLibres() {
 /** Pages du pense-bête, éventuellement filtrées par étude. */
 export async function pagesPenseBete(filtres: { etudeId?: number | null } = {}) {
   const id = await moi();
-  const conditions = [objetAccessible(pages.proprietaireId, pages.etudeId, id)];
+  const conditions = [pageVisible(id)];
   if (filtres.etudeId) conditions.push(eq(pages.etudeId, filtres.etudeId));
   return db
     .select()
@@ -192,7 +193,7 @@ export async function pageParId(id: number) {
     .select()
     .from(pages)
     .where(
-      and(eq(pages.id, id), objetAccessible(pages.proprietaireId, pages.etudeId, utilisateur)),
+      and(eq(pages.id, id), pageVisible(utilisateur)),
     )
     .limit(1);
   return ligne ?? null;

@@ -1,6 +1,7 @@
 import "server-only";
 import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import { assigneePeutAvancer } from "./attribution";
 import { db } from "@/db";
 import {
   checklistItems,
@@ -99,6 +100,24 @@ function idsEtudesProprietaire(utilisateurId: number): SQL {
 }
 
 /**
+ * Une page du pense-bête est une note de travail : elle n'est visible que de
+ * son auteur et des personnes réellement associées à l'étude — propriétaire
+ * ou conviées. Le droit « accès à toutes les études » n'y donne pas accès :
+ * il ouvre les études, pas les notes que les autres y prennent.
+ */
+export function pageVisible(utilisateurId: number): SQL {
+  return sql`(
+    ${pages.proprietaireId} = ${utilisateurId}
+    or ${pages.etudeId} in (
+      select id from etudes where proprietaire_id = ${utilisateurId}
+      union
+      select ressource_id from partages
+        where type = 'etude' and utilisateur_id = ${utilisateurId}
+    )
+  )`;
+}
+
+/**
  * Une mission n'est visible que si on l'a créée, qu'on nous l'a attribuée,
  * ou qu'on est propriétaire de l'une des études concernées. Être convié ne
  * suffit pas, et le droit « accès à toutes les études » non plus : il ouvre
@@ -166,7 +185,9 @@ export async function exigerAcces(
   const garde =
     entite === "taches"
       ? missionVisible(utilisateurId)
-      : objetAccessible(table.proprietaireId, table.etudeId, utilisateurId);
+      : entite === "pages"
+        ? pageVisible(utilisateurId)
+        : objetAccessible(table.proprietaireId, table.etudeId, utilisateurId);
   const [ligne] = await db
     .select({ id: table.id })
     .from(table)
@@ -221,17 +242,22 @@ export async function piloteLesEtudes(etudeIds: number[], utilisateurId: number)
 }
 
 /**
- * Avancer une mission (statut, étapes, commentaire, temps) : propriétaire de
- * l'une des études, auteur d'une mission sans étude, ou personne à qui elle
- * est attribuée en écriture. Un accès en lecture ne suffit pas.
+ * Avancer une mission (statut, étapes, commentaire, temps) : son auteur, le
+ * propriétaire de l'une des études, ou la personne à qui elle est attribuée.
+ *
+ * Attribuer une mission, c'est la confier : la personne la fait avancer, y
+ * compris quand la mission n'est rattachée à aucune étude. Seul un partage
+ * explicitement en lecture sur ses études l'en empêche. Réattribuer ou
+ * supprimer reste au propriétaire (voir `exigerGestionMission`).
  */
 export async function exigerEcritureMission(id: number, utilisateurId: number): Promise<void> {
   const tache = await tacheSiAccessible(id, utilisateurId);
   if (tache.proprietaireId === utilisateurId) return;
   const etudeIds = await idsEtudesDeMission(id);
   if (await possedeUneEtudeLiee(etudeIds, utilisateurId)) return;
-  if (tache.assigneA === utilisateurId && etudeIds.length > 0) {
-    const [partage] = await db
+  if (tache.assigneA === utilisateurId) {
+    if (etudeIds.length === 0) return;
+    const niveaux = await db
       .select({ niveau: partages.niveau })
       .from(partages)
       .where(
@@ -239,11 +265,9 @@ export async function exigerEcritureMission(id: number, utilisateurId: number): 
           eq(partages.type, "etude"),
           eq(partages.utilisateurId, utilisateurId),
           inArray(partages.ressourceId, etudeIds),
-          eq(partages.niveau, "ecriture"),
         ),
-      )
-      .limit(1);
-    if (partage) return;
+      );
+    if (assigneePeutAvancer(niveaux.map((n) => n.niveau))) return;
   }
   throw new Error(REFUS_ECRITURE);
 }
