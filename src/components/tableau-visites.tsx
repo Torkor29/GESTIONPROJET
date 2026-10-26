@@ -42,7 +42,7 @@ export default function TableauVisites({
   message = "Aucune visite.",
 }: {
   lignes: LigneVisite[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   afficherEtude?: boolean;
   message?: string;
 }) {

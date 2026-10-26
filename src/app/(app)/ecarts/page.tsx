@@ -4,6 +4,7 @@ import { GRAVITES_ECART, STATUTS_ECART } from "@/lib/constantes";
 import { listerEtudes, tousLesEcarts, visitesPourChoix } from "@/lib/requetes";
 import FormulaireEcart from "@/components/formulaire-ecart";
 import TableauEcarts from "@/components/tableau-ecarts";
+import OptionsEtudes from "@/components/options-etudes";
 
 export const dynamic = "force-dynamic";
 
@@ -50,11 +51,7 @@ export default async function PageEcarts({
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
             <option value="">Toutes</option>
-            {etudes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nom}
-              </option>
-            ))}
+            <OptionsEtudes etudes={etudes} />
           </select>
         </div>
 

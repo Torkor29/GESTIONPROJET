@@ -5,6 +5,7 @@ import { STATUTS_ACTION, STATUTS_ACTION_OUVERTS } from "@/lib/constantes";
 import { ecartsPourChoix, listerEtudes, toutesLesActions } from "@/lib/requetes";
 import FormulaireAction from "@/components/formulaire-action";
 import TableauActions from "@/components/tableau-actions";
+import OptionsEtudes from "@/components/options-etudes";
 
 export const dynamic = "force-dynamic";
 
@@ -78,11 +79,7 @@ export default async function PageActions({
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
             <option value="">Toutes</option>
-            {etudes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nom}
-              </option>
-            ))}
+            <OptionsEtudes etudes={etudes} />
           </select>
         </div>
 

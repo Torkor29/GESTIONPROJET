@@ -17,7 +17,7 @@ export default function ListeFaq({
   message = "Aucune question enregistrée.",
 }: {
   lignes: LigneFaq[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   afficherPortee?: boolean;
   message?: string;
 }) {

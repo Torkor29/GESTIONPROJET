@@ -28,7 +28,7 @@ export default function ListeDocuments({
   message = "Aucun document.",
 }: {
   lignes: LigneDocument[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   afficherEtude?: boolean;
   message?: string;
 }) {

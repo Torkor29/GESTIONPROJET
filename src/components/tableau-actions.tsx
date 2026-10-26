@@ -43,7 +43,7 @@ export default function TableauActions({
   message = "Aucune action.",
 }: {
   lignes: LigneAction[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   ecarts: EcartChoix[];
   message?: string;
 }) {

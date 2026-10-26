@@ -8,6 +8,7 @@ import { VIDE } from "@/actions/etat";
 import type { ActionCorrective, Etude } from "@/db/schema";
 import { NATURES_ACTION, STATUTS_ACTION } from "@/lib/constantes";
 import { versChampDate } from "@/lib/format";
+import OptionsEtudes from "@/components/options-etudes";
 
 export type EcartChoix = { id: number; titre: string; reference: string | null };
 
@@ -30,7 +31,7 @@ export default function FormulaireAction({
   variante = "principal",
 }: {
   action?: ActionCorrective;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   ecarts: EcartChoix[];
   ecartIdParDefaut?: number;
   etudeIdParDefaut?: number;
@@ -129,11 +130,7 @@ export default function FormulaireAction({
                 className="champ"
               >
                 <option value="">Sans étude</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nom}
-                  </option>
-                ))}
+                <OptionsEtudes etudes={etudes} />
               </select>
             </div>
 

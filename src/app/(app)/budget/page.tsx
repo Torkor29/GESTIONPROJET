@@ -6,6 +6,7 @@ import { conventionsPourChoix, listerEtudes, toutesLesConventions } from "@/lib/
 import FormulaireConvention from "@/components/formulaire-convention";
 import TableauConventions from "@/components/tableau-conventions";
 import { Icone, type NomIcone } from "@/components/icones";
+import OptionsEtudes from "@/components/options-etudes";
 
 export const dynamic = "force-dynamic";
 
@@ -131,11 +132,7 @@ export default async function PageBudget({
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
             <option value="">Toutes</option>
-            {etudes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nom}
-              </option>
-            ))}
+            <OptionsEtudes etudes={etudes} />
           </select>
         </div>
 

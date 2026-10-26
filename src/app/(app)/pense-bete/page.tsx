@@ -1,6 +1,7 @@
 import FormulairePenseBete from "@/components/formulaire-pense-bete";
 import ListePenseBete from "@/components/liste-pense-bete";
 import { listerEtudes, pagesPenseBete } from "@/lib/requetes";
+import OptionsEtudes from "@/components/options-etudes";
 
 export const dynamic = "force-dynamic";
 
@@ -43,11 +44,7 @@ export default async function PagePenseBete({
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
             <option value="">Toutes</option>
-            {etudes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.code ? `${e.code} — ${e.nom}` : e.nom}
-              </option>
-            ))}
+            <OptionsEtudes etudes={etudes} />
           </select>
         </div>
         <button type="submit" className="bouton-discret">

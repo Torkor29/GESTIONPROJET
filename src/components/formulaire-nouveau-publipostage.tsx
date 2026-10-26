@@ -7,6 +7,7 @@ import { creerPublipostage } from "@/actions/publipostage";
 import { VIDE } from "@/actions/etat";
 import type { Etude } from "@/db/schema";
 import { MODELES_PUBLIPOSTAGE } from "@/lib/publipostage";
+import OptionsEtudes from "@/components/options-etudes";
 
 function BoutonEnvoyer() {
   const { pending } = useFormStatus();
@@ -88,11 +89,7 @@ export default function FormulaireNouveauPublipostage({
                 className="champ"
               >
                 <option value="">Sans étude</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.code ? `${e.code} — ${e.nom}` : e.nom}
-                  </option>
-                ))}
+                <OptionsEtudes etudes={etudes} />
               </select>
               <p className="mt-1 text-xs text-attenue">
                 Acronyme, promoteur, investigateur et identifiants seront repris de la fiche étude.

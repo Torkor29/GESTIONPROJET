@@ -8,6 +8,7 @@ import { VIDE } from "@/actions/etat";
 import type { Convention, Etude } from "@/db/schema";
 import { STATUTS_CONVENTION, TYPES_CONVENTION } from "@/lib/constantes";
 import { versChampDate } from "@/lib/format";
+import OptionsEtudes from "@/components/options-etudes";
 
 export type ConventionChoix = {
   id: number;
@@ -40,7 +41,7 @@ export default function FormulaireConvention({
   variante = "principal",
 }: {
   convention?: Convention;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   parents: ConventionChoix[];
   etudeIdParDefaut?: number;
   libelle: string;
@@ -137,11 +138,7 @@ export default function FormulaireConvention({
                 className="champ"
               >
                 <option value="">Sans étude</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nom}
-                  </option>
-                ))}
+                <OptionsEtudes etudes={etudes} />
               </select>
             </div>
 

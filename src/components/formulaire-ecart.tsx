@@ -13,6 +13,7 @@ import {
   TYPES_VISITE,
 } from "@/lib/constantes";
 import { formaterDate, versChampDate } from "@/lib/format";
+import OptionsEtudes from "@/components/options-etudes";
 
 export type VisiteChoix = {
   id: number;
@@ -39,7 +40,7 @@ export default function FormulaireEcart({
   variante = "principal",
 }: {
   ecart?: Ecart;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   visites: VisiteChoix[];
   etudeIdParDefaut?: number;
   libelle: string;
@@ -119,11 +120,7 @@ export default function FormulaireEcart({
                 className="champ"
               >
                 <option value="">Sans étude</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nom}
-                  </option>
-                ))}
+                <OptionsEtudes etudes={etudes} />
               </select>
             </div>
 

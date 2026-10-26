@@ -16,6 +16,7 @@ import {
   lireValeurs,
   modelePublipostage,
 } from "@/lib/publipostage";
+import OptionsEtudes from "@/components/options-etudes";
 
 /** Relit le formulaire tel qu'il est à l'écran, pour la complétude en direct. */
 function lireFormulaire(form: HTMLFormElement, modele: ModelePublipostage): Valeurs {
@@ -556,11 +557,7 @@ export default function EditeurPublipostage({
               className="champ"
             >
               <option value="">Sans étude</option>
-              {etudes.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.code ? `${e.code} — ${e.nom}` : e.nom}
-                </option>
-              ))}
+              <OptionsEtudes etudes={etudes} />
             </select>
             <button
               type="button"

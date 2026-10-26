@@ -51,7 +51,7 @@ export default function TableauEcarts({
   message = "Aucun écart.",
 }: {
   lignes: LigneEcart[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   visites: VisiteChoix[];
   message?: string;
 }) {

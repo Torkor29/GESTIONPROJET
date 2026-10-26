@@ -63,7 +63,7 @@ export default function TableauConventions({
   message = "Aucune convention.",
 }: {
   lignes: LigneConvention[];
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   parents: ConventionChoix[];
   message?: string;
 }) {

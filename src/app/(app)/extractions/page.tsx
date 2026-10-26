@@ -9,6 +9,7 @@ import {
 } from "@/lib/extraction-missions";
 import { suiviMissions } from "@/lib/extraction-serveur";
 import { listerEtudes } from "@/lib/requetes";
+import OptionsEtudes from "@/components/options-etudes";
 
 export const dynamic = "force-dynamic";
 
@@ -82,11 +83,7 @@ export default async function PageExtractions({
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
             <option value="">Toutes</option>
-            {etudes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.code || e.nom}
-              </option>
-            ))}
+            <OptionsEtudes etudes={etudes} />
           </select>
         </div>
 

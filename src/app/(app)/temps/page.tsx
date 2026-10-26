@@ -12,6 +12,7 @@ import {
 } from "@/lib/format";
 import { CHOIX_PERIODE, resoudrePeriode } from "@/lib/periode";
 import { dureeMinutes, entreesTemps, listerEtudes, totauxParEtude } from "@/lib/requetes";
+import OptionsEtudes from "@/components/options-etudes";
 
 export const dynamic = "force-dynamic";
 
@@ -77,11 +78,7 @@ export default async function PageTemps({
             </label>
             <select id="chrono-etude" name="etudeId" className="champ" defaultValue={etudeId ?? ""}>
               <option value="">Sans étude</option>
-              {etudes.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nom}
-                </option>
-              ))}
+              <OptionsEtudes etudes={etudes} />
             </select>
           </div>
           <div className="min-w-48 flex-[2]">
@@ -135,11 +132,7 @@ export default async function PageTemps({
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
             <option value="">Toutes</option>
-            {etudes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nom}
-              </option>
-            ))}
+            <OptionsEtudes etudes={etudes} />
           </select>
         </div>
 

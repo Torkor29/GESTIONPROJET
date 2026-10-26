@@ -8,6 +8,7 @@ import { VIDE } from "@/actions/etat";
 import type { Document, Etude } from "@/db/schema";
 import { CATEGORIES_DOCUMENT } from "@/lib/constantes";
 import { versChampDate } from "@/lib/format";
+import OptionsEtudes from "@/components/options-etudes";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -26,7 +27,7 @@ export default function FormulaireDocument({
   variante = "principal",
 }: {
   document?: Document;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   etudeIdParDefaut?: number;
   libelle: string;
   variante?: "principal" | "discret" | "icone";
@@ -147,11 +148,7 @@ export default function FormulaireDocument({
                 className="champ"
               >
                 <option value="">Document général</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nom}
-                  </option>
-                ))}
+                <OptionsEtudes etudes={etudes} />
               </select>
             </div>
 

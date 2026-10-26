@@ -5,6 +5,7 @@ import Modale from "./modale";
 import { creerPage } from "@/actions/pages";
 import { categoriesProposees } from "@/lib/pense-bete";
 import type { Etude } from "@/db/schema";
+import OptionsEtudes from "@/components/options-etudes";
 
 export default function FormulairePenseBete({
   categories = [],
@@ -92,11 +93,7 @@ export default function FormulairePenseBete({
               </label>
               <select id={`${uid}-etude`} name="etudeId" defaultValue="" className="champ">
                 <option value="">Aucune — visible seulement ici</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.code ? `${e.code} — ${e.nom}` : e.nom}
-                  </option>
-                ))}
+                <OptionsEtudes etudes={etudes} />
               </select>
             </div>
           )}

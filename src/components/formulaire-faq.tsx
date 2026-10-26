@@ -7,6 +7,7 @@ import { creerFaq, modifierFaq } from "@/actions/faq";
 import { VIDE } from "@/actions/etat";
 import type { Etude, Faq } from "@/db/schema";
 import { CATEGORIES_FAQ } from "@/lib/constantes";
+import { sigleEtude } from "@/lib/format";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -25,7 +26,7 @@ export default function FormulaireFaq({
   variante = "principal",
 }: {
   entree?: Faq;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   etudeIdParDefaut?: number;
   libelle: string;
   variante?: "principal" | "discret" | "icone";
@@ -133,11 +134,15 @@ export default function FormulaireFaq({
                 className="champ"
               >
                 <option value="">FAQ générale (toutes les études)</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    Spécifique à {e.nom}
-                  </option>
-                ))}
+                {[...etudes]
+                  .sort((a, b) =>
+                    sigleEtude(a).localeCompare(sigleEtude(b), "fr", { sensitivity: "base", numeric: true }),
+                  )
+                  .map((e) => (
+                    <option key={e.id} value={e.id} title={e.nom}>
+                      Spécifique à {sigleEtude(e)}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>

@@ -8,6 +8,7 @@ import { VIDE } from "@/actions/etat";
 import type { Etude, Visite } from "@/db/schema";
 import { STATUTS_VISITE, TYPES_VISITE } from "@/lib/constantes";
 import { versChampDate } from "@/lib/format";
+import OptionsEtudes from "@/components/options-etudes";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -26,7 +27,7 @@ export default function FormulaireVisite({
   variante = "principal",
 }: {
   visite?: Visite;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   etudeIdParDefaut?: number;
   libelle: string;
   variante?: "principal" | "discret" | "icone";
@@ -92,11 +93,7 @@ export default function FormulaireVisite({
                 className="champ"
               >
                 <option value="">Sans étude</option>
-                {etudes.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nom}
-                  </option>
-                ))}
+                <OptionsEtudes etudes={etudes} />
               </select>
             </div>
 

@@ -7,6 +7,7 @@ import { ajouterTemps, modifierTemps } from "@/actions/temps";
 import { VIDE } from "@/actions/etat";
 import type { Etude, Temps } from "@/db/schema";
 import { versChampDate } from "@/lib/format";
+import OptionsEtudes from "@/components/options-etudes";
 
 function BoutonEnvoyer({ libelle }: { libelle: string }) {
   const { pending } = useFormStatus();
@@ -30,7 +31,7 @@ export default function FormulaireTemps({
   variante = "principal",
 }: {
   entree?: Temps;
-  etudes: Pick<Etude, "id" | "nom">[];
+  etudes: Pick<Etude, "id" | "nom" | "code">[];
   etudeIdParDefaut?: number;
   libelle: string;
   variante?: "principal" | "discret" | "icone";
@@ -91,11 +92,7 @@ export default function FormulaireTemps({
               className="champ"
             >
               <option value="">Sans étude</option>
-              {etudes.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nom}
-                </option>
-              ))}
+              <OptionsEtudes etudes={etudes} />
             </select>
           </div>
 

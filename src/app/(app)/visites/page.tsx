@@ -4,6 +4,7 @@ import { STATUTS_VISITE, STATUTS_VISITE_OUVERTS } from "@/lib/constantes";
 import { listerEtudes, toutesLesVisites } from "@/lib/requetes";
 import FormulaireVisite from "@/components/formulaire-visite";
 import TableauVisites from "@/components/tableau-visites";
+import OptionsEtudes from "@/components/options-etudes";
 
 export const dynamic = "force-dynamic";
 
@@ -51,11 +52,7 @@ export default async function PageVisites({
           </label>
           <select id="etude" name="etude" defaultValue={params.etude ?? ""} className="champ">
             <option value="">Toutes</option>
-            {etudes.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nom}
-              </option>
-            ))}
+            <OptionsEtudes etudes={etudes} />
           </select>
         </div>
 
