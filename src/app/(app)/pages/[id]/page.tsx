@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { supprimerPage } from "@/actions/pages";
 import EditeurCharge from "@/components/editeur-charge";
 import TitrePage from "@/components/titre-page";
+import PanneauIANote from "@/components/panneau-ia-note";
+import { iaDisponible } from "@/lib/ia";
 import { formaterDateHeure } from "@/lib/format";
 import { etudeParId, pageParId, pagesPenseBete } from "@/lib/requetes";
 
@@ -62,6 +64,10 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
       <p className="mt-1 text-xs text-attenue">
         Modifiée le {formaterDateHeure(page.modifieLe)}
       </p>
+
+      <div className="mt-4">
+        <PanneauIANote pageId={page.id} titre={page.titre} disponible={iaDisponible()} />
+      </div>
 
       <div className="mt-6">
         <EditeurCharge pageId={page.id} contenuInitial={page.contenu} />

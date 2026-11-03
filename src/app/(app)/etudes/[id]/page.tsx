@@ -35,6 +35,8 @@ import {
   toutesLesVisites,
 } from "@/lib/requetes";
 import ListeEcheances from "@/components/liste-echeances";
+import RedactionIA from "@/components/redaction-ia";
+import { iaDisponible } from "@/lib/ia";
 import type { Echeance } from "@/lib/echeances";
 import {
   STATUTS_CONVENTION_OUVERTS,
@@ -216,6 +218,7 @@ export default async function PageEtude({
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <RedactionIA etudeId={etude.id} disponible={iaDisponible()} />
             {estProprietaire && (
               <PartageEtude etudeId={etude.id} invites={invites} comptes={comptes} />
             )}
