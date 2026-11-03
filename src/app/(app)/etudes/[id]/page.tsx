@@ -48,7 +48,6 @@ export const dynamic = "force-dynamic";
 const SECTIONS = [
   { cle: "apercu", libelle: "Aperçu" },
   { cle: "missions", libelle: "Missions" },
-  { cle: "checklist", libelle: "Réglementaire" },
   { cle: "pense-bete", libelle: "Notes" },
   { cle: "faq", libelle: "FAQ" },
   { cle: "temps", libelle: "Temps" },
@@ -334,32 +333,7 @@ export default async function PageEtude({
           {/* ------------------------------------------ Colonne latérale */}
           <aside className="min-w-0 space-y-4">
             <section className="bloc-app space-y-4">
-              <div>
-                <div className="flex items-baseline justify-between">
-                  <p className="sur-titre">Conformité réglementaire</p>
-                  <span className="chiffres text-sm font-semibold">
-                    {prog.total === 0 ? "—" : `${prog.pourcentage} %`}
-                  </span>
-                </div>
-                {prog.total > 0 ? (
-                  <>
-                    <div className="sous-tache-barre mt-2">
-                      <span style={{ width: `${prog.pourcentage}%` }} />
-                    </div>
-                    <p className="mt-1 text-xs text-attenue">
-                      {prog.faits}/{prog.total} lignes faites ·{" "}
-                      <Link href={lien("checklist")} className="text-accent-appuye hover:underline">
-                        voir
-                      </Link>
-                    </p>
-                  </>
-                ) : (
-                  <p className="mt-1 text-xs text-attenue">
-                    Aucun cadre coché. Modifiez l&apos;étude pour générer sa checklist.
-                  </p>
-                )}
-              </div>
-              <dl className="grid grid-cols-3 gap-2 border-t border-ligne pt-4 text-center">
+              <dl className="grid grid-cols-3 gap-2 text-center">
                 <div>
                   <dt className="text-[11px] text-efface">Missions</dt>
                   <dd className="chiffres text-lg font-semibold">{ouvertes.length}</dd>

@@ -142,7 +142,6 @@ export default async function PagePortefeuille() {
                 <th scope="col" className="sur-titre w-24 px-3 py-3">Visites</th>
                 <th scope="col" className="sur-titre w-24 px-3 py-3">Écarts</th>
                 <th scope="col" className="sur-titre w-24 px-3 py-3">Actions</th>
-                <th scope="col" className="sur-titre w-28 px-3 py-3">Conformité</th>
                 <th scope="col" className="sur-titre w-24 px-3 py-3">Temps</th>
                 <th scope="col" className="sur-titre w-32 px-3 py-3">Équipe</th>
               </tr>
@@ -209,14 +208,6 @@ export default async function PagePortefeuille() {
                         href={`/actions?etude=${s.id}`}
                         titre="Actions à traiter"
                       />
-                    </td>
-
-                    <td className="chiffres px-3 py-3">
-                      {s.conformite === null ? (
-                        <span className="text-efface">—</span>
-                      ) : (
-                        `${s.conformite} %`
-                      )}
                     </td>
 
                     <td className="chiffres px-3 py-3">

@@ -98,7 +98,7 @@ export default async function PageIndicateurs() {
       </header>
 
       {/* ------------------------------------------------------- Chiffres clés */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Chiffre
           libelle="Missions ouvertes"
           valeur={String(stats.tachesOuvertes)}
@@ -117,16 +117,6 @@ export default async function PageIndicateurs() {
               : `${echeances.aLHeure} à l'heure, ${echeances.enRetard} en retard`
           }
           icone="checklist"
-        />
-        <Chiffre
-          libelle="Conformité moyenne"
-          valeur={conformiteMoyenne === null ? "—" : `${conformiteMoyenne} %`}
-          detail={
-            conformiteMoyenne === null
-              ? "aucune checklist active"
-              : `sur ${avecConformite.length} étude${avecConformite.length > 1 ? "s" : ""}`
-          }
-          icone="bouclier"
         />
         <Chiffre
           libelle="Temps saisi"
@@ -179,26 +169,6 @@ export default async function PageIndicateurs() {
         </Cadre>
       </div>
 
-      {/* ------------------------------------------------------- Réglementaire */}
-      <Cadre
-        titre="Avancement par référentiel"
-        detail="Toutes études confondues, hors lignes marquées « sans objet »"
-      >
-        {refs.size === 0 ? (
-          <RienAMontrer message="Aucune checklist réglementaire active. Cochez un cadre sur une étude pour la générer." />
-        ) : (
-          <BarresHorizontales
-            lignes={[...refs.entries()]
-              .sort(([, a], [, b]) => b.pourcentage - a.pourcentage)
-              .map(([cle, p]) => ({
-                cle,
-                libelle: REFERENTIELS_PAR_CLE.get(cle)?.nom ?? cle,
-                valeur: p.pourcentage,
-                affichage: `${p.pourcentage} % · ${p.faits}/${p.total}`,
-              }))}
-          />
-        )}
-      </Cadre>
 
       {/* -------------------------------------------------- Tableau par étude */}
       <section className="carte relative overflow-x-auto">
@@ -221,7 +191,6 @@ export default async function PageIndicateurs() {
                 <th scope="col" className="sur-titre px-5 py-3">Étude</th>
                 <th scope="col" className="sur-titre px-3 py-3">Missions</th>
                 <th scope="col" className="sur-titre px-3 py-3">En retard</th>
-                <th scope="col" className="sur-titre px-3 py-3">Conformité</th>
                 <th scope="col" className="sur-titre px-3 py-3">Temps</th>
                 <th scope="col" className="sur-titre px-3 py-3">Notes</th>
               </tr>
@@ -251,13 +220,6 @@ export default async function PageIndicateurs() {
                       <span className="font-semibold text-alerte">{s.missionsEnRetard}</span>
                     ) : (
                       <span className="text-efface">—</span>
-                    )}
-                  </td>
-                  <td className="chiffres px-3 py-3">
-                    {s.conformite === null ? (
-                      <span className="text-efface">—</span>
-                    ) : (
-                      `${s.conformite} %`
                     )}
                   </td>
                   <td className="chiffres px-3 py-3">

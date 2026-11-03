@@ -137,7 +137,6 @@ export default function FormulaireEtude({
     couleur: etude?.couleur ?? PALETTE_COULEURS[0],
   });
   const types = REFERENTIELS.filter((r) => r.categorie === "type");
-  const transversaux = REFERENTIELS.filter((r) => r.categorie === "transversal");
 
   return (
     <>
@@ -231,8 +230,8 @@ export default function FormulaireEtude({
 
           <Section
             numero={2}
-            titre="Cadre réglementaire"
-            description="Cochez le type de recherche : la checklist correspondante est créée automatiquement."
+            titre="Type de recherche"
+            description="Affiché comme étiquette sur la fiche de l'étude."
           >
 
             <div className="grid gap-2 sm:grid-cols-2">
@@ -247,20 +246,6 @@ export default function FormulaireEtude({
               ))}
             </div>
 
-            <p className="pt-1 text-xs font-medium uppercase tracking-wide text-attenue">
-              Référentiels transversaux
-            </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {transversaux.map((r) => (
-                <CarteReferentiel
-                  key={r.cle}
-                  cle={r.cle}
-                  nom={r.nom}
-                  resume={r.resume}
-                  coche={cochees.includes(r.cle)}
-                />
-              ))}
-            </div>
           </Section>
 
           <Section

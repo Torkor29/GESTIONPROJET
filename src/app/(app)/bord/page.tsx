@@ -7,8 +7,9 @@ import PersonnaliserAccueil from "@/components/personnaliser-accueil";
 import RappelInclusion from "@/components/rappel-inclusion";
 import TableauMissions from "@/components/tableau-missions";
 import ListeEcheances from "@/components/liste-echeances";
+import CalendrierEcheances from "@/components/calendrier-echeances";
 import MenuCreer from "@/components/menu-creer";
-import type { Echeance } from "@/lib/echeances";
+import { delaiRelatif, type Echeance } from "@/lib/echeances";
 import { couleurAffichee } from "@/lib/couleurs";
 import {
   STATUTS_CONVENTION_OUVERTS,
@@ -94,9 +95,9 @@ const ORGANISATIONS = [
 export default async function TableauDeBord({
   searchParams,
 }: {
-  searchParams: Promise<{ organisation?: string }>;
+  searchParams: Promise<{ organisation?: string; echeances?: string }>;
 }) {
-  const { organisation = "etude" } = await searchParams;
+  const { organisation = "etude", echeances: vueEcheances = "calendrier" } = await searchParams;
   const maintenant = Math.floor(Date.now() / 1000);
   const compte = await utilisateurActuel();
   const widgets = lireWidgetsAccueil(compte?.accueil);
@@ -128,6 +129,17 @@ export default async function TableauDeBord({
     pilote: compte?.accesToutesEtudes,
     niveauxPartage: niveaux,
   };
+
+  // Fins d'inclusion des quatre prochains mois, la plus proche d'abord.
+  const finsInclusion = etudes
+    .filter(
+      (e) =>
+        (e.statut === "active" || e.statut === "en_pause") &&
+        e.dateFinInclusion &&
+        e.dateFinInclusion >= maintenant - 86400 &&
+        e.dateFinInclusion <= maintenant + 122 * 86400,
+    )
+    .sort((a, b) => a.dateFinInclusion! - b.dateFinInclusion!);
 
   // Moyenne de conformité sur les seules études qui ont une checklist.
   const avecChecklist = [...progressions.values()].filter((p) => p.total > 0);
@@ -186,6 +198,18 @@ export default async function TableauDeBord({
             etude: c.etudeCode ?? c.etudeNom,
             couleur: c.etudeCouleur,
           })),
+        // Jalons d'étude : fin des inclusions, fin d'étude.
+        ...etudes
+          .filter((e) => e.statut === "active" || e.statut === "en_pause")
+          .flatMap((e) => [
+            ...(e.dateFinInclusion
+              ? [{ cle: `fi${e.id}`, nature: "jalon" as const, titre: "Fin des inclusions", date: e.dateFinInclusion, href: `/etudes/${e.id}`, etude: sigleEtude(e), couleur: e.couleur }]
+              : []),
+            ...(e.dateFin
+              ? [{ cle: `fe${e.id}`, nature: "jalon" as const, titre: "Fin de l'étude", date: e.dateFin, href: `/etudes/${e.id}`, etude: sigleEtude(e), couleur: e.couleur }]
+              : []),
+          ])
+          .filter((j) => j.date >= maintenant - 86400),
       ]
     : [];
 
@@ -250,14 +274,15 @@ export default async function TableauDeBord({
             href="/missions?masquerTerminees=1"
           />
           <Chiffre
-            libelle="Conformité moyenne"
-            valeur={conformiteMoyenne === null ? "—" : `${conformiteMoyenne} %`}
+            libelle="Fin d'inclusion"
+            valeur={String(finsInclusion.length)}
             detail={
-              conformiteMoyenne === null
-                ? "aucune checklist active"
-                : `sur ${avecChecklist.length} étude(s)`
+              finsInclusion[0]
+                ? `prochaine : ${sigleEtude(finsInclusion[0])} · ${delaiRelatif(finsInclusion[0].dateFinInclusion!, maintenant)}`
+                : "aucune dans les 4 mois"
             }
-            icone="checklist"
+            alerte={finsInclusion.some((e) => e.dateFinInclusion! - maintenant < 90 * 86400)}
+            icone="drapeau"
           />
           <Chiffre
             libelle="Cette semaine"
@@ -278,17 +303,41 @@ export default async function TableauDeBord({
 
       {voir("timeline") && (
         <section className="bloc-app anime-bloc">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-titre text-xl font-bold">Échéances</h2>
-            <p className="text-xs text-attenue">missions, visites et conventions · 8 semaines</p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-titre text-xl font-bold">Échéances</h2>
+              <p className="text-xs text-attenue">
+                Missions, visites, conventions, fins d&apos;inclusion et d&apos;étude
+              </p>
+            </div>
+            <nav className="segments" aria-label="Affichage des échéances">
+              {[
+                { cle: "calendrier", libelle: "Calendrier" },
+                { cle: "liste", libelle: "Liste" },
+              ].map((o) => (
+                <Link
+                  key={o.cle}
+                  href={`/bord?echeances=${o.cle}${organisation !== "etude" ? `&organisation=${organisation}` : ""}`}
+                  scroll={false}
+                  aria-current={vueEcheances === o.cle ? "page" : undefined}
+                  className="segment"
+                >
+                  {o.libelle}
+                </Link>
+              ))}
+            </nav>
           </div>
-          <ListeEcheances
-            echeances={echeances}
-            maintenant={maintenant}
-            limiteJours={56}
-            afficherEtude
-            vide="Aucune échéance dans les huit prochaines semaines."
-          />
+          {vueEcheances === "liste" ? (
+            <ListeEcheances
+              echeances={echeances}
+              maintenant={maintenant}
+              limiteJours={56}
+              afficherEtude
+              vide="Aucune échéance dans les huit prochaines semaines."
+            />
+          ) : (
+            <CalendrierEcheances echeances={echeances} maintenant={maintenant} />
+          )}
         </section>
       )}
 
