@@ -28,7 +28,7 @@ export default async function PageFaq({
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="entete-page">
         <div>
           <h1 className="font-titre text-3xl font-bold">Base de connaissance</h1>
           <p className="mt-1 text-sm text-attenue">

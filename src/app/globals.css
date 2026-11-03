@@ -165,46 +165,147 @@ p {
   transform: none;
 }
 
-/* Espace de travail : plus doux, cartes plus compactes, un peu de vie. */
-.page-app {
-  --ombre-posee: 0 1px 3px rgb(36 36 36 / 0.06);
-  --ombre-douce: 0 14px 36px -12px rgb(36 36 36 / 0.16), 0 4px 14px rgb(36 36 36 / 0.05);
-  --ombre-elevee: 0 22px 48px -14px rgb(36 36 36 / 0.2);
-  background:
-    radial-gradient(920px 320px at -8% -8%, rgb(var(--pervenche) / 0.7), transparent 58%),
-    radial-gradient(640px 260px at 110% 0%, rgb(var(--menthe) / 0.28), transparent 50%),
-    rgb(var(--surface));
+/* ---------------------------------------------------------------------------
+   Espace de travail — charte « application »
+   Le site public garde son parchemin ; l'application, elle, vise la lecture
+   longue et dense : sans-serif d'écran, fonds neutres, une seule couleur
+   d'accent, et des couleurs de statut qui veulent dire quelque chose
+   (vert = fait, ambre = attention, rouge = en retard, bleu = en cours).
+--------------------------------------------------------------------------- */
+
+/* `body:has(.page-app)` : les menus ouverts en portail, rattachés à <body>
+   hors de l'application, reçoivent la même charte. */
+.page-app,
+body:has(.page-app) {
+  --creux: 241 242 245;
+  --surface: 247 247 249;
+  --relief: 255 255 255;
+
+  --ligne: 229 230 235;
+  --ligne-forte: 210 212 220;
+
+  --encre: 22 23 28;
+  --attenue: 84 86 99;
+  --efface: 130 133 146;
+
+  --accent: 43 89 209;
+  --accent-appuye: 33 70 172;
+  --accent-voile: 233 239 253;
+  --sur-accent: 255 255 255;
+
+  --pervenche: 233 239 253;
+  --ciel: 160 181 235;
+  --menthe: 220 245 230;
+  --corail: 253 214 205;
+  --or: 252 236 189;
+
+  --reussite: 21 128 61;
+  --reussite-voile: 228 245 234;
+  --attention: 176 96 6;
+  --attention-voile: 253 242 214;
+  --alerte: 205 45 40;
+  --alerte-voile: 253 234 232;
+  --info: 43 89 209;
+  --info-voile: 233 239 253;
+
+  --ombre-posee: 0 1px 2px rgb(16 24 40 / 0.05);
+  --ombre-douce: 0 2px 6px -1px rgb(16 24 40 / 0.07), 0 1px 2px rgb(16 24 40 / 0.04);
+  --ombre-elevee: 0 16px 36px -10px rgb(16 24 40 / 0.22), 0 4px 10px -4px rgb(16 24 40 / 0.08);
+
+  /* Une seule famille, titres compris : la hiérarchie tient aux graisses. */
+  --police-texte: var(--police-sans);
+  --police-titre: var(--police-sans);
+
+  background: rgb(var(--surface));
+  font-family: var(--police-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.006em;
+  font-feature-settings: "cv11", "ss01";
 }
 
-.page-app .carte,
-.page-app .carte-active,
-.page-app .bloc-app {
-  border-radius: 28px;
+@media (prefers-color-scheme: dark) {
+  .page-app,
+  body:has(.page-app) {
+    --creux: 36 37 43;
+    --surface: 16 17 20;
+    --relief: 24 25 30;
+
+    --ligne: 44 46 54;
+    --ligne-forte: 62 64 74;
+
+    --encre: 236 237 241;
+    --attenue: 170 172 184;
+    --efface: 122 125 138;
+
+    --accent: 124 156 252;
+    --accent-appuye: 162 186 255;
+    --accent-voile: 30 39 70;
+    --sur-accent: 12 16 32;
+
+    --pervenche: 30 39 70;
+    --menthe: 20 52 36;
+    --corail: 74 32 28;
+    --or: 70 54 14;
+
+    --reussite: 92 214 140;
+    --reussite-voile: 20 48 33;
+    --attention: 245 190 70;
+    --attention-voile: 58 42 10;
+    --alerte: 248 120 112;
+    --alerte-voile: 64 26 26;
+    --info: 124 156 252;
+    --info-voile: 30 39 70;
+
+    --ombre-posee: 0 1px 2px rgb(0 0 0 / 0.3);
+    --ombre-douce: 0 2px 8px rgb(0 0 0 / 0.35);
+    --ombre-elevee: 0 18px 40px rgb(0 0 0 / 0.55);
+  }
 }
 
-.page-app .etiquette {
-  padding: 0.22rem 0.7rem;
-  font-size: 11px;
+.page-app h1,
+.page-app h2,
+.page-app h3,
+.page-app h4 {
+  font-weight: 600;
+  letter-spacing: -0.018em;
 }
 
-.page-app .bouton,
-.page-app .bouton-discret {
-  min-height: 2.65rem;
-  padding: 0.5rem 1.15rem;
-  font-size: 12px;
+/* Titre de page : un seul gabarit, quelle que soit la page. */
+.page-app main h1 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+/* Marque dans l'application : point d'accent, nom en semi-gras. */
+.page-app .marque-nom {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.page-app .marque-point {
+  background: rgb(var(--accent));
+  border-radius: 4px;
+}
+
+/* Inter en 700 alourdit les listes : les « gras » de l'outil passent en 600. */
+.page-app .font-bold {
+  font-weight: 600;
 }
 
 .page-app .anime-bloc {
-  animation: apparait 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: apparait-doux 0.3s ease-out both;
 }
 
-.page-app .anime-bloc:nth-child(1) { animation-delay: 0.04s; }
-.page-app .anime-bloc:nth-child(2) { animation-delay: 0.1s; }
-.page-app .anime-bloc:nth-child(3) { animation-delay: 0.16s; }
-.page-app .anime-bloc:nth-child(4) { animation-delay: 0.22s; }
-.page-app .anime-bloc:nth-child(5) { animation-delay: 0.28s; }
-.page-app .anime-bloc:nth-child(6) { animation-delay: 0.34s; }
-.page-app .anime-bloc:nth-child(7) { animation-delay: 0.4s; }
+@keyframes apparait-doux {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 /* Rappel fin d'inclusion : pastilles, jaune < 4 mois, rouge < 3 mois. */
 .rappel-inclusion {
@@ -230,9 +331,9 @@ p {
 }
 
 .carte-mission {
-  border-radius: 22px;
+  border-radius: 12px;
   border: 1px solid rgb(var(--ligne));
-  border-left-width: 4px;
+  border-left-width: 3px;
   background: rgb(var(--relief));
   box-shadow: var(--ombre-posee);
   transition:
@@ -246,7 +347,7 @@ p {
 }
 
 .bloc-app .carte-mission {
-  background: rgb(var(--surface) / 0.72);
+  background: rgb(var(--relief));
   box-shadow: none;
 }
 
@@ -352,6 +453,110 @@ p {
   .lien-fleche {
     @apply inline-flex items-center gap-2 text-[14px] font-medium uppercase
            tracking-[-0.02em] text-encre transition-opacity hover:opacity-60;
+  }
+
+  /* --- Variantes de l'espace de travail ----------------------------------
+     `:where()` garde la spécificité d'une simple classe : un utilitaire posé
+     sur l'élément (`!py-2`, `w-full`…) continue de l'emporter. */
+
+  :where(.page-app) .bouton {
+    @apply min-h-9 rounded-lg px-3.5 py-2 text-[13px] font-medium normal-case tracking-normal
+           shadow-posee transition-colors hover:bg-accent-appuye hover:opacity-100 active:scale-100;
+  }
+
+  :where(.page-app) .bouton-discret {
+    @apply min-h-9 rounded-lg border-ligne bg-relief px-3.5 py-2 text-[13px] font-medium
+           normal-case tracking-normal text-encre shadow-posee
+           hover:border-ligne-forte hover:bg-creux hover:text-encre active:scale-100;
+  }
+
+  :where(.page-app) .bouton-fantome {
+    @apply rounded-lg px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal
+           text-attenue hover:bg-creux hover:text-encre hover:opacity-100;
+  }
+
+  :where(.page-app) .champ {
+    @apply rounded-lg border-ligne bg-relief px-3 py-2 text-sm shadow-posee
+           hover:border-ligne-forte
+           focus:border-accent focus:ring-[3px] focus:ring-accent/15;
+  }
+
+  :where(.page-app) .carte {
+    @apply rounded-xl shadow-posee;
+  }
+
+  :where(.page-app) .carte-active {
+    @apply rounded-xl shadow-posee hover:translate-y-0 hover:border-ligne-forte hover:shadow-douce;
+  }
+
+  :where(.page-app) .bloc-app {
+    @apply rounded-xl p-5 shadow-posee;
+  }
+
+  :where(.page-app) .etiquette {
+    @apply gap-1 rounded-md border-transparent bg-creux px-2 py-0.5 text-[11.5px] font-medium
+           normal-case leading-5 tracking-normal text-attenue;
+  }
+
+  :where(.page-app) .sur-titre {
+    @apply text-[11px] font-semibold tracking-[0.06em];
+  }
+
+  :where(.page-app) .lien-fleche {
+    @apply text-[13px] normal-case tracking-normal text-accent-appuye;
+  }
+
+  /* En-tête de page commun : titre, phrase d'appui, actions à droite. */
+  .entete-page {
+    @apply flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-b border-ligne pb-5;
+  }
+
+  .entete-page-sous-titre {
+    @apply mt-1 max-w-2xl text-sm text-attenue;
+  }
+
+  /* Onglets : les sections d'un même dossier. */
+  .onglets {
+    @apply flex gap-1 overflow-x-auto border-b border-ligne;
+  }
+
+  .onglet {
+    @apply -mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2
+           border-transparent px-2.5 pb-2.5 pt-1 text-[13.5px] font-medium text-attenue
+           transition-colors hover:text-encre;
+  }
+
+  .onglet[aria-current="page"] {
+    @apply border-accent text-encre;
+  }
+
+  .onglet-compte {
+    @apply chiffres rounded-full bg-creux px-1.5 text-[11px] font-medium leading-[18px] text-efface;
+  }
+
+  /* Interrupteur : une case à cocher qui se lit « activé / désactivé ». */
+  .interrupteur {
+    @apply relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-ligne-forte
+           transition-colors duration-200
+           before:absolute before:left-0.5 before:top-0.5 before:h-4 before:w-4 before:rounded-full
+           before:bg-white before:shadow-posee before:transition-transform before:duration-200
+           checked:bg-accent checked:before:translate-x-4
+           focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+           focus-visible:outline-accent
+           disabled:cursor-default disabled:opacity-60;
+  }
+
+  /* Contrôle segmenté : plusieurs façons de voir la même liste. */
+  .segments {
+    @apply inline-flex max-w-full flex-wrap gap-0.5 rounded-lg border border-ligne bg-creux/70 p-0.5;
+  }
+
+  .segment {
+    @apply rounded-md px-3 py-1 text-[13px] font-medium text-attenue transition-colors hover:text-encre;
+  }
+
+  .segment[aria-current="page"] {
+    @apply bg-relief text-encre shadow-posee;
   }
 }
 

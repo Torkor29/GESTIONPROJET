@@ -87,7 +87,7 @@ export default async function PageMissions({
 
   return (
     <div className="space-y-5">
-      <header className="anime-bloc flex flex-wrap items-center justify-between gap-3">
+      <header className="anime-bloc entete-page">
         <div>
           <h1 className="font-titre text-3xl font-bold">Suivi de missions</h1>
           <p className="mt-1 text-sm text-attenue">
@@ -135,7 +135,7 @@ export default async function PageMissions({
       </header>
 
       {/* Barre de vues */}
-      <nav className="anime-bloc flex flex-wrap gap-2">
+      <nav aria-label="Vues" className="anime-bloc segments">
         {VUES.map((v) => {
           const q = new URLSearchParams(
             Object.entries(params).filter(([k, val]) => {
@@ -150,12 +150,7 @@ export default async function PageMissions({
               key={v.cle}
               href={`/missions?${q.toString()}`}
               aria-current={vue === v.cle ? "page" : undefined}
-              className={`rounded-full border px-4 py-1.5 text-sm transition
-                          ${
-                            vue === v.cle
-                              ? "border-accent bg-accent-voile font-medium text-accent-appuye shadow-posee"
-                              : "border-ligne text-attenue hover:border-encre/30 hover:text-encre"
-                          }`}
+              className="segment"
             >
               {v.libelle}
             </Link>

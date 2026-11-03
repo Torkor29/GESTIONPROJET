@@ -2,29 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Etude } from "@/db/schema";
 import { Icone, type NomIcone } from "@/components/icones";
 import { Marque } from "@/components/marque";
-
-function IconeSortie({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`shrink-0 ${className ?? ""}`}
-      aria-hidden
-    >
-      <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
-    </svg>
-  );
-}
+import { sigleEtude } from "@/lib/format";
 
 export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
+export type RubriqueLiens = { titre: string | null; liens: LienNavigation[] };
+
+/** Au-delà, la liste des études se replie derrière « Voir toutes ». */
+const ETUDES_VISIBLES = 8;
 
 /** Initiales tirées du nom, pour la pastille d'identité. */
 function initiales(nom: string): string {
@@ -36,20 +24,44 @@ function initiales(nom: string): string {
     .join("");
 }
 
+function LienNav({ lien, actif }: { lien: LienNavigation; actif: boolean }) {
+  return (
+    <Link
+      href={lien.href}
+      aria-current={actif ? "page" : undefined}
+      className={`group flex h-8 items-center gap-2.5 rounded-md px-2 text-[13.5px] transition-colors duration-150
+                  ${
+                    actif
+                      ? "bg-accent-voile font-medium text-accent-appuye"
+                      : "text-attenue hover:bg-creux hover:text-encre"
+                  }`}
+    >
+      <Icone
+        nom={lien.icone}
+        className={`h-4 w-4 shrink-0 ${actif ? "text-accent-appuye" : "text-efface group-hover:text-attenue"}`}
+      />
+      <span className="truncate">{lien.libelle}</span>
+    </Link>
+  );
+}
+
 export default function BarreLaterale({
   etudes,
   nom,
   role,
-  liens,
+  rubriques,
 }: {
   etudes: Etude[];
   nom: string;
   role: string;
-  /** Construits côté serveur à partir des modules activés par la personne. */
-  liens: LienNavigation[];
+  /** Construites côté serveur à partir des modules activés par la personne. */
+  rubriques: RubriqueLiens[];
 }) {
   const chemin = usePathname();
   const [ouvert, setOuvert] = useState(false);
+  const [etudesDepliees, setEtudesDepliees] = useState(true);
+  const [toutes, setToutes] = useState(false);
+  const [filtre, setFiltre] = useState("");
 
   // Sur mobile, changer de page referme le tiroir.
   useEffect(() => {
@@ -60,19 +72,35 @@ export default function BarreLaterale({
     if (href === "/pense-bete" && (chemin.startsWith("/pages/") || chemin === "/notes")) {
       return true;
     }
-    return href === "/" ? chemin === "/" : chemin === href || chemin.startsWith(`${href}/`);
+    // Le dossier d'une étude s'ouvre depuis la liste du bas : « Études »
+    // ne s'allume que sur la liste elle-même.
+    if (href === "/etudes") return chemin === "/etudes";
+    return chemin === href || chemin.startsWith(`${href}/`);
   };
+
+  const triees = useMemo(
+    () =>
+      [...etudes].sort((a, b) =>
+        sigleEtude(a).localeCompare(sigleEtude(b), "fr", { sensitivity: "base", numeric: true }),
+      ),
+    [etudes],
+  );
+  const q = filtre.trim().toLocaleLowerCase("fr");
+  const filtrees = q
+    ? triees.filter((e) => `${sigleEtude(e)} ${e.nom}`.toLocaleLowerCase("fr").includes(q))
+    : triees;
+  const affichees = toutes || q ? filtrees : filtrees.slice(0, ETUDES_VISIBLES);
 
   return (
     <>
       {/* Barre supérieure, mobile uniquement */}
-      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-ligne/70 bg-relief/80 px-4 py-2.5 shadow-posee backdrop-blur-md lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-ligne bg-relief/90 px-4 backdrop-blur-md lg:hidden">
         <button
           type="button"
           onClick={() => setOuvert((o) => !o)}
           aria-label={ouvert ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={ouvert}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-ligne bg-relief text-attenue shadow-posee transition-all duration-200 hover:text-encre active:scale-95"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-ligne bg-relief text-attenue transition-colors hover:text-encre"
         >
           <svg
             viewBox="0 0 24 24"
@@ -80,22 +108,13 @@ export default function BarreLaterale({
             stroke="currentColor"
             strokeWidth={1.75}
             strokeLinecap="round"
-            className="h-4.5 w-4.5"
+            className="h-4 w-4"
             aria-hidden
           >
             {ouvert ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
         </button>
         <Marque complete={false} />
-        <form action="/deconnexion" method="post" className="ml-auto">
-          <button
-            type="submit"
-            aria-label="Se déconnecter"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-ligne bg-relief text-attenue shadow-posee transition-all duration-200 hover:text-encre active:scale-95"
-          >
-            <IconeSortie className="h-4 w-4" />
-          </button>
-        </form>
       </div>
 
       {ouvert && (
@@ -103,119 +122,157 @@ export default function BarreLaterale({
           type="button"
           aria-label="Fermer le menu"
           onClick={() => setOuvert(false)}
-          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-30 bg-black/30 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col overflow-y-auto border-r border-ligne/70 bg-relief/90
-                    shadow-posee backdrop-blur-md
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-ligne bg-relief
                     transition-transform duration-300 ease-souple
                     lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
-                    ${ouvert ? "translate-x-0" : "-translate-x-full"}`}
+                    ${ouvert ? "translate-x-0 shadow-elevee" : "-translate-x-full"}`}
       >
-        <div className="px-4 py-5">
-          <Marque complete={false} />
+        <div className="flex h-14 shrink-0 items-center px-4">
+          <Link href="/bord" className="rounded-md outline-offset-4">
+            <Marque complete={false} />
+          </Link>
         </div>
 
-        <nav className="space-y-1 px-3">
-          {liens.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              aria-current={actif(l.href) ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-1.5 text-sm transition-all duration-200
-                          ${
-                            actif(l.href)
-                              ? "bg-accent-voile font-semibold text-accent-appuye shadow-posee"
-                              : "font-medium text-attenue hover:bg-creux hover:text-encre"
-                          }`}
-            >
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition
-                            ${actif(l.href) ? "bg-relief text-accent-appuye" : "bg-creux/80"}`}
+        <div className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4">
+          <nav aria-label="Navigation principale" className="space-y-4">
+            {rubriques.map((r, i) => (
+              <div key={r.titre ?? i}>
+                {r.titre && <p className="sur-titre px-2 pb-1">{r.titre}</p>}
+                <div className="space-y-0.5">
+                  {r.liens.map((l) => (
+                    <LienNav key={l.href} lien={l} actif={actif(l.href)} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+
+          {/* --- Accès direct aux dossiers d'étude ----------------------- */}
+          <div className="mt-5 border-t border-ligne pt-4">
+            <div className="flex items-center justify-between px-2 pb-1">
+              <button
+                type="button"
+                onClick={() => setEtudesDepliees((d) => !d)}
+                aria-expanded={etudesDepliees}
+                className="sur-titre flex items-center gap-1 hover:text-attenue"
               >
-                <Icone nom={l.icone} className="h-[16px] w-[16px]" />
-              </span>
-              {l.libelle}
-            </Link>
-          ))}
-        </nav>
+                <Icone
+                  nom="chevron"
+                  className={`h-3 w-3 transition-transform ${etudesDepliees ? "rotate-90" : ""}`}
+                />
+                Mes études
+                <span className="ml-1 font-medium normal-case tracking-normal text-efface">
+                  {etudes.length}
+                </span>
+              </button>
+              <Link
+                href="/etudes"
+                title="Toutes les études"
+                className="rounded px-1 text-[11px] font-medium text-efface hover:text-accent-appuye"
+              >
+                Liste
+              </Link>
+            </div>
 
-        <div className="mt-6 min-h-0 flex-1 overflow-y-auto px-3">
-          <p className="sur-titre px-3 pb-2">Mes études</p>
-          {etudes.length === 0 && (
-            <p className="px-3 py-1 text-xs text-efface">Aucune étude pour l&apos;instant.</p>
-          )}
-          {etudes.map((e) => (
-            <Link
-              key={e.id}
-              href={`/etudes/${e.id}`}
-              title={e.nom}
-              className={`mb-0.5 flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm transition-all duration-200
-                          ${
-                            chemin.startsWith(`/etudes/${e.id}`)
-                              ? "bg-creux font-semibold text-encre"
-                              : "text-attenue hover:bg-creux hover:text-encre"
-                          }`}
-            >
-              <span
-                aria-hidden
-                className="h-2 w-2 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
-                style={{ backgroundColor: e.couleur }}
-              />
-              <span className="truncate">{e.code ?? e.nom}</span>
-            </Link>
-          ))}
+            {etudesDepliees && (
+              <>
+                {etudes.length > ETUDES_VISIBLES && (
+                  <div className="relative mx-1 mb-1.5 mt-1">
+                    <Icone
+                      nom="loupe"
+                      className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-efface"
+                    />
+                    <input
+                      value={filtre}
+                      onChange={(e) => setFiltre(e.target.value)}
+                      placeholder="Filtrer…"
+                      aria-label="Filtrer les études"
+                      className="h-7 w-full rounded-md border border-ligne bg-surface pl-7 pr-2 text-xs outline-none placeholder:text-efface focus:border-accent"
+                    />
+                  </div>
+                )}
+                {etudes.length === 0 && (
+                  <p className="px-2 py-1 text-xs text-efface">Aucune étude pour l&apos;instant.</p>
+                )}
+                <div className="space-y-0.5">
+                  {affichees.map((e) => {
+                    const ici = chemin.startsWith(`/etudes/${e.id}`);
+                    return (
+                      <Link
+                        key={e.id}
+                        href={`/etudes/${e.id}`}
+                        title={e.nom}
+                        aria-current={ici ? "page" : undefined}
+                        className={`flex h-7 items-center gap-2.5 rounded-md px-2 text-[13px] transition-colors
+                                    ${
+                                      ici
+                                        ? "bg-creux font-medium text-encre"
+                                        : "text-attenue hover:bg-creux hover:text-encre"
+                                    }`}
+                      >
+                        <span
+                          aria-hidden
+                          className="h-2 w-2 shrink-0 rounded-[3px]"
+                          style={{ backgroundColor: e.couleur }}
+                        />
+                        <span className="truncate">{sigleEtude(e)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+                {!q && filtrees.length > ETUDES_VISIBLES && (
+                  <button
+                    type="button"
+                    onClick={() => setToutes((t) => !t)}
+                    className="mt-1 px-2 text-xs font-medium text-efface hover:text-accent-appuye"
+                  >
+                    {toutes ? "Réduire" : `Voir les ${filtrees.length} études`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="border-t border-ligne p-3">
+        {/* --- Compte ------------------------------------------------------ */}
+        <div className="flex shrink-0 items-center gap-2.5 border-t border-ligne px-3 py-3">
+          <span
+            aria-hidden
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-voile text-xs font-semibold text-accent-appuye"
+          >
+            {initiales(nom)}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13px] font-medium leading-tight">{nom}</span>
+            <span className="block truncate text-[11.5px] leading-tight text-efface">{role}</span>
+          </span>
           <Link
             href="/parametres"
-            aria-current={chemin === "/parametres" ? "page" : undefined}
-            className={`mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-200
+            title="Paramètres"
+            aria-label="Paramètres"
+            aria-current={chemin.startsWith("/parametres") ? "page" : undefined}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors
                         ${
-                          chemin === "/parametres"
-                            ? "bg-accent-voile font-semibold text-accent-appuye"
-                            : "font-medium text-attenue hover:bg-creux hover:text-encre"
+                          chemin.startsWith("/parametres")
+                            ? "bg-accent-voile text-accent-appuye"
+                            : "text-efface hover:bg-creux hover:text-encre"
                         }`}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-[18px] w-[18px] shrink-0"
-              aria-hidden
-            >
-              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-            </svg>
-            Modules
+            <Icone nom="reglages" className="h-4 w-4" />
           </Link>
-
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2">
-            <span
-              aria-hidden
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-voile font-titre text-xs font-bold text-accent-appuye"
-            >
-              {initiales(nom)}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold">{nom}</span>
-              <span className="block truncate text-xs text-efface">{role}</span>
-            </span>
-          </div>
-
           <form action="/deconnexion" method="post">
             <button
               type="submit"
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium text-attenue transition-all duration-200 hover:bg-creux hover:text-encre"
+              title="Se déconnecter"
+              aria-label="Se déconnecter"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-efface transition-colors hover:bg-creux hover:text-alerte"
             >
-              <IconeSortie className="h-[18px] w-[18px]" />
-              Se déconnecter
+              <Icone nom="sortie" className="h-4 w-4" />
             </button>
           </form>
         </div>

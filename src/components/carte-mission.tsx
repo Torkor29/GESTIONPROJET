@@ -180,7 +180,7 @@ export default function CarteMission({
 
   return (
     <article
-      className={`carte-mission overflow-hidden ${terminee ? "opacity-70" : ""}`}
+      className={`carte-mission group/carte overflow-hidden ${terminee ? "opacity-70" : ""}`}
       style={{
         borderLeftColor: barreDelai ?? teinte,
       }}
@@ -219,7 +219,7 @@ export default function CarteMission({
               className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-inset ring-black/5"
               style={{ backgroundColor: teinte }}
             />
-            <h3 className={`font-titre text-lg leading-snug ${terminee ? "text-attenue line-through" : ""}`}>
+            <h3 className={`text-[15px] font-semibold leading-snug ${terminee ? "text-attenue line-through" : ""}`}>
               {tache.titre}
             </h3>
             <EtiquettePriorite priorite={tache.priorite} />
@@ -304,7 +304,14 @@ export default function CarteMission({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-          {peutEcrire && !archivee && <SaisieDureeRapide tacheId={tache.id} />}
+          {/* La saisie rapide n'apparaît qu'au survol sur grand écran : répétée
+              sur chaque carte, elle encombrait la liste. Au toucher, pas de
+              survol : elle reste visible. */}
+          {peutEcrire && !archivee && (
+            <div className="transition-opacity lg:opacity-0 lg:focus-within:opacity-100 lg:group-hover/carte:opacity-100">
+              <SaisieDureeRapide tacheId={tache.id} />
+            </div>
+          )}
           {peutEcrire && !archivee && (
           <form action={demarrerChrono}>
             <input type="hidden" name="etudeId" value={tache.etudeId ?? ""} />
@@ -463,7 +470,7 @@ export default function CarteMission({
                         </span>
                       )}
                       {ecrire && (
-                      <div className="flex items-center gap-0.5">
+                      <div className="flex items-center gap-0.5 transition-opacity lg:opacity-0 lg:focus-within:opacity-100 lg:group-hover/etape:opacity-100">
                         <SaisieDureeRapide tacheId={tache.id} sousTacheId={s.id} compact />
                         <form action={demarrerChrono}>
                           <input type="hidden" name="sousTacheId" value={s.id} />

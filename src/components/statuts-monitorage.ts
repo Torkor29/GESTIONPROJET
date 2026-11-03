@@ -42,7 +42,7 @@ export const PASTILLES_ECART: Record<string, string> = {
  * efficacité vérifiée. La couleur le dit avant qu'on lise le libellé.
  */
 export const COULEURS_ACTION: Record<string, string> = {
-  a_faire: "text-alerte",
+  a_faire: "text-attenue",
   en_cours: "text-attention",
   faite: "text-info",
   verifiee: "text-reussite",
@@ -50,7 +50,7 @@ export const COULEURS_ACTION: Record<string, string> = {
 };
 
 export const PASTILLES_ACTION: Record<string, string> = {
-  a_faire: "bg-alerte",
+  a_faire: "bg-efface",
   en_cours: "bg-attention",
   faite: "bg-info",
   verifiee: "bg-reussite",

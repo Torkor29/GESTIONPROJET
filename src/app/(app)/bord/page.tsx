@@ -130,7 +130,7 @@ export default async function TableauDeBord({
 
   return (
     <div className="space-y-6">
-      <header className="anime-bloc flex flex-wrap items-start justify-between gap-3">
+      <header className="anime-bloc entete-page">
         <div>
           <p className="sur-titre">
             {new Date().toLocaleDateString("fr-FR", {
@@ -140,9 +140,33 @@ export default async function TableauDeBord({
               year: "numeric",
             })}
           </p>
-          <h1 className="mt-1.5 font-titre text-3xl font-bold">Tableau de bord</h1>
+          <h1 className="mt-1">
+            {compte ? `Bonjour ${compte.nom.split(/\s+/)[0]}` : "Tableau de bord"}
+          </h1>
         </div>
-        <PersonnaliserAccueil actifs={widgets} compact />
+        {/* Les ajouts rapides vivent dans l'en-tête : une carte entière pour
+            quatre boutons repoussait le contenu utile sous la ligne de flottaison. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <PersonnaliserAccueil actifs={widgets} compact />
+          {voir("ajouts") && (
+            <>
+              {/* Sur téléphone, seule la mission reste en tête : les autres
+                  ajouts sont à un tap, depuis leur module. */}
+              <span className="hidden sm:contents">
+                <FormulaireEtude libelle="Nouvelle étude" variante="discret" />
+                <FormulairePenseBete etudes={etudes} libelle="Nouvelle page" variante="discret" />
+                <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
+              </span>
+              <FormulaireTache
+                etudes={etudes}
+                libelle="Nouvelle mission"
+                membres={membres}
+                comptes={comptes}
+                peutAttribuer
+              />
+            </>
+          )}
+        </div>
       </header>
 
       {widgets.length === 0 && (
@@ -152,25 +176,6 @@ export default async function TableauDeBord({
             Toutes les vues sont masquées. Ramenez celles dont vous avez besoin.
           </p>
         </div>
-      )}
-
-      {voir("ajouts") && (
-        <section className="bloc-app anime-bloc">
-          <h2 className="sur-titre mb-4">Ajouts rapides</h2>
-          <div className="flex flex-wrap gap-2">
-            <FormulaireTache
-              etudes={etudes}
-              libelle="Nouvelle mission"
-              variante="discret"
-              membres={membres}
-              comptes={comptes}
-              peutAttribuer
-            />
-            <FormulairePenseBete etudes={etudes} libelle="Nouvelle page" variante="discret" />
-            <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
-            <FormulaireEtude libelle="Nouvelle étude" variante="discret" />
-          </div>
-        </section>
       )}
 
       {voir("chiffres") && (
@@ -244,18 +249,14 @@ export default async function TableauDeBord({
         <section className="bloc-app anime-bloc">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-titre text-xl font-bold">Suivi des missions en cours</h2>
-            <nav className="flex flex-wrap gap-1.5" aria-label="Organisation du suivi">
+            <nav className="segments" aria-label="Organisation du suivi">
               {ORGANISATIONS.map((o) => (
                 <Link
                   key={o.cle}
                   href={`/bord?organisation=${o.cle}`}
                   scroll={false}
                   aria-current={organisation === o.cle ? "page" : undefined}
-                  className={`rounded-full border px-3.5 py-1 text-sm transition ${
-                    organisation === o.cle
-                      ? "border-accent bg-accent-voile font-medium text-accent-appuye"
-                      : "border-ligne text-attenue hover:border-encre/30 hover:text-encre"
-                  }`}
+                  className="segment"
                 >
                   {o.libelle}
                 </Link>

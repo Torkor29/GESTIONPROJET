@@ -9,14 +9,14 @@ import type { EtudeLiee } from "@/lib/attribution";
 import SelecteurStatutGenerique from "./selecteur-statut-generique";
 
 const COULEURS: Record<string, string> = {
-  a_faire: "text-alerte",
+  a_faire: "text-attenue",
   en_cours: "text-info",
   terminee: "text-reussite",
   sans_objet: "text-attenue",
 };
 
 const PASTILLES: Record<string, string> = {
-  a_faire: "bg-alerte",
+  a_faire: "bg-efface",
   en_cours: "bg-info",
   terminee: "bg-reussite",
   sans_objet: "bg-efface",

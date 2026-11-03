@@ -5,6 +5,7 @@ import { comptesDisponibles, invitesDeLEtude } from "@/actions/partages";
 import { demarrerChrono } from "@/actions/temps";
 import { utilisateurActuel } from "@/lib/auth";
 import Checklist from "@/components/checklist";
+import { Icone } from "@/components/icones";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import FormulaireEtude from "@/components/formulaire-etude";
 import PartageEtude from "@/components/partage-etude";
@@ -115,71 +116,71 @@ export default async function PageEtude({
           />
         )}
 
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2.5">
+        <nav aria-label="Fil d'Ariane" className="mb-3 flex items-center gap-1.5 text-[13px] text-efface">
+          <Link href="/etudes" className="hover:text-encre">
+            Études
+          </Link>
+          <span aria-hidden>/</span>
+          <span className="font-medium text-attenue">{etude.code ?? etude.nom}</span>
+        </nav>
+
+        <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
+          <div className="min-w-0 flex-1 basis-[28rem]">
+            <div className="flex flex-wrap items-center gap-2">
               <span
                 aria-hidden
-                className="h-3.5 w-3.5 shrink-0 rounded-full"
+                className="h-3 w-3 shrink-0 rounded-[4px]"
                 style={{ backgroundColor: etude.couleur }}
               />
               {etude.code && (
-                <span className="text-sm font-semibold tracking-wide text-attenue">
+                <span className="text-[13px] font-semibold tracking-wide text-encre">
                   {etude.code}
                 </span>
               )}
-              <h1 className="font-titre text-3xl font-bold">{etude.nom}</h1>
               <EtiquetteStatutEtude statut={etude.statut} />
-            </div>
-
-            {etude.description && <p className="mt-2 max-w-2xl text-sm">{etude.description}</p>}
-
-            <div className="mt-2 flex flex-wrap gap-1.5">
               {reglements.map((r) => (
-                <span key={r.cle} className="etiquette bg-accent/10 text-accent">
+                <span key={r.cle} className="etiquette bg-info-voile text-info">
                   {r.nom.split("—")[0].trim()}
                 </span>
               ))}
             </div>
+            <h1 className="mt-2 max-w-4xl">{etude.nom}</h1>
+            {etude.description && (
+              <p className="mt-2 max-w-2xl text-sm text-attenue">{etude.description}</p>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <form action={demarrerChrono}>
-              <input type="hidden" name="etudeId" value={etude.id} />
-              <button type="submit" className="bouton">
-                ⏱ Démarrer
-              </button>
-            </form>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {estProprietaire && (
+              <PartageEtude etudeId={etude.id} invites={invites} comptes={comptes} />
+            )}
             {estProprietaire && (
               <FormulaireEtude etude={etude} libelle="Modifier" variante="discret" />
             )}
             {/* Seul le propriétaire gère les accès : une personne conviée en
                 écriture modifie le contenu, pas la liste des invités. */}
-            {estProprietaire && (
-              <PartageEtude etudeId={etude.id} invites={invites} comptes={comptes} />
-            )}
+            <form action={demarrerChrono}>
+              <input type="hidden" name="etudeId" value={etude.id} />
+              <button type="submit" className="bouton">
+                <Icone nom="chrono" className="h-4 w-4" />
+                Chronométrer
+              </button>
+            </form>
           </div>
         </div>
       </header>
 
       {/* ------------------------------------------------------- Sections */}
-      <nav className="flex flex-wrap gap-1.5">
+      <nav aria-label="Sections du dossier" className="onglets">
         {SECTIONS.map((s) => (
           <Link
             key={s.cle}
             href={lien(s.cle)}
             aria-current={section === s.cle ? "page" : undefined}
-            className={`rounded-full px-4 py-1.5 text-sm transition
-                        ${
-                          section === s.cle
-                            ? "bg-accent-voile font-medium text-accent-appuye shadow-posee"
-                            : "text-attenue hover:bg-creux hover:text-encre"
-                        }`}
+            className="onglet"
           >
             {s.libelle}
-            {compteurs[s.cle] > 0 && (
-              <span className="chiffres ml-1.5 text-xs opacity-70">{compteurs[s.cle]}</span>
-            )}
+            {compteurs[s.cle] > 0 && <span className="onglet-compte">{compteurs[s.cle]}</span>}
           </Link>
         ))}
       </nav>

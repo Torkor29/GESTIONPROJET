@@ -17,6 +17,8 @@ export type Module = {
   description: string;
   icone: NomIcone;
   domaine: string;
+  /** Libellé court pour la barre latérale, quand le nom complet ne tient pas. */
+  libelleNav?: string;
   /** Destination dans la navigation. Absent tant que le module n'existe pas. */
   href?: string;
   /** Un module de socle est toujours actif et ne se décoche pas. */
@@ -33,7 +35,7 @@ export const MODULES: Module[] = [
     cle: "bord",
     nom: "Tableau de bord",
     description: "Vue d'ensemble : ce qui presse, l'avancement, le temps de la semaine.",
-    icone: "graphique",
+    icone: "accueil",
     domaine: "Socle",
     href: "/bord",
     socle: true,
@@ -55,7 +57,7 @@ export const MODULES: Module[] = [
     cle: "missions",
     nom: "Missions",
     description: "Ce qu'il reste à faire, par statut ou par échéance, avec filtres et export.",
-    icone: "drapeau",
+    icone: "cible",
     domaine: "Suivi de projet",
     href: "/missions",
     roles: TOUS,
@@ -65,7 +67,7 @@ export const MODULES: Module[] = [
     nom: "Extractions",
     description:
       "Tableau de suivi des missions, à extraire pour un point avec la hiérarchie.",
-    icone: "document",
+    icone: "tableau",
     domaine: "Suivi de projet",
     href: "/extractions",
     socle: true,
@@ -110,9 +112,10 @@ export const MODULES: Module[] = [
   {
     cle: "monitorage",
     nom: "Visites de monitorage",
+    libelleNav: "Visites",
     description:
       "Visites planifiées et réalisées, par centre : rapport, lettre de suivi, clôture.",
-    icone: "bouclier",
+    icone: "repere",
     domaine: "Monitorage et qualité",
     href: "/visites",
     roles: ["arc", "cp"],
@@ -120,9 +123,10 @@ export const MODULES: Module[] = [
   {
     cle: "ecarts",
     nom: "Écarts et déviations",
+    libelleNav: "Écarts et déviations",
     description:
       "Déviations au protocole : catégorie, gravité, circonstances et suites données.",
-    icone: "drapeau",
+    icone: "alerte",
     domaine: "Monitorage et qualité",
     href: "/ecarts",
     roles: ["arc", "cp"],
@@ -148,7 +152,7 @@ export const MODULES: Module[] = [
     nom: "Actions correctives",
     description:
       "Du constat à la clôture : responsable, échéance, et vérification de l'efficacité.",
-    icone: "eclair",
+    icone: "outil",
     domaine: "Monitorage et qualité",
     href: "/actions",
     roles: ["arc", "cp"],
@@ -247,7 +251,7 @@ export const MODULES: Module[] = [
     nom: "Publipostage",
     description:
       "Conventions et fiches de qualification complétées champ par champ, exportées en Word ou en PDF, et suivies jusqu'au retour du coordo.",
-    icone: "page",
+    icone: "enveloppe",
     domaine: "Réglementaire et documentaire",
     href: "/publipostage",
     roles: TOUS,
@@ -257,7 +261,7 @@ export const MODULES: Module[] = [
     nom: "Assistant",
     description:
       "Questions de réglementation et aide à la rédaction, auprès d'un modèle de langage. Sans accès à vos données.",
-    icone: "eclair",
+    icone: "etincelles",
     domaine: "Réglementaire et documentaire",
     href: "/assistant",
     roles: TOUS,
@@ -265,8 +269,9 @@ export const MODULES: Module[] = [
   {
     cle: "faq",
     nom: "Base de connaissance",
+    libelleNav: "Base de connaissance",
     description: "Les questions qui reviennent, répondues une fois pour toutes.",
-    icone: "question",
+    icone: "livre",
     domaine: "Réglementaire et documentaire",
     href: "/faq",
     roles: TOUS,
@@ -276,6 +281,7 @@ export const MODULES: Module[] = [
   {
     cle: "temps",
     nom: "Suivi du temps",
+    libelleNav: "Temps",
     description: "Chronomètre, saisie manuelle et export valorisé.",
     icone: "chrono",
     domaine: "Administratif et financier",
@@ -293,9 +299,10 @@ export const MODULES: Module[] = [
   {
     cle: "budget",
     nom: "Budget et conventions",
+    libelleNav: "Budget",
     description:
       "Conventions et avenants : montant contractualisé, déjà perçu, reste à percevoir.",
-    icone: "document",
+    icone: "euro",
     domaine: "Administratif et financier",
     href: "/budget",
     roles: ["cp"],
@@ -313,9 +320,10 @@ export const MODULES: Module[] = [
   {
     cle: "portefeuille",
     nom: "Portefeuille et charge d'équipe",
+    libelleNav: "Portefeuille",
     description:
       "L'état de chaque étude en une ligne, et la charge de chacun sur celles que vous portez.",
-    icone: "personnes",
+    icone: "mallette",
     domaine: "Management",
     href: "/portefeuille",
     roles: ["cp", "arc"],
@@ -341,7 +349,7 @@ export const MODULES: Module[] = [
     nom: "Indicateurs",
     description:
       "Charge, retards, conformité réglementaire et tendances — des chiffres présentables en réunion.",
-    icone: "graphique",
+    icone: "courbe",
     domaine: "Management",
     href: "/indicateurs",
     // Utile à tous les métiers : un ARC y suit ses écarts, un TEC sa charge.
@@ -396,6 +404,40 @@ export function lireModules(brut: string | null | undefined, role: string): stri
   } catch {
     return modulesSuggeres(role);
   }
+}
+
+/**
+ * Rubriques de la barre latérale. Elles suivent le fil du travail — piloter,
+ * suivre ses études, monitorer, documenter — et non le catalogue des
+ * paramètres, qui range les modules par domaine métier.
+ */
+export const RUBRIQUES_NAVIGATION: { titre: string | null; cles: string[] }[] = [
+  { titre: null, cles: ["bord"] },
+  { titre: "Études et missions", cles: ["etudes", "missions", "temps", "extractions"] },
+  { titre: "Monitorage et qualité", cles: ["monitorage", "ecarts", "capa"] },
+  { titre: "Documents", cles: ["documents", "publipostage", "faq", "assistant"] },
+  { titre: "Pilotage", cles: ["portefeuille", "indicateurs", "budget"] },
+];
+
+export type RubriqueNavigation = { titre: string | null; modules: Module[] };
+
+/**
+ * La navigation rangée par rubrique. Un module construit qui n'aurait pas
+ * encore de rubrique tombe dans « Autres » plutôt que de disparaître.
+ */
+export function navigationParRubrique(actifs: string[]): RubriqueNavigation[] {
+  const disponibles = navigation(actifs);
+  const places = new Set<string>();
+  const rubriques = RUBRIQUES_NAVIGATION.map((r) => ({
+    titre: r.titre,
+    modules: r.cles
+      .map((cle) => disponibles.find((m) => m.cle === cle))
+      .filter((m): m is Module => m !== undefined),
+  }));
+  for (const r of rubriques) for (const m of r.modules) places.add(m.cle);
+  const autres = disponibles.filter((m) => !places.has(m.cle));
+  if (autres.length > 0) rubriques.push({ titre: "Autres", modules: autres });
+  return rubriques.filter((r) => r.modules.length > 0);
 }
 
 /** Modules actifs **et** construits, dans l'ordre du catalogue : la navigation. */

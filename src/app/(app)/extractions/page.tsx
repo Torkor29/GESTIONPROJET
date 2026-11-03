@@ -60,7 +60,7 @@ export default async function PageExtractions({
     <div className="space-y-5">
       <style>{`@media print { @page { size: A4 landscape; margin: 12mm; } }`}</style>
 
-      <header className="anime-bloc relative z-20 flex flex-wrap items-start justify-between gap-3">
+      <header className="anime-bloc relative z-20 entete-page">
         <div>
           <p className="sur-titre">Extractions</p>
           <h1 className="mt-1.5 font-titre text-3xl font-bold">Suivi des missions</h1>

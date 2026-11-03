@@ -18,10 +18,10 @@ export function Marque({
       }`}
     >
       <span
-        className={`shrink-0 rounded-full bg-encre ${petite ? "h-2 w-2" : "h-2.5 w-2.5"}`}
+        className={`marque-point shrink-0 rounded-full bg-encre ${petite ? "h-2 w-2" : "h-2.5 w-2.5"}`}
         aria-hidden
       />
-      <span className="whitespace-nowrap font-titre font-normal">
+      <span className="marque-nom whitespace-nowrap font-titre font-normal">
         {complete ? NOM_PRODUIT : NOM_COURT}
       </span>
     </span>

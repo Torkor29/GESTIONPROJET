@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Newsreader } from "next/font/google";
 import { DESCRIPTION_SEO, NOM_PRODUIT, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -17,6 +17,15 @@ const titre = Newsreader({
   weight: ["400"],
   style: ["normal", "italic"],
   variable: "--police-titre",
+  display: "swap",
+});
+
+// Police de l'espace de travail : une sans-serif dessinée pour l'écran, aux
+// chiffres tabulaires, lisible dans les listes denses. Le site public garde
+// son couple serif / mono.
+const interface_ = Inter({
+  subsets: ["latin"],
+  variable: "--police-sans",
   display: "swap",
 });
 
@@ -68,7 +77,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${texte.variable} ${titre.variable}`}>
+    <html lang="fr" className={`${texte.variable} ${titre.variable} ${interface_.variable}`}>
       <body>{children}</body>
     </html>
   );

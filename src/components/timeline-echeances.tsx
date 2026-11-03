@@ -65,9 +65,11 @@ export default function TimelineEcheances({
               {grille.retard.length}
             </span>
           </div>
-          <ul className="grid gap-1.5 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {grille.retard.map((m) => (
-              <li key={m.id}>
+              // `min-w-0` : sans lui, un élément de grille refuse de descendre
+              // sous la largeur de son titre et fait déborder la page sur mobile.
+              <li key={m.id} className="min-w-0">
                 <Link
                   href={m.href}
                   title={m.etudeCode ? `${m.etudeCode} · ${m.titre}` : m.titre}

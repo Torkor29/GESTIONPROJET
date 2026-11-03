@@ -43,7 +43,7 @@ export default async function PageEquipe() {
 
   return (
     <div className="space-y-8">
-      <header>
+      <header className="entete-page">
         <p className="sur-titre">
           <Link href="/parametres" className="transition-colors hover:text-accent">
             Paramètres

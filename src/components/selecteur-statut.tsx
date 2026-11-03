@@ -5,13 +5,13 @@ import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 import SelecteurStatutGenerique from "./selecteur-statut-generique";
 
 const COULEURS: Record<string, string> = {
-  a_faire: "text-alerte",
+  a_faire: "text-attenue",
   en_cours: "text-info",
   terminee: "text-reussite",
 };
 
 const PASTILLES: Record<string, string> = {
-  a_faire: "bg-alerte",
+  a_faire: "bg-efface",
   en_cours: "bg-info",
   terminee: "bg-reussite",
 };

@@ -58,7 +58,7 @@ export default async function PageTemps({
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="entete-page">
         <h1 className="font-titre text-3xl font-bold">Temps</h1>
         <div className="flex flex-wrap gap-2">
           <MenuExport

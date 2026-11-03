@@ -8,7 +8,7 @@ export default function PageAssistant() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="entete-page">
         <div>
           <p className="sur-titre">Réglementaire</p>
           <h1 className="mt-1.5 font-titre text-3xl font-bold">Assistant</h1>

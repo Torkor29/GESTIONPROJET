@@ -85,7 +85,7 @@ export default async function PageIndicateurs() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+      <header className="entete-page">
         <div>
           <p className="sur-titre">Indicateurs</p>
           <h1 className="mt-1.5 font-titre text-3xl font-bold">Vue d&apos;ensemble</h1>

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { annulerChrono, arreterChrono } from "@/actions/temps";
 import { formaterChrono } from "@/lib/format";
@@ -39,22 +38,13 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
     document.title = `${formaterChrono(ecoule)} — Gestion de projet`;
   }, [debut, ecoule]);
 
-  if (!chrono) {
-    return (
-      <div className="sans-impression pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
-        <Link
-          href="/temps"
-          className="pointer-events-auto rounded-full border border-ligne/80 bg-relief/95 px-5 py-2.5 text-sm font-medium shadow-elevee backdrop-blur-md transition hover:-translate-y-0.5 hover:border-accent/40 hover:text-accent"
-        >
-          ⏱ Démarrer un chronomètre
-        </Link>
-      </div>
-    );
-  }
+  // Sans chronomètre en cours, rien ne flotte : le lien « Temps » de la barre
+  // latérale suffit, et un bouton permanent masquait les barres d'action.
+  if (!chrono) return null;
 
   return (
-    <div className="sans-impression pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center p-4">
-      <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-ligne/80 bg-relief/95 py-2 pl-4 pr-2 shadow-elevee backdrop-blur-md">
+    <div className="sans-impression pointer-events-none fixed bottom-0 right-0 z-20 max-w-full p-4 sm:p-5">
+      <div className="pointer-events-auto flex max-w-full items-center gap-3 rounded-full border border-ligne bg-relief/95 py-1.5 pl-4 pr-1.5 shadow-elevee backdrop-blur-md">
         <span
           aria-hidden
           className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full"
@@ -74,7 +64,7 @@ export default function ChronoFlottant({ chrono }: { chrono: Chrono }) {
           {formaterChrono(ecoule)}
         </span>
         <form action={arreterChrono}>
-          <button type="submit" className="bouton rounded-full px-4 py-1.5">
+          <button type="submit" className="bouton !min-h-8 rounded-full !px-3.5 !py-1">
             Arrêter
           </button>
         </form>
