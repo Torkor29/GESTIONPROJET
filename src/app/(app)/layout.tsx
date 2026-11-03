@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { utilisateurActuel } from "@/lib/auth";
 import { LIBELLES_ROLE } from "@/lib/constantes";
 import { lireModules, navigationParRubrique } from "@/lib/modules";
-import { chronoEnCours, listerEtudes } from "@/lib/requetes";
+import { chronoEnCours, indexRecherche, listerEtudes } from "@/lib/requetes";
+import PaletteCommandes, { type EntreePalette } from "@/components/palette-commandes";
+import { sigleEtude } from "@/lib/format";
 import BarreLaterale from "@/components/barre-laterale";
 import ChronoFlottant from "@/components/chrono-flottant";
 
@@ -16,7 +18,11 @@ export default async function LayoutApplication({ children }: { children: React.
   const compte = await utilisateurActuel();
   if (!compte) redirect("/connexion");
 
-  const [etudes, chrono] = await Promise.all([listerEtudes(), chronoEnCours()]);
+  const [etudes, chrono, index] = await Promise.all([
+    listerEtudes(),
+    chronoEnCours(),
+    indexRecherche(),
+  ]);
 
   // La navigation se déduit des modules activés : elle ne montre que ce qui
   // sert à cette personne, et rien qui ne soit encore construit.
@@ -25,8 +31,47 @@ export default async function LayoutApplication({ children }: { children: React.
     liens: r.modules.map((m) => ({ href: m.href as string, libelle: m.libelleNav ?? m.nom, icone: m.icone })),
   }));
 
+  const sigles = new Map(etudes.map((e) => [e.id, sigleEtude(e)]));
+  const entreesPalette: EntreePalette[] = [
+    ...rubriques.flatMap((r) =>
+      r.liens.map((l) => ({
+        cle: `nav-${l.href}`,
+        groupe: "Aller à",
+        libelle: l.libelle,
+        href: l.href,
+        icone: l.icone,
+      })),
+    ),
+    { cle: "nav-parametres", groupe: "Aller à", libelle: "Paramètres", href: "/parametres", icone: "reglages" },
+    ...etudes.map((e) => ({
+      cle: `etude-${e.id}`,
+      groupe: "Études",
+      libelle: sigleEtude(e),
+      detail: e.code ? e.nom : null,
+      href: `/etudes/${e.id}`,
+      icone: "dossier" as const,
+      couleur: e.couleur,
+    })),
+    ...index.missions.map((m) => ({
+      cle: `mission-${m.id}`,
+      groupe: "Missions",
+      libelle: m.titre,
+      detail: m.etudeId ? sigles.get(m.etudeId) : null,
+      href: `/missions?q=${encodeURIComponent(m.titre)}`,
+      icone: "cible" as const,
+    })),
+    ...index.notes.map((n) => ({
+      cle: `note-${n.id}`,
+      groupe: "Notes",
+      libelle: `${n.icone} ${n.titre}`,
+      href: `/pages/${n.id}`,
+      icone: "page" as const,
+    })),
+  ];
+
   return (
     <div className="page-app flex min-h-screen">
+      <PaletteCommandes entrees={entreesPalette} />
       <BarreLaterale
         etudes={etudes}
         nom={compte.nom}

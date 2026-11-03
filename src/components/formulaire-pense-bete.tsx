@@ -42,7 +42,7 @@ export default function FormulairePenseBete({
       <Modale
         ouverte={ouverte}
         onFermer={() => setOuverte(false)}
-        titre="Nouvelle page"
+        titre="Nouvelle note"
       >
         <form action={creerPage} className="space-y-4">
           {etudeIdParDefaut ? (

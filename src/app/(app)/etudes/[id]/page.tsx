@@ -31,7 +31,17 @@ import {
   pagesDEtude,
   progression,
   tachesDEtude,
+  toutesLesConventions,
+  toutesLesVisites,
 } from "@/lib/requetes";
+import ListeEcheances from "@/components/liste-echeances";
+import type { Echeance } from "@/lib/echeances";
+import {
+  STATUTS_CONVENTION_OUVERTS,
+  STATUTS_VISITE_OUVERTS,
+  TYPES_CONVENTION,
+  TYPES_VISITE,
+} from "@/lib/constantes";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +49,7 @@ const SECTIONS = [
   { cle: "apercu", libelle: "Aperçu" },
   { cle: "missions", libelle: "Missions" },
   { cle: "checklist", libelle: "Réglementaire" },
-  { cle: "pense-bete", libelle: "Pense-bête" },
+  { cle: "pense-bete", libelle: "Notes" },
   { cle: "faq", libelle: "FAQ" },
   { cle: "temps", libelle: "Temps" },
 ] as const;
@@ -60,7 +70,7 @@ export default async function PageEtude({
   const etude = await etudeParId(etudeId);
   if (!etude) notFound();
 
-  const [pages, missions, temps, documents, checklist, faq, toutesEtudes] = await Promise.all([
+  const [pages, missions, temps, documents, checklist, faq, toutesEtudes, visites, conventions] = await Promise.all([
     pagesDEtude(etudeId),
     tachesDEtude(etudeId),
     entreesTemps({ etudeId }),
@@ -68,6 +78,8 @@ export default async function PageEtude({
     checklistDEtude(etudeId),
     faqDEtude(etudeId),
     listerEtudes({ avecArchivees: true }),
+    toutesLesVisites({ etudeId }),
+    toutesLesConventions({ etudeId }),
   ]);
 
   // Le partage n'est proposé qu'au propriétaire ; les personnes conviées
@@ -88,13 +100,67 @@ export default async function PageEtude({
   const valorise = etude.tarifHoraire ? heuresDecimales(minutesTotal) * etude.tarifHoraire : null;
   const ouvertes = missions.filter((t) => t.statut !== "terminee");
   const enRetard = ouvertes.filter((t) => t.echeance && t.echeance < maintenant);
+  const lien = (cle: string) => `/etudes/${etudeId}?section=${cle}`;
   const prog = progression(checklist);
+
+  // Fiche : on ne montre que ce qui est renseigné, et l'on propose de
+  // compléter le reste plutôt que d'aligner des tirets.
+  const champsFiche: [string, string | null][] = [
+    ["Promoteur", etude.promoteur],
+    ["Investigateur coordonnateur", etude.investigateur],
+    ["ID-RCB", etude.idRcb],
+    ["N° CTIS / EudraCT / NCT", etude.numeroCtis],
+    ["Référence CPP", etude.numeroCpp],
+    ["Partenaire ou financeur", etude.client],
+    ["Début", etude.dateDebut ? formaterDate(etude.dateDebut) : null],
+    ["Fin prévue", etude.dateFin ? formaterDate(etude.dateFin) : null],
+  ];
+  const champsRenseignes = champsFiche.filter((c): c is [string, string] => Boolean(c[1]));
+  const manquants = champsFiche.length - champsRenseignes.length;
+
+  const echeances: Echeance[] = [
+    ...ouvertes
+      .filter((t) => t.echeance)
+      .map((t) => ({
+        cle: `m${t.id}`,
+        nature: "mission" as const,
+        titre: t.titre,
+        detail: t.assigneNom ?? t.type ?? null,
+        date: t.echeance!,
+        href: lien("missions"),
+      })),
+    ...visites
+      .filter((v) => v.visite.datePrevue && !v.visite.dateRealisee && STATUTS_VISITE_OUVERTS.includes(v.visite.statut))
+      .map((v) => ({
+        cle: `v${v.visite.id}`,
+        nature: "visite" as const,
+        titre: TYPES_VISITE[v.visite.type] ?? "Visite",
+        detail: v.visite.centre,
+        date: v.visite.datePrevue!,
+        href: `/visites?etude=${etudeId}`,
+      })),
+    ...conventions
+      .filter((c) => c.convention.dateEcheance && STATUTS_CONVENTION_OUVERTS.includes(c.convention.statut))
+      .map((c) => ({
+        cle: `c${c.convention.id}`,
+        nature: "convention" as const,
+        titre: `${TYPES_CONVENTION[c.convention.type] ?? "Convention"}${c.convention.reference ? ` ${c.convention.reference}` : ""}`,
+        detail: c.convention.partie,
+        date: c.convention.dateEcheance!,
+        href: `/budget?etude=${etudeId}`,
+      })),
+    ...(etude.dateFinInclusion && etude.dateFinInclusion >= maintenant
+      ? [{ cle: "fin-inclusion", nature: "jalon" as const, titre: "Fin des inclusions", date: etude.dateFinInclusion, href: lien("apercu") }]
+      : []),
+    ...(etude.dateFin && etude.dateFin >= maintenant
+      ? [{ cle: "fin-etude", nature: "jalon" as const, titre: "Fin de l'étude", date: etude.dateFin, href: lien("apercu") }]
+      : []),
+  ];
 
   const reglements = lireReglementations(etude.reglementations)
     .map((c) => referentiel(c))
     .filter((r) => r !== undefined);
 
-  const lien = (cle: string) => `/etudes/${etudeId}?section=${cle}`;
   const compteurs: Record<string, number> = {
     missions: ouvertes.length,
     checklist: prog.total - prog.faits,
@@ -187,106 +253,203 @@ export default async function PageEtude({
 
       {/* --------------------------------------------------------- Aperçu */}
       {section === "apercu" && (
-        <div className="space-y-6">
-          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-attenue">Conformité</dt>
-              <dd className="chiffres mt-1 text-lg font-semibold">
-                {prog.total > 0 ? `${prog.pourcentage} %` : "—"}
-              </dd>
-              {prog.total > 0 && (
-                <dd className="mt-1 h-1.5 overflow-hidden rounded-full bg-creux">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${prog.pourcentage}%`, backgroundColor: etude.couleur }}
-                  />
-                </dd>
-              )}
-            </div>
-            <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-attenue">Missions ouvertes</dt>
-              <dd className="chiffres mt-1 text-lg font-semibold">
-                {ouvertes.length}
-                {enRetard.length > 0 && (
-                  <span className="ml-2 text-sm font-medium text-alerte">
-                    {enRetard.length} en retard
-                  </span>
-                )}
-              </dd>
-            </div>
-            <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-attenue">Temps total</dt>
-              <dd className="chiffres mt-1 text-lg font-semibold">{formaterDuree(minutesTotal)}</dd>
-              {valorise !== null && (
-                <dd className="chiffres mt-0.5 text-xs text-attenue">{formaterMontant(valorise)}</dd>
-              )}
-            </div>
-            <div className="carte p-3">
-              <dt className="text-xs uppercase tracking-wide text-attenue">Pense-bête</dt>
-              <dd className="chiffres mt-1 text-lg font-semibold">{pages.length}</dd>
-            </div>
-          </dl>
-
-          <section className="carte p-5">
-            <h2 className="mb-3 font-semibold">Identification</h2>
-            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-              {[
-                ["Promoteur", etude.promoteur],
-                ["Investigateur coordonnateur", etude.investigateur],
-                ["ID-RCB", etude.idRcb],
-                ["N° CTIS / EudraCT / NCT", etude.numeroCtis],
-                ["Référence CPP", etude.numeroCpp],
-                ["Partenaire ou financeur", etude.client],
-                ["Date de début", etude.dateDebut ? formaterDate(etude.dateDebut) : null],
-                ["Date de fin prévue", etude.dateFin ? formaterDate(etude.dateFin) : null],
-              ].map(([libelle, valeur]) => (
-                <div key={libelle as string}>
-                  <dt className="text-xs uppercase tracking-wide text-attenue">{libelle}</dt>
-                  <dd className={valeur ? "mt-0.5" : "mt-0.5 text-attenue"}>{valeur || "—"}</dd>
-                </div>
-              ))}
-              <ChampFinInclusion date={etude.dateFinInclusion} statut={etude.statut} />
-            </dl>
-
-            {etude.imageCouverture && estProprietaire && (
-              <form action={retirerCouverture} className="mt-4 border-t border-ligne pt-3">
-                <input type="hidden" name="id" value={etude.id} />
-                <button
-                  type="submit"
-                  className="text-xs text-attenue underline-offset-2 hover:text-alerte hover:underline"
-                >
-                  Retirer l&apos;image de couverture
-                </button>
-              </form>
-            )}
-          </section>
-
-          {enRetard.length > 0 && (
-            <section>
-              <h2 className="mb-2 font-semibold text-alerte">Missions en retard</h2>
-              <TableauMissions
-                lignes={enRetard.map((t) => ({
-                  tache: t,
-                  assigneNom: t.assigneNom,
-                  sousTaches: t.sousTaches,
-                  minutes: t.minutes,
-                  minutesParEtape: t.minutesParEtape,
-                  chronoEnCours: t.chronoEnCours,
-                  chronoSousTacheId: t.chronoSousTacheId,
-                  etudeProprietaireId: etude.proprietaireId,
-                  etudesLiees: t.etudesLiees,
-                }))}
-                etudes={toutesEtudes}
-                afficherEtude={false}
-                membres={membres}
-                comptes={comptes}
-                utilisateurId={compte?.id}
-                pilote={compte?.accesToutesEtudes}
-                niveauxPartage={niveaux}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          {/* ------------------------------------- Colonne principale */}
+          <div className="min-w-0 space-y-6">
+            <section className="bloc-app">
+              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-base">Échéances</h2>
+                <p className="text-xs text-attenue">
+                  Missions, visites, conventions et dates clés de l&apos;étude
+                </p>
+              </div>
+              <ListeEcheances
+                echeances={echeances}
+                maintenant={maintenant}
+                vide="Aucune échéance à venir. Ajoutez une mission datée, ou planifiez une visite."
               />
             </section>
-          )}
 
+            <section className="bloc-app">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base">
+                  Missions ouvertes
+                  <span className="chiffres ml-2 text-sm font-normal text-efface">{ouvertes.length}</span>
+                </h2>
+                <Link href={lien("missions")} className="text-[13px] font-medium text-accent-appuye hover:underline">
+                  Toutes les missions
+                </Link>
+              </div>
+              {ouvertes.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-ligne-forte px-4 py-6 text-center">
+                  <p className="text-sm text-attenue">Aucune mission ouverte sur cette étude.</p>
+                  <div className="mt-3 inline-flex">
+                    <FormulaireTache
+                      etudes={toutesEtudes}
+                      etudeIdParDefaut={etude.id}
+                      libelle="Créer une mission"
+                      variante="discret"
+                      membres={membres}
+                      comptes={comptes}
+                      peutAttribuer={estProprietaire}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <ul className="divide-y divide-ligne">
+                  {ouvertes.slice(0, 6).map((t) => {
+                    const retard = Boolean(t.echeance && t.echeance < maintenant);
+                    const etapes = t.sousTaches ?? [];
+                    return (
+                      <li key={t.id} className="flex items-center gap-3 py-2.5">
+                        <span
+                          aria-hidden
+                          className={`h-2 w-2 shrink-0 rounded-full ${t.statut === "en_cours" ? "bg-info" : "bg-efface"}`}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">{t.titre}</span>
+                          <span className="block truncate text-xs text-attenue">
+                            {t.statut === "en_cours" ? "En cours" : "Non démarrée"}
+                            {etapes.length > 0 &&
+                              ` · ${etapes.filter((e) => e.faite).length}/${etapes.length} étapes`}
+                            {t.assigneNom ? ` · ${t.assigneNom}` : ""}
+                          </span>
+                        </span>
+                        <span className={`chiffres shrink-0 text-xs ${retard ? "font-medium text-alerte" : "text-efface"}`}>
+                          {t.echeance ? formaterDate(t.echeance) : "Sans échéance"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {ouvertes.length > 6 && (
+                <Link href={lien("missions")} className="mt-2 block text-xs text-efface hover:text-encre">
+                  + {ouvertes.length - 6} autre{ouvertes.length - 6 > 1 ? "s" : ""}
+                </Link>
+              )}
+            </section>
+          </div>
+
+          {/* ------------------------------------------ Colonne latérale */}
+          <aside className="min-w-0 space-y-4">
+            <section className="bloc-app space-y-4">
+              <div>
+                <div className="flex items-baseline justify-between">
+                  <p className="sur-titre">Conformité réglementaire</p>
+                  <span className="chiffres text-sm font-semibold">
+                    {prog.total === 0 ? "—" : `${prog.pourcentage} %`}
+                  </span>
+                </div>
+                {prog.total > 0 ? (
+                  <>
+                    <div className="sous-tache-barre mt-2">
+                      <span style={{ width: `${prog.pourcentage}%` }} />
+                    </div>
+                    <p className="mt-1 text-xs text-attenue">
+                      {prog.faits}/{prog.total} lignes faites ·{" "}
+                      <Link href={lien("checklist")} className="text-accent-appuye hover:underline">
+                        voir
+                      </Link>
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-1 text-xs text-attenue">
+                    Aucun cadre coché. Modifiez l&apos;étude pour générer sa checklist.
+                  </p>
+                )}
+              </div>
+              <dl className="grid grid-cols-3 gap-2 border-t border-ligne pt-4 text-center">
+                <div>
+                  <dt className="text-[11px] text-efface">Missions</dt>
+                  <dd className="chiffres text-lg font-semibold">{ouvertes.length}</dd>
+                  {enRetard.length > 0 && (
+                    <dd className="text-[11px] font-medium text-alerte">{enRetard.length} en retard</dd>
+                  )}
+                </div>
+                <div>
+                  <dt className="text-[11px] text-efface">Temps</dt>
+                  <dd className="chiffres text-lg font-semibold">{formaterDuree(minutesTotal)}</dd>
+                  {valorise !== null && (
+                    <dd className="chiffres text-[11px] text-attenue">{formaterMontant(valorise)}</dd>
+                  )}
+                </div>
+                <div>
+                  <dt className="text-[11px] text-efface">Notes</dt>
+                  <dd className="chiffres text-lg font-semibold">{pages.length}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="bloc-app">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm">Fiche de l&apos;étude</h2>
+                {estProprietaire && manquants > 0 && (
+                  <FormulaireEtude etude={etude} libelle={`Compléter (${manquants})`} variante="discret" />
+                )}
+              </div>
+              <dl className="space-y-2.5 text-sm">
+                {champsRenseignes.map(([libelle, valeur]) => (
+                  <div key={libelle}>
+                    <dt className="text-[11px] text-efface">{libelle}</dt>
+                    <dd className="break-words">{valeur}</dd>
+                  </div>
+                ))}
+                <ChampFinInclusion date={etude.dateFinInclusion} statut={etude.statut} />
+              </dl>
+              {champsRenseignes.length === 0 && (
+                <p className="text-xs text-attenue">
+                  Promoteur, investigateur, identifiants réglementaires : rien n&apos;est encore
+                  renseigné.
+                </p>
+              )}
+              {etude.imageCouverture && estProprietaire && (
+                <form action={retirerCouverture} className="mt-4 border-t border-ligne pt-3">
+                  <input type="hidden" name="id" value={etude.id} />
+                  <button
+                    type="submit"
+                    className="text-xs text-attenue underline-offset-2 hover:text-alerte hover:underline"
+                  >
+                    Retirer l&apos;image de couverture
+                  </button>
+                </form>
+              )}
+            </section>
+
+            <section className="bloc-app">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm">Dernières notes</h2>
+                <Link href={lien("pense-bete")} className="text-[13px] font-medium text-accent-appuye hover:underline">
+                  Tout voir
+                </Link>
+              </div>
+              {pages.length === 0 ? (
+                <p className="text-xs text-attenue">Aucune note : comptes rendus, contacts, modes opératoires…</p>
+              ) : (
+                <ul className="space-y-1">
+                  {[...pages]
+                    .sort((x, y) => y.modifieLe - x.modifieLe)
+                    .slice(0, 4)
+                    .map((pg) => (
+                      <li key={pg.id}>
+                        <Link
+                          href={`/pages/${pg.id}`}
+                          className="-mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-creux"
+                        >
+                          <span aria-hidden>{pg.icone}</span>
+                          <span className="min-w-0 flex-1 truncate">{pg.titre}</span>
+                          <span className="chiffres shrink-0 text-[11px] text-efface">
+                            {formaterDate(pg.modifieLe)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </section>
+          </aside>
+
+          <div className="lg:col-span-2">
           {estProprietaire && (
           <section className="border-t border-ligne pt-6">
             <details>
@@ -315,6 +478,7 @@ export default async function PageEtude({
             </details>
           </section>
           )}
+          </div>
         </div>
       )}
 
@@ -378,11 +542,11 @@ export default async function PageEtude({
       {section === "pense-bete" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-titre text-lg font-bold">Pense-bête</h2>
+            <h2 className="font-titre text-lg font-bold">Notes</h2>
             <FormulairePenseBete
               categories={[...new Set(pages.map((p) => p.categorie).filter(Boolean))]}
               etudeIdParDefaut={etude.id}
-              libelle="Nouvelle page"
+              libelle="Nouvelle note"
               variante="discret"
             />
           </div>

@@ -19,14 +19,87 @@ function BoutonEnvoyer({ libelle }: { libelle: string }) {
   );
 }
 
-function Section({ titre, children }: { titre: string; children: React.ReactNode }) {
+/**
+ * Une étape du formulaire : numéro, titre, phrase d'appui. Les étapes
+ * facultatives se replient, pour qu'une étude se crée en trente secondes et
+ * se complète ensuite.
+ */
+function Section({
+  numero,
+  titre,
+  description,
+  repliable = false,
+  ouverte = true,
+  children,
+}: {
+  numero: number;
+  titre: string;
+  description?: string;
+  repliable?: boolean;
+  ouverte?: boolean;
+  children: React.ReactNode;
+}) {
+  const entete = (
+    <span className="flex items-start gap-3">
+      <span className="chiffres flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-voile text-xs font-semibold text-accent-appuye">
+        {numero}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">{titre}</span>
+        {description && <span className="mt-0.5 block text-xs text-attenue">{description}</span>}
+      </span>
+      {repliable && (
+        <span aria-hidden className="mt-0.5 text-xs text-efface transition-transform group-open:rotate-90">
+          ▸
+        </span>
+      )}
+    </span>
+  );
+  if (repliable) {
+    return (
+      <details open={ouverte} className="group border-t border-ligne pt-4">
+        <summary className="cursor-pointer list-none">{entete}</summary>
+        <div className="mt-4 space-y-4 pl-9">{children}</div>
+      </details>
+    );
+  }
   return (
-    <fieldset className="border-t border-ligne pt-4">
-      <legend className="pr-2 text-xs font-semibold uppercase tracking-wide text-attenue">
-        {titre}
-      </legend>
-      <div className="space-y-4">{children}</div>
-    </fieldset>
+    <section className="border-t border-ligne pt-4 first:border-t-0 first:pt-0">
+      {entete}
+      <div className="mt-4 space-y-4 pl-9">{children}</div>
+    </section>
+  );
+}
+
+/** Case à cocher en carte : la carte entière s'allume quand elle est cochée. */
+function CarteReferentiel({
+  cle,
+  nom,
+  resume,
+  coche,
+}: {
+  cle: string;
+  nom: string;
+  resume: string;
+  coche: boolean;
+}) {
+  return (
+    <label
+      className="flex cursor-pointer gap-2.5 rounded-lg border border-ligne p-3 transition-colors hover:border-ligne-forte
+                 has-[:checked]:border-accent/60 has-[:checked]:bg-accent-voile/50"
+    >
+      <input
+        type="checkbox"
+        name="reglementations"
+        value={cle}
+        defaultChecked={coche}
+        className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+      />
+      <span className="min-w-0">
+        <span className="block text-[13px] font-medium leading-snug">{nom}</span>
+        <span className="mt-0.5 block text-xs leading-snug text-attenue">{resume}</span>
+      </span>
+    </label>
   );
 }
 
@@ -57,6 +130,12 @@ export default function FormulaireEtude({
   }, [etat.succes, etat.avertissement]);
 
   const cochees = lireReglementations(etude?.reglementations);
+  // Aperçu vivant de la fiche : on voit l'étude prendre forme en la saisissant.
+  const [apercu, setApercu] = useState({
+    nom: etude?.nom ?? "",
+    code: etude?.code ?? "",
+    couleur: etude?.couleur ?? PALETTE_COULEURS[0],
+  });
   const types = REFERENTIELS.filter((r) => r.categorie === "type");
   const transversaux = REFERENTIELS.filter((r) => r.categorie === "transversal");
 
@@ -76,8 +155,35 @@ export default function FormulaireEtude({
         titre={edition ? "Modifier l'étude" : "Nouvelle étude"}
         large
       >
-        <form action={action} className="space-y-5">
+        <form
+          action={action}
+          className="space-y-5"
+          onChange={(e) => {
+            const champ = e.target as HTMLInputElement;
+            if (champ.name === "nom" || champ.name === "code" || champ.name === "couleur") {
+              setApercu((a) => ({ ...a, [champ.name]: champ.value }));
+            }
+          }}
+        >
           {edition && <input type="hidden" name="id" value={etude!.id} />}
+
+          <div className="flex items-center gap-3 rounded-xl border border-ligne bg-surface px-4 py-3">
+            <span
+              aria-hidden
+              className="h-9 w-9 shrink-0 rounded-lg"
+              style={{ background: `linear-gradient(135deg, ${apercu.couleur}, ${apercu.couleur}88)` }}
+            />
+            <span className="min-w-0">
+              <span className="block text-[11px] font-semibold uppercase tracking-wide text-efface">
+                {apercu.code.trim().toUpperCase() || "ACRONYME"}
+              </span>
+              <span className="block truncate text-sm font-medium">
+                {apercu.nom.trim() || "Intitulé de l'étude"}
+              </span>
+            </span>
+          </div>
+
+          <Section numero={1} titre="L'étude" description="L'acronyme sert d'étiquette partout dans Vigie.">
 
           <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
             <div>
@@ -121,59 +227,49 @@ export default function FormulaireEtude({
             />
           </div>
 
-          <Section titre="Cadre réglementaire">
-            <p className="text-xs text-attenue">
-              Cochez le type de recherche : les checklists correspondantes seront créées
-              automatiquement pour cette étude.
-            </p>
+          </Section>
 
-            <div className="space-y-2">
+          <Section
+            numero={2}
+            titre="Cadre réglementaire"
+            description="Cochez le type de recherche : la checklist correspondante est créée automatiquement."
+          >
+
+            <div className="grid gap-2 sm:grid-cols-2">
               {types.map((r) => (
-                <label
+                <CarteReferentiel
                   key={r.cle}
-                  className="flex cursor-pointer gap-2.5 rounded-lg border border-ligne p-3 transition hover:border-accent/50"
-                >
-                  <input
-                    type="checkbox"
-                    name="reglementations"
-                    value={r.cle}
-                    defaultChecked={cochees.includes(r.cle)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-indigo-600"
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium">{r.nom}</span>
-                    <span className="mt-0.5 block text-xs text-attenue">{r.resume}</span>
-                  </span>
-                </label>
+                  cle={r.cle}
+                  nom={r.nom}
+                  resume={r.resume}
+                  coche={cochees.includes(r.cle)}
+                />
               ))}
             </div>
 
             <p className="pt-1 text-xs font-medium uppercase tracking-wide text-attenue">
               Référentiels transversaux
             </p>
-            <div className="space-y-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {transversaux.map((r) => (
-                <label
+                <CarteReferentiel
                   key={r.cle}
-                  className="flex cursor-pointer gap-2.5 rounded-lg border border-ligne p-3 transition hover:border-accent/50"
-                >
-                  <input
-                    type="checkbox"
-                    name="reglementations"
-                    value={r.cle}
-                    defaultChecked={cochees.includes(r.cle)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-indigo-600"
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium">{r.nom}</span>
-                    <span className="mt-0.5 block text-xs text-attenue">{r.resume}</span>
-                  </span>
-                </label>
+                  cle={r.cle}
+                  nom={r.nom}
+                  resume={r.resume}
+                  coche={cochees.includes(r.cle)}
+                />
               ))}
             </div>
           </Section>
 
-          <Section titre="Identification">
+          <Section
+            numero={3}
+            titre="Identification et dates"
+            description="Promoteur, identifiants réglementaires, jalons. Complétable plus tard."
+            repliable
+            ouverte={edition}
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor={`${uid}-promoteur`} className="mb-1.5 block text-sm font-medium">
@@ -285,7 +381,13 @@ export default function FormulaireEtude({
             </div>
           </Section>
 
-          <Section titre="Présentation">
+          <Section
+            numero={4}
+            titre="Apparence et valorisation"
+            description="Couleur, image de couverture, tarif horaire."
+            repliable
+            ouverte={edition}
+          >
             <div>
               <label htmlFor={`${uid}-imageCouverture`} className="mb-1.5 block text-sm font-medium">
                 Image de couverture{" "}

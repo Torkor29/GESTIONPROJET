@@ -4,6 +4,9 @@ import MenuExport from "@/components/menu-export";
 import TableauMissions from "@/components/tableau-missions";
 import ViderArchives from "@/components/vider-archives";
 import { VueParEtude, VueParType } from "@/components/vues-missions";
+import ListeDenseMissions from "@/components/liste-dense-missions";
+import { droitsSurMission } from "@/lib/attribution";
+import { sigleEtude } from "@/lib/format";
 import { LIBELLES_STATUT_LIGNE_MISSION, LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 import { cleType } from "@/lib/missions";
 import { utilisateurActuel } from "@/lib/auth";
@@ -21,7 +24,8 @@ import OptionsEtudes from "@/components/options-etudes";
 export const dynamic = "force-dynamic";
 
 const VUES = [
-  { cle: "tableau", libelle: "Tableau" },
+  { cle: "tableau", libelle: "Cartes" },
+  { cle: "liste", libelle: "Liste" },
   { cle: "etude", libelle: "Par étude" },
   { cle: "type", libelle: "Par type" },
   { cle: "groupe", libelle: "Groupé par statut" },
@@ -258,6 +262,35 @@ export default async function PageMissions({
           utilisateurId={compte?.id}
           pilote={compte?.accesToutesEtudes}
           niveauxPartage={niveaux}
+        />
+      ) : vue === "liste" ? (
+        <ListeDenseMissions
+          maintenant={maintenant}
+          lignes={lignes.map((l) => ({
+            id: l.tache.id,
+            titre: l.tache.titre,
+            type: l.tache.type,
+            etudes: (l.etudesLiees ?? []).map((e) => ({ sigle: sigleEtude(e), couleur: e.couleur })),
+            statut: l.tache.statut,
+            priorite: l.tache.priorite,
+            echeance: l.tache.echeance,
+            assigneNom: l.assigneNom,
+            etapes: {
+              faites: (l.sousTaches ?? []).filter((e) => e.faite).length,
+              total: (l.sousTaches ?? []).length,
+            },
+            peutEcrire: compte
+              ? droitsSurMission({
+                  utilisateurId: compte.id,
+                  pilote: compte.accesToutesEtudes,
+                  proprietaireId: l.tache.proprietaireId,
+                  etudeIds: (l.etudesLiees ?? []).map((e) => e.id),
+                  etudesLiees: l.etudesLiees,
+                  assigneA: l.tache.assigneA,
+                  niveauxPartage: niveaux,
+                }).peutEcrire
+              : false,
+          }))}
         />
       ) : vue === "etude" ? (
         <VueParEtude

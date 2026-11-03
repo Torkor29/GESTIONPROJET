@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import { definirStatutAction, supprimerAction } from "@/actions/ecarts";
 import FormulaireAction, { type EcartChoix } from "./formulaire-action";
 import SelecteurStatutGenerique from "./selecteur-statut-generique";
@@ -48,7 +49,7 @@ export default function TableauActions({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-10 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="outil" message={message} aide="Une action corrective découle d'un écart : un responsable, une échéance, une vérification." />;
   }
 
   const maintenant = Math.floor(Date.now() / 1000);

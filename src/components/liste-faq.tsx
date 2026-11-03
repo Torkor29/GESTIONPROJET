@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import { supprimerFaq } from "@/actions/faq";
 import FormulaireFaq from "./formulaire-faq";
 import { CATEGORIES_FAQ } from "@/lib/constantes";
@@ -22,7 +23,7 @@ export default function ListeFaq({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-8 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="livre" message={message} aide="Les questions qui reviennent, répondues une fois pour toutes." />;
   }
 
   const parCategorie = new Map<string, LigneFaq[]>();

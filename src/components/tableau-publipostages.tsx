@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import Link from "next/link";
 import { definirStatutPublipostage } from "@/actions/publipostage";
 import ActionsLignePublipostage from "./actions-ligne-publipostage";
@@ -63,7 +64,7 @@ export default function TableauPublipostages({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-10 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="enveloppe" message={message} aide="Complétez conventions et fiches de qualification champ par champ, puis exportez-les." />;
   }
 
   const maintenant = Math.floor(Date.now() / 1000);

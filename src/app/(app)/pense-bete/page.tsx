@@ -24,7 +24,7 @@ export default async function PagePenseBete({
     <div className="space-y-5">
       <header className="entete-page">
         <div>
-          <h1 className="font-titre text-3xl font-bold">Pense-bête</h1>
+          <h1 className="font-titre text-3xl font-bold">Notes</h1>
           <p className="mt-1 max-w-xl text-sm text-attenue">
             Des pages rangées par catégorie : un compte rendu, une liste, un mode opératoire.
             Texte, images, tout ce qui sert à se souvenir.
@@ -33,7 +33,7 @@ export default async function PagePenseBete({
         <FormulairePenseBete
           categories={categories}
           etudes={etudes}
-          libelle="Nouvelle page"
+          libelle="Nouvelle note"
         />
       </header>
 

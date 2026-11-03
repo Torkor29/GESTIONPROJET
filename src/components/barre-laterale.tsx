@@ -7,6 +7,21 @@ import type { Etude } from "@/db/schema";
 import { Icone, type NomIcone } from "@/components/icones";
 import { Marque } from "@/components/marque";
 import { sigleEtude } from "@/lib/format";
+import { OUVRIR_PALETTE } from "@/components/palette-commandes";
+
+function BoutonRecherche({ className = "" }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event(OUVRIR_PALETTE))}
+      className={`flex h-8 items-center gap-2 rounded-md border border-ligne bg-surface px-2.5 text-[13px] text-efface transition-colors hover:border-ligne-forte hover:text-attenue ${className}`}
+    >
+      <Icone nom="loupe" className="h-3.5 w-3.5 shrink-0" />
+      <span className="flex-1 text-left">Rechercher…</span>
+      <kbd className="rounded border border-ligne px-1 text-[10px]">Ctrl K</kbd>
+    </button>
+  );
+}
 
 export type LienNavigation = { href: string; libelle: string; icone: NomIcone };
 export type RubriqueLiens = { titre: string | null; liens: LienNavigation[] };
@@ -115,6 +130,14 @@ export default function BarreLaterale({
           </svg>
         </button>
         <Marque complete={false} />
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event(OUVRIR_PALETTE))}
+          aria-label="Rechercher"
+          className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg border border-ligne bg-relief text-attenue"
+        >
+          <Icone nom="loupe" className="h-4 w-4" />
+        </button>
       </div>
 
       {ouvert && (
@@ -136,6 +159,10 @@ export default function BarreLaterale({
           <Link href="/bord" className="rounded-md outline-offset-4">
             <Marque complete={false} />
           </Link>
+        </div>
+
+        <div className="px-2.5 pb-3">
+          <BoutonRecherche className="w-full" />
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4">

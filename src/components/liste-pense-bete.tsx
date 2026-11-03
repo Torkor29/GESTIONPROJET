@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import Link from "next/link";
 import FormulairePenseBete from "./formulaire-pense-bete";
 import { formaterDate } from "@/lib/format";
@@ -21,7 +22,7 @@ export default function ListePenseBete({
   const groupes = grouperParCategorie(pages);
 
   if (pages.length === 0) {
-    return <p className="carte p-8 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="page" message={message} aide="Comptes rendus, contacts, modes opératoires : tout ce qui sert à se souvenir." />;
   }
 
   return (
@@ -37,7 +38,7 @@ export default function ListePenseBete({
               etudes={etudes}
               etudeIdParDefaut={etudeIdParDefaut}
               categorieParDefaut={groupe.nom === SANS_CATEGORIE ? "" : groupe.nom}
-              libelle="+ Page"
+              libelle="+ Note"
               variante="compact"
             />
           </div>

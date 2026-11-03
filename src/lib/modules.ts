@@ -75,7 +75,7 @@ export const MODULES: Module[] = [
   },
   {
     cle: "documents",
-    nom: "Pense-bête",
+    nom: "Notes",
     description: "Pages classées par catégorie : texte, images, listes.",
     icone: "page",
     domaine: "Suivi de projet",

@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import Link from "next/link";
 import { definirStatutEcart, supprimerEcart } from "@/actions/ecarts";
 import FormulaireEcart, { type VisiteChoix } from "./formulaire-ecart";
@@ -56,7 +57,7 @@ export default function TableauEcarts({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-10 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="alerte" message={message} aide="Consignez les déviations constatées, avec leur gravité et les suites données." />;
   }
 
   return (

@@ -223,7 +223,7 @@ export default async function PageIndicateurs() {
                 <th scope="col" className="sur-titre px-3 py-3">En retard</th>
                 <th scope="col" className="sur-titre px-3 py-3">Conformité</th>
                 <th scope="col" className="sur-titre px-3 py-3">Temps</th>
-                <th scope="col" className="sur-titre px-3 py-3">Pense-bête</th>
+                <th scope="col" className="sur-titre px-3 py-3">Notes</th>
               </tr>
             </thead>
             <tbody>

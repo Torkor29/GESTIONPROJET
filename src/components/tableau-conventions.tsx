@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import { definirStatutConvention, supprimerConvention } from "@/actions/conventions";
 import FormulaireConvention, { type ConventionChoix } from "./formulaire-convention";
 import SelecteurStatutGenerique from "./selecteur-statut-generique";
@@ -68,7 +69,7 @@ export default function TableauConventions({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-10 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="euro" message={message} aide="Suivez pour chaque contrat le montant prévu, déjà perçu et restant à percevoir." />;
   }
 
   const maintenant = Math.floor(Date.now() / 1000);

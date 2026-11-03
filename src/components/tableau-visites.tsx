@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import { supprimerVisite } from "@/actions/visites";
 import FormulaireVisite from "./formulaire-visite";
 import SelecteurStatutGenerique from "./selecteur-statut-generique";
@@ -47,7 +48,7 @@ export default function TableauVisites({
   message?: string;
 }) {
   if (lignes.length === 0) {
-    return <p className="carte p-10 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="repere" message={message} aide="Planifiez les visites de mise en place, de routine et de clôture, centre par centre." />;
   }
 
   const maintenant = Math.floor(Date.now() / 1000);

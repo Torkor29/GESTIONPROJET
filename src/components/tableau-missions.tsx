@@ -1,3 +1,4 @@
+import EtatVide from "./etat-vide";
 import CarteMission from "./carte-mission";
 import { droitsSurMission, etudesModifiables } from "@/lib/attribution";
 import type { CompteChoix, EtudeLiee, MembreAttribution } from "@/lib/attribution";
@@ -43,7 +44,7 @@ export default function TableauMissions({
   niveauxPartage?: Record<number, string>;
 }) {
   if (lignes.length === 0) {
-    return <p className="rounded-2xl border border-dashed border-ligne bg-creux/30 p-10 text-center text-sm text-attenue">{message}</p>;
+    return <EtatVide icone="cible" message={message} aide="Une mission, c'est ce qu'il reste à faire : relancer, déposer, déclarer — découpée en étapes si besoin." />;
   }
 
   return (

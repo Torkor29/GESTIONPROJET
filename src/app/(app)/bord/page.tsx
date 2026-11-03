@@ -6,7 +6,16 @@ import FormulaireTache from "@/components/formulaire-tache";
 import PersonnaliserAccueil from "@/components/personnaliser-accueil";
 import RappelInclusion from "@/components/rappel-inclusion";
 import TableauMissions from "@/components/tableau-missions";
-import TimelineEcheances from "@/components/timeline-echeances";
+import ListeEcheances from "@/components/liste-echeances";
+import MenuCreer from "@/components/menu-creer";
+import type { Echeance } from "@/lib/echeances";
+import { couleurAffichee } from "@/lib/couleurs";
+import {
+  STATUTS_CONVENTION_OUVERTS,
+  STATUTS_VISITE_OUVERTS,
+  TYPES_CONVENTION,
+  TYPES_VISITE,
+} from "@/lib/constantes";
 import { VueParEtude, VueParType } from "@/components/vues-missions";
 import { EtiquetteStatutEtude } from "@/components/etiquettes";
 import { Icone, type NomIcone } from "@/components/icones";
@@ -15,7 +24,6 @@ import { debutDeSemaine, formaterDuree, sigleEtude } from "@/lib/format";
 import { missionsATraiter } from "@/lib/priorite";
 import { lignesRappelInclusion } from "@/lib/inclusion";
 import { lireReglementations, referentiel } from "@/lib/referentiels";
-import { missionsPourTimeline } from "@/lib/timeline";
 import { utilisateurActuel } from "@/lib/auth";
 import { comptesDisponibles } from "@/actions/partages";
 import {
@@ -25,7 +33,9 @@ import {
   progressionParEtude,
   statistiques,
   totauxParEtude,
+  toutesLesConventions,
   toutesLesTaches,
+  toutesLesVisites,
 } from "@/lib/requetes";
 
 export const dynamic = "force-dynamic";
@@ -102,6 +112,9 @@ export default async function TableauDeBord({
     compte ? comptesDisponibles(compte.id) : Promise.resolve([]),
     niveauxPartage(),
   ]);
+  const [visites, conventions] = voir("timeline")
+    ? await Promise.all([toutesLesVisites(), toutesLesConventions()])
+    : [[], []];
 
   const aTraiter = missionsATraiter(missions, maintenant);
 
@@ -126,7 +139,55 @@ export default async function TableauDeBord({
         );
 
   const maxMinutes = Math.max(1, ...repartition.map((r) => r.minutes));
-  const timeline = voir("timeline") ? missionsPourTimeline(missions) : [];
+  const echeances: Echeance[] = voir("timeline")
+    ? [
+        ...missions
+          .filter((m) => m.tache.statut !== "terminee" && m.tache.echeance)
+          .map((m) => ({
+            cle: `m${m.tache.id}`,
+            nature: "mission" as const,
+            titre: m.tache.titre,
+            detail: m.assigneNom ?? null,
+            date: m.tache.echeance!,
+            href: `/missions?q=${encodeURIComponent(m.tache.titre)}`,
+            etude: m.etudeCode ?? m.etudeNom,
+            couleur: couleurAffichee(m.tache.couleur, m.etudeCouleur),
+          })),
+        ...visites
+          .filter(
+            (v) =>
+              v.visite.datePrevue &&
+              !v.visite.dateRealisee &&
+              STATUTS_VISITE_OUVERTS.includes(v.visite.statut),
+          )
+          .map((v) => ({
+            cle: `v${v.visite.id}`,
+            nature: "visite" as const,
+            titre: TYPES_VISITE[v.visite.type] ?? "Visite",
+            detail: v.visite.centre,
+            date: v.visite.datePrevue!,
+            href: "/visites",
+            etude: v.etudeCode ?? v.etudeNom,
+            couleur: v.etudeCouleur,
+          })),
+        ...conventions
+          .filter(
+            (c) =>
+              c.convention.dateEcheance &&
+              STATUTS_CONVENTION_OUVERTS.includes(c.convention.statut),
+          )
+          .map((c) => ({
+            cle: `c${c.convention.id}`,
+            nature: "convention" as const,
+            titre: `${TYPES_CONVENTION[c.convention.type] ?? "Convention"}${c.convention.reference ? ` ${c.convention.reference}` : ""}`,
+            detail: c.convention.partie,
+            date: c.convention.dateEcheance!,
+            href: "/budget",
+            etude: c.etudeCode ?? c.etudeNom,
+            couleur: c.etudeCouleur,
+          })),
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
@@ -150,13 +211,13 @@ export default async function TableauDeBord({
           <PersonnaliserAccueil actifs={widgets} compact />
           {voir("ajouts") && (
             <>
-              {/* Sur téléphone, seule la mission reste en tête : les autres
-                  ajouts sont à un tap, depuis leur module. */}
-              <span className="hidden sm:contents">
+              {/* Les ajouts secondaires se rangent derrière « Créer » : la
+                  mission, la plus fréquente, reste à un clic. */}
+              <MenuCreer>
                 <FormulaireEtude libelle="Nouvelle étude" variante="discret" />
-                <FormulairePenseBete etudes={etudes} libelle="Nouvelle page" variante="discret" />
+                <FormulairePenseBete etudes={etudes} libelle="Nouvelle note" variante="discret" />
                 <FormulaireFaq etudes={etudes} libelle="Nouvelle question" variante="discret" />
-              </span>
+              </MenuCreer>
               <FormulaireTache
                 etudes={etudes}
                 libelle="Nouvelle mission"
@@ -216,7 +277,19 @@ export default async function TableauDeBord({
       )}
 
       {voir("timeline") && (
-        <TimelineEcheances missions={timeline} maintenant={maintenant} />
+        <section className="bloc-app anime-bloc">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-titre text-xl font-bold">Échéances</h2>
+            <p className="text-xs text-attenue">missions, visites et conventions · 8 semaines</p>
+          </div>
+          <ListeEcheances
+            echeances={echeances}
+            maintenant={maintenant}
+            limiteJours={56}
+            afficherEtude
+            vide="Aucune échéance dans les huit prochaines semaines."
+          />
+        </section>
       )}
 
       {voir("inclusion") && <RappelInclusion lignes={lignesRappelInclusion(etudes)} />}

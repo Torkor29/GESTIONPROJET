@@ -10,7 +10,7 @@ export const WIDGETS_ACCUEIL: WidgetAccueil[] = [
   {
     cle: "ajouts",
     nom: "Ajouts rapides",
-    description: "Créer une mission, un document, une étude, sans changer de page.",
+    description: "Créer une mission, une note, une étude, sans changer de page.",
   },
   {
     cle: "chiffres",
@@ -20,7 +20,7 @@ export const WIDGETS_ACCUEIL: WidgetAccueil[] = [
   {
     cle: "timeline",
     nom: "Échéances",
-    description: "Calendrier des quatre prochaines semaines, retards en tête.",
+    description: "Missions, visites et conventions des huit prochaines semaines, retards en tête.",
   },
   {
     cle: "inclusion",

@@ -31,11 +31,11 @@ export default async function PageDetail({ params }: { params: Promise<{ id: str
                 {etude.nom}
               </Link>
               <span aria-hidden>/</span>
-              <span className="truncate">Pense-bête</span>
+              <span className="truncate">Notes</span>
             </>
           ) : (
             <Link href="/pense-bete" className="hover:text-encre">
-              Pense-bête
+              Notes
             </Link>
           )}
         </div>

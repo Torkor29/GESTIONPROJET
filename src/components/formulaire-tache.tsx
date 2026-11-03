@@ -278,8 +278,14 @@ export default function FormulaireTache({
             </div>
           </div>
 
+          <details open={Boolean(tache?.couleur)} className="group/option rounded-lg border border-ligne">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium text-attenue hover:text-encre">
+              <span aria-hidden className="text-xs transition-transform group-open/option:rotate-90">▸</span>
+              "Couleur de la mission"
+            </summary>
+            <div className="border-t border-ligne px-3 py-3">
           <fieldset>
-            <legend className="mb-1.5 text-sm font-medium">Couleur</legend>
+            <legend className="sr-only">Couleur</legend>
             <div className="flex flex-wrap items-center gap-2">
               <label className="cursor-pointer" title="Reprendre la couleur de l'étude">
                 <input
@@ -318,6 +324,8 @@ export default function FormulaireTache({
               Elle reste la même partout : accueil, suivi, dossier.
             </p>
           </fieldset>
+            </div>
+          </details>
             </>
           )}
 
@@ -342,6 +350,12 @@ export default function FormulaireTache({
             </p>
           )}
 
+          <details open={tache?.rappelLe != null} className="group/option rounded-lg border border-ligne">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium text-attenue hover:text-encre">
+              <span aria-hidden className="text-xs transition-transform group-open/option:rotate-90">▸</span>
+              "Rappel par mail"
+            </summary>
+            <div className="border-t border-ligne px-3 py-3">
           <div className="group/rappel">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
               <input
@@ -373,6 +387,9 @@ export default function FormulaireTache({
               un rappel automatique part avant l&apos;échéance (réglable dans Paramètres).
             </p>
           </div>
+
+            </div>
+          </details>
 
           <div>
             <label htmlFor={`${uid}-notes`} className="mb-1.5 block text-sm font-medium">

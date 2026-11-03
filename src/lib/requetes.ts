@@ -526,6 +526,29 @@ export async function faqDEtude(etudeId: number) {
  * et il est propre à chacun : partager une étude ne fait pas apparaître le
  * chronomètre d'un collègue.
  */
+/**
+ * Index léger pour la palette de recherche (Ctrl+K) : titres seulement, dans
+ * le même périmètre que le reste de l'outil.
+ */
+export async function indexRecherche() {
+  const id = await moi();
+  const [missions, notes] = await Promise.all([
+    db
+      .select({ id: taches.id, titre: taches.titre, etudeId: taches.etudeId })
+      .from(taches)
+      .where(and(missionVisible(id), isNull(taches.archiveeLe)))
+      .orderBy(desc(taches.modifieLe))
+      .limit(300),
+    db
+      .select({ id: pages.id, titre: pages.titre, icone: pages.icone })
+      .from(pages)
+      .where(pageVisible(id))
+      .orderBy(desc(pages.modifieLe))
+      .limit(300),
+  ]);
+  return { missions, notes };
+}
+
 export async function chronoEnCours() {
   const id = await moi();
   const [ligne] = await db

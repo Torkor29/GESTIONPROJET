@@ -758,3 +758,27 @@ export async function supprimerSousTache(donnees: FormData) {
   await appliquerStatutDepuisEtapes(ligne.tacheId);
   revalidatePath("/", "layout");
 }
+
+export type BilanLot = { faites: number; refusees: number };
+
+/**
+ * Change le statut de plusieurs missions d'un coup, depuis la vue liste.
+ * Chaque mission passe par les mêmes contrôles qu'une à une : celles qu'on
+ * n'a pas le droit d'avancer sont laissées telles quelles et comptées.
+ */
+export async function definirStatutMissions(ids: number[], statut: string): Promise<BilanLot> {
+  await exigerSession();
+  const uniques = [...new Set(ids.filter((id) => Number.isInteger(id) && id > 0))].slice(0, 500);
+  let faites = 0;
+  let refusees = 0;
+  for (const id of uniques) {
+    try {
+      await definirStatutTache(id, statut);
+      faites += 1;
+    } catch {
+      refusees += 1;
+    }
+  }
+  revalidatePath("/", "layout");
+  return { faites, refusees };
+}
