@@ -33,6 +33,7 @@ export default function FormulaireTache({
   comptes = [],
   peutAttribuer = false,
   typesConnus = [],
+  etapes = [],
 }: {
   tache?: Tache;
   etudes: Pick<Etude, "id" | "nom" | "code">[];
@@ -47,6 +48,8 @@ export default function FormulaireTache({
   peutAttribuer?: boolean;
   /** Types déjà employés, proposés en plus des suggestions. */
   typesConnus?: string[];
+  /** Étapes actuelles de la mission, en édition. */
+  etapes?: { titre: string }[];
 }) {
   // Plusieurs de ces formulaires cohabitent sur une même page : les identifiants
   // doivent être uniques, sinon les libellés pointent vers le mauvais champ.
@@ -165,20 +168,6 @@ export default function FormulaireTache({
             </datalist>
           </div>
 
-          {!edition && (
-            <div>
-              <label htmlFor={`${uid}-etapes`} className="mb-1.5 block text-sm font-medium">
-                Étapes <span className="font-normal text-attenue">(une par ligne, facultatif)</span>
-              </label>
-              <textarea
-                id={`${uid}-etapes`}
-                name="lignesSousTaches"
-                rows={3}
-                placeholder={"Relancer le promoteur\nAttendre le retour ANSM\nDéposer le document"}
-                className="champ resize-y"
-              />
-            </div>
-          )}
 
           <div>
             <p className="mb-1.5 text-sm font-medium" id={`${uid}-etudes`}>
@@ -328,6 +317,22 @@ export default function FormulaireTache({
           </details>
             </>
           )}
+
+          {/* Étapes : modifiables aussi après création. Une étape gardée telle
+              quelle conserve sa coche ; une ligne retirée supprime l'étape. */}
+          <div>
+            <label htmlFor={`${uid}-etapes`} className="mb-1.5 block text-sm font-medium">
+              Étapes <span className="font-normal text-attenue">(une par ligne, facultatif)</span>
+            </label>
+            <textarea
+              id={`${uid}-etapes`}
+              name="lignesSousTaches"
+              rows={Math.max(3, etapes.length + 1)}
+              defaultValue={etapes.map((e) => e.titre).join("\n")}
+              placeholder={"Relancer le promoteur\nAttendre le retour ANSM\nDéposer le document"}
+              className="champ resize-y"
+            />
+          </div>
 
           {edition && !statutSuitEtapes && (
             <div>

@@ -3,6 +3,9 @@
 import { useMemo, useState, useTransition } from "react";
 import { definirStatutMissions } from "@/actions/taches";
 import SelecteurStatut from "./selecteur-statut";
+import CarteMission from "./carte-mission";
+import Modale from "./modale";
+import type { ComponentProps } from "react";
 import { LIBELLES_STATUT_MISSION } from "@/lib/constantes";
 import { formaterDate } from "@/lib/format";
 
@@ -17,7 +20,11 @@ export type LigneDense = {
   assigneNom: string | null;
   etapes: { faites: number; total: number };
   peutEcrire: boolean;
+  /** De quoi afficher la mission entière dans la fenêtre de détail. */
+  carte: Omit<ComponentProps<typeof CarteMission>, "etudes" | "membres" | "comptes">;
 };
+
+type Partage = Pick<ComponentProps<typeof CarteMission>, "etudes" | "membres" | "comptes">;
 
 type Tri = "titre" | "etude" | "statut" | "echeance" | "assigne";
 
@@ -30,10 +37,14 @@ const ORDRE_STATUT: Record<string, number> = { a_faire: 0, en_cours: 1, terminee
 export default function ListeDenseMissions({
   lignes,
   maintenant,
+  partage,
 }: {
   lignes: LigneDense[];
   maintenant: number;
+  partage: Partage;
 }) {
+  const [detailId, setDetailId] = useState<number | null>(null);
+  const detail = lignes.find((l) => l.id === detailId);
   const [tri, setTri] = useState<{ cle: Tri; sens: 1 | -1 }>({ cle: "echeance", sens: 1 });
   const [choisies, setChoisies] = useState<Set<number>>(new Set());
   const [enCours, demarrer] = useTransition();
@@ -101,6 +112,14 @@ export default function ListeDenseMissions({
 
   return (
     <div className="space-y-2">
+      <Modale
+        ouverte={detail !== undefined}
+        onFermer={() => setDetailId(null)}
+        titre={detail?.titre ?? "Mission"}
+        large
+      >
+        {detail && <CarteMission key={detail.id} {...detail.carte} {...partage} />}
+      </Modale>
       <div
         className={`flex min-h-10 flex-wrap items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
           choisies.size > 0 ? "bg-accent-voile" : ""
@@ -167,7 +186,12 @@ export default function ListeDenseMissions({
               return (
                 <tr
                   key={l.id}
-                  className={`border-b border-ligne last:border-0 ${coche ? "bg-accent-voile/40" : "hover:bg-creux/50"}`}
+                  onClick={(ev) => {
+                    // Un clic sur la ligne ouvre la mission, sauf sur ses contrôles.
+                    if ((ev.target as HTMLElement).closest("button, input, a, [role=listbox]")) return;
+                    setDetailId(l.id);
+                  }}
+                  className={`cursor-pointer border-b border-ligne last:border-0 ${coche ? "bg-accent-voile/40" : "hover:bg-creux/50"}`}
                 >
                   <td className="px-3 py-2">
                     <input
@@ -187,9 +211,14 @@ export default function ListeDenseMissions({
                     />
                   </td>
                   <td className="px-3 py-2">
-                    <span className={`block font-medium ${l.statut === "terminee" ? "text-attenue line-through" : ""}`}>
+                    {/* Le titre ouvre la mission entière : étapes, temps, modification. */}
+                    <button
+                      type="button"
+                      onClick={() => setDetailId(l.id)}
+                      className={`block text-left font-medium hover:text-accent-appuye hover:underline ${l.statut === "terminee" ? "text-attenue line-through" : ""}`}
+                    >
                       {l.titre}
-                    </span>
+                    </button>
                     <span className="block text-xs text-efface">
                       {[
                         l.type,

@@ -359,6 +359,7 @@ export async function modifierTache(
           modifieLe: maintenant(),
         })
         .where(eq(taches.id, id));
+      await synchroniserEtapes(id, donnees);
       await appliquerStatutDepuisEtapes(id);
       revalidatePath("/", "layout");
       return { succes: (precedent.succes ?? 0) + 1 };
@@ -398,6 +399,7 @@ export async function modifierTache(
       .where(eq(taches.id, id));
 
     await enregistrerLiens(id, etudeIds);
+    await synchroniserEtapes(id, donnees);
     await appliquerStatutDepuisEtapes(id);
 
     revalidatePath("/", "layout");
@@ -606,6 +608,46 @@ async function statutsParEtude(tacheId: number): Promise<string[]> {
     .from(tachesEtudes)
     .where(eq(tachesEtudes.tacheId, tacheId));
   return lignes.length > 1 ? lignes.map((l) => l.statut) : [];
+}
+
+/**
+ * Réécrit les étapes d'une mission depuis le champ « une par ligne » du
+ * formulaire. Une ligne identique à une étape existante la garde (et sa
+ * coche, et son temps) ; les autres lignes reprennent, dans l'ordre, les
+ * étapes restantes en les renommant ; le surplus est créé ou supprimé.
+ */
+async function synchroniserEtapes(tacheId: number, donnees: FormData) {
+  if (!donnees.has("lignesSousTaches")) return;
+  const lignes = String(donnees.get("lignesSousTaches") ?? "")
+    .split("\n")
+    .map((l) => l.trim().slice(0, 300))
+    .filter(Boolean)
+    .slice(0, 100);
+  const existantes = await db
+    .select({ id: sousTaches.id, titre: sousTaches.titre })
+    .from(sousTaches)
+    .where(eq(sousTaches.tacheId, tacheId))
+    .orderBy(sousTaches.ordre, sousTaches.id);
+
+  const libres = [...existantes];
+  const affectation: ({ id: number; titre: string } | null)[] = lignes.map((l) => {
+    const i = libres.findIndex((e) => e.titre === l);
+    return i >= 0 ? libres.splice(i, 1)[0] : null;
+  });
+  for (let i = 0; i < lignes.length; i++) {
+    const deja = affectation[i];
+    if (deja) {
+      await db.update(sousTaches).set({ ordre: i }).where(eq(sousTaches.id, deja.id));
+    } else if (libres.length > 0) {
+      const reprise = libres.shift()!;
+      await db.update(sousTaches).set({ titre: lignes[i], ordre: i }).where(eq(sousTaches.id, reprise.id));
+    } else {
+      await db.insert(sousTaches).values({ tacheId, titre: lignes[i], ordre: i });
+    }
+  }
+  if (libres.length > 0) {
+    await db.delete(sousTaches).where(inArray(sousTaches.id, libres.map((e) => e.id)));
+  }
 }
 
 /**

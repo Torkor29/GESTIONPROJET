@@ -334,6 +334,7 @@ export default function CarteMission({
               libelle="✎"
               variante="icone"
               statutSuitEtapes={total > 0}
+              etapes={sousTaches}
               membres={membres}
               comptes={comptes}
               peutAttribuer={peutGerer}

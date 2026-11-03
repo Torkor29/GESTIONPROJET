@@ -266,7 +266,20 @@ export default async function PageMissions({
       ) : vue === "liste" ? (
         <ListeDenseMissions
           maintenant={maintenant}
-          lignes={lignes.map((l) => ({
+          partage={{ etudes, membres, comptes }}
+          lignes={lignes.map((l) => {
+            const droits = compte
+              ? droitsSurMission({
+                  utilisateurId: compte.id,
+                  pilote: compte.accesToutesEtudes,
+                  proprietaireId: l.tache.proprietaireId,
+                  etudeIds: (l.etudesLiees ?? []).map((e) => e.id),
+                  etudesLiees: l.etudesLiees,
+                  assigneA: l.tache.assigneA,
+                  niveauxPartage: niveaux,
+                })
+              : { peutGerer: false, peutEcrire: false };
+            return {
             id: l.tache.id,
             titre: l.tache.titre,
             type: l.tache.type,
@@ -279,18 +292,24 @@ export default async function PageMissions({
               faites: (l.sousTaches ?? []).filter((e) => e.faite).length,
               total: (l.sousTaches ?? []).length,
             },
-            peutEcrire: compte
-              ? droitsSurMission({
-                  utilisateurId: compte.id,
-                  pilote: compte.accesToutesEtudes,
-                  proprietaireId: l.tache.proprietaireId,
-                  etudeIds: (l.etudesLiees ?? []).map((e) => e.id),
-                  etudesLiees: l.etudesLiees,
-                  assigneA: l.tache.assigneA,
-                  niveauxPartage: niveaux,
-                }).peutEcrire
-              : false,
-          }))}
+            peutEcrire: droits.peutEcrire,
+            carte: {
+              tache: l.tache,
+              etudeNom: l.etudeNom,
+              etudeCode: l.etudeCode,
+              etudeCouleur: l.etudeCouleur,
+              etudesLiees: l.etudesLiees,
+              assigneNom: l.assigneNom,
+              sousTaches: l.sousTaches ?? [],
+              minutes: l.minutes ?? 0,
+              minutesParEtape: l.minutesParEtape ?? {},
+              chronoEnCours: l.chronoEnCours ?? false,
+              chronoSousTacheId: l.chronoSousTacheId ?? null,
+              peutGerer: droits.peutGerer,
+              peutEcrire: droits.peutEcrire,
+            },
+          };
+          })}
         />
       ) : vue === "etude" ? (
         <VueParEtude
